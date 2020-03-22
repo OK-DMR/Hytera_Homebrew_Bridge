@@ -1,8 +1,9 @@
-from generic_service import GenericService
-import constants
+from .generic_service import GenericService
+from .constants import *
 
 
 class P2PService(GenericService):
+
     COMMAND_PREFIX: bytes = bytes([0x50, 0x32, 0x50])
     PING_PREFIX: bytes = bytes([0x0A, 0x00, 0x00, 0x00, 0x14])
 
@@ -17,7 +18,7 @@ class P2PService(GenericService):
 
     def __init__(self):
         super().__init__()
-        self.listenPort = constants.DEFAULT_SERVICE_PORT
+        self.listenPort = self.DEFAULT_LISTEN_PORT = DEFAULT_P2P_PORT
 
     def packet_is_command(self, data: bytes) -> bool:
         ret = data[:3] == self.COMMAND_PREFIX
