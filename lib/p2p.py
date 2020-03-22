@@ -137,7 +137,11 @@ class P2PService(Thread):
         self.log(data.hex())
 
     def handle_ping(self, data: bytes, address: tuple) -> None:
-        self.log("handle ping from %s.%s" % address)
+        data = bytearray(data)
+        data[12] += 1
+        self.serverSocket.sendto(data, address)
+        self.log("pong sent to %s.%s" % address)
+        self.log(data.hex())
 
     def run(self) -> None:
         self.create_socket()
