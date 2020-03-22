@@ -1,15 +1,8 @@
-from __future__ import annotations
-
-from threading import Thread
-import socket
-import logging
-from storage import Storage
+from generic_service import GenericService
+import constants
 
 
-class P2PService(Thread):
-    DEFAULT_SERVICE_PORT: int = 45000
-    DEFAULT_SERVICE_IP: str = "0.0.0.0"
-
+class P2PService(GenericService):
     COMMAND_PREFIX: bytes = bytes([0x50, 0x32, 0x50])
     PING_PREFIX: bytes = bytes([0x0A, 0x00, 0x00, 0x00, 0x14])
 
@@ -22,47 +15,9 @@ class P2PService(Thread):
         PACKET_TYPE_REQUEST_REGISTRATION,
     ]
 
-    listenPort: int = DEFAULT_SERVICE_PORT
-    listenIP: str = DEFAULT_SERVICE_IP
-    serverSocket: socket
-    selfLogger: logging.Logger = None
-    storage: Storage = Storage.instance()
-
-    def log(self, msg, level=logging.INFO):
-        if not self.selfLogger:
-            self.selfLogger = logging.getLogger("P2PService")
-            self.selfLogger.setLevel(logging.DEBUG)
-            console_log_output = logging.StreamHandler()
-            console_log_output.setLevel(logging.DEBUG)
-            formatter = logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
-            console_log_output.setFormatter(formatter)
-            self.selfLogger.addHandler(console_log_output)
-        self.selfLogger.log(level, msg)
-
-    def set_port(self, port: int) -> P2PService:
-        self.listenPort = self.DEFAULT_SERVICE_PORT if not port else port
-        self.log("Listen on Port set %s" % self.listenPort)
-        return self
-
-    def set_ip(self, ip: str) -> P2PService:
-        self.listenIP = self.DEFAULT_SERVICE_IP if not ip else ip
-        self.log("Listen on IP set %s" % self.listenIP)
-        return self
-
-    def set_storage(self, new_storage: Storage) -> P2PService:
-        self.storage = new_storage
-        return self
-
-    def create_socket(self) -> P2PService:
-        self.serverSocket = socket.socket(
-            socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP
-        )
-        self.serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.serverSocket.bind((self.listenIP, self.listenPort))
-        self.log("server socket created")
-        return self
+    def __init__(self):
+        super().__init__()
+        self.listenPort = constants.DEFAULT_SERVICE_PORT
 
     def packet_is_command(self, data: bytes) -> bool:
         ret = data[:3] == self.COMMAND_PREFIX
