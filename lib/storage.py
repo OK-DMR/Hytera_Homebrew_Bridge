@@ -42,7 +42,7 @@ class Storage(dict):
     def get_repeater_info_by_ip(self, ip: str) -> RepeaterInfo:
         return self.get_repeater_info_by_address((ip, 0))
 
-    def get_repeater_info_by_address(self, address: tuple):
+    def get_repeater_info_by_address(self, address: tuple) -> RepeaterInfo:
         storage_key = self.get_repeater_info_storage_key_for_address(address)
         with self.storageMutex:
             return self.get(storage_key)
