@@ -26,7 +26,7 @@ class P2PService(Thread):
     listenIP: str = DEFAULT_SERVICE_IP
     serverSocket: socket
     selfLogger: logging.Logger = None
-    storage: Storage = Storage()
+    storage: Storage = Storage.instance()
 
     def log(self, msg, level=logging.INFO):
         if not self.selfLogger:
@@ -81,12 +81,14 @@ class P2PService(Thread):
 
     def handle_registration(self, data: bytes, address: tuple) -> None:
         ip, port = address
-        repeater_idx = self.storage.get_repeater_id_for_remote_address(address)
+        repeater_idx = self.storage.get_repeater_id_for_remote_address(address, create_if_not_exists=True)
         self.log(
             "registration of remote %s.%s assigned id %d" % (ip, port, repeater_idx)
         )
         data = bytearray(data)
+        # set repeater ID
         data[4] = repeater_idx
+        # set operation result status code
         data[13] = 0x01
         data.append(0x01)
         self.serverSocket.sendto(data, address)
@@ -94,10 +96,33 @@ class P2PService(Thread):
         self.log(data.hex())
 
     def handle_rdac_request(self, data: bytes, address: tuple) -> None:
-        self.log("rdac request from %s.%s" % address)
+        repeater_idx = self.storage.get_repeater_id_for_remote_address(address, create_if_not_exists=False)
+        if repeater_idx <= 0:
+            self.log("Ignoring RDAC request for unknown repeater (originated from %s.%s)" % address)
+            return
+        data = bytearray(data)
+        # set RDAC id
+        data[4] = repeater_idx
+        # set operation result status code
+        data[13] = 0x01
+        data.append(0x01)
+        self.serverSocket.sendto(data, address)
+        self.log("rdac response for %s.%s" % address)
+        self.log(data.hex())
 
     def handle_dmr_request(self, data: bytes, address: tuple) -> None:
-        self.log("dmr request from %s.%s" % address)
+        repeater_idx = self.storage.get_repeater_id_for_remote_address(address, create_if_not_exists=False)
+        if repeater_idx <= 0:
+            self.log("Ignoring DMR request for unknown repeater (originated from %s.%s)" % address)
+            return
+        data = bytearray(data)
+        # set DMR id
+        data[4] = repeater_idx
+        data[13] = 0x01
+        data.append(0x01)
+        self.serverSocket.sendto(data, address)
+        self.log("dmr response for %s.%s" % address)
+        self.log(data.hex())
 
     def handle_ping(self, data: bytes, address: tuple) -> None:
         self.log("handle ping from %s.%s" % address)

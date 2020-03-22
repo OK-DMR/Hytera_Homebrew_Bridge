@@ -1,1 +1,1 @@
-__all__ = ["storage", "p2p", "rdac"]
+__all__ = ["p2p", "rdac", "dmr"]
