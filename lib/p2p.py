@@ -81,7 +81,9 @@ class P2PService(Thread):
 
     def handle_registration(self, data: bytes, address: tuple) -> None:
         ip, port = address
-        repeater_idx = self.storage.get_repeater_id_for_remote_address(address, create_if_not_exists=True)
+        repeater_idx = self.storage.get_repeater_id_for_remote_address(
+            address, create_if_not_exists=True
+        )
         self.log(
             "registration of remote %s.%s assigned id %d" % (ip, port, repeater_idx)
         )
@@ -96,9 +98,14 @@ class P2PService(Thread):
         self.log(data.hex())
 
     def handle_rdac_request(self, data: bytes, address: tuple) -> None:
-        repeater_idx = self.storage.get_repeater_id_for_remote_address(address, create_if_not_exists=False)
+        repeater_idx = self.storage.get_repeater_id_for_remote_address(
+            address, create_if_not_exists=False
+        )
         if repeater_idx <= 0:
-            self.log("Ignoring RDAC request for unknown repeater (originated from %s.%s)" % address)
+            self.log(
+                "Ignoring RDAC request for unknown repeater (originated from %s.%s)"
+                % address
+            )
             return
         data = bytearray(data)
         # set RDAC id
@@ -111,9 +118,14 @@ class P2PService(Thread):
         self.log(data.hex())
 
     def handle_dmr_request(self, data: bytes, address: tuple) -> None:
-        repeater_idx = self.storage.get_repeater_id_for_remote_address(address, create_if_not_exists=False)
+        repeater_idx = self.storage.get_repeater_id_for_remote_address(
+            address, create_if_not_exists=False
+        )
         if repeater_idx <= 0:
-            self.log("Ignoring DMR request for unknown repeater (originated from %s.%s)" % address)
+            self.log(
+                "Ignoring DMR request for unknown repeater (originated from %s.%s)"
+                % address
+            )
             return
         data = bytearray(data)
         # set DMR id
