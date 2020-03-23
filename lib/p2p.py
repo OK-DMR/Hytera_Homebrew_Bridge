@@ -22,7 +22,7 @@ class P2PService(GenericService):
         return ret
 
     def packet_is_ping(self, data: bytes) -> bool:
-        ret = data[4:5] == self.PING_PREFIX
+        ret = data[4:9] == self.PING_PREFIX
         self.log("packet_is_ping:%s" % ret)
         return ret
 
@@ -169,7 +169,17 @@ class P2PService(GenericService):
         self.log(data.hex())
         self.serverSocket.sendto(data, response_address)
 
-    def handle_ping(self, data: bytes, address: tuple) -> None:
+    def handle_ping(self, data: bytes, address: tuple) -> None:   
+        repeater_idx = self.storage.get_repeater_id_for_remote_address(
+            address, create_if_not_exists=False
+        )
+        if repeater_idx <= 0:
+            self.log(
+                "Ignoring ping for unknown repeater (originated from %s.%s)"
+                % address
+            )
+            return
+
         data = bytearray(data)
         data[12] += 1
         self.serverSocket.sendto(data, address)
