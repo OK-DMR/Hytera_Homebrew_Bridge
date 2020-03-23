@@ -13,6 +13,55 @@ class RepeaterInfo(dict):
     KEY_REMOTE_RDAC_PORT = "remote_rdac_port"
     KEY_REMOTE_DMR_PORT = "remote_dmr_port"
     KEY_DMR_STEP = "current_dmr_step"
+    KEY_REPEATER_ID = "repeater_id"
+    KEY_FIRMWARE = "repeater_firmware"
+    KEY_HARDWARE = "repeater_hardware"
+    KEY_CALLSIGN = "repeater_callsign"
+    KEY_REPEATER_MODE = "repeater_mode"
+    KEY_TX_FREQ = "tx_freq"
+    KEY_RX_FREQ = "rx_freq"
+
+    def set_repeater_mode(self, new_repeater_mode: int) -> None:
+        self[self.KEY_REPEATER_MODE] = new_repeater_mode
+
+    def get_repeater_mode(self) -> int:
+        return self.get(self.KEY_REPEATER_MODE, 0)
+
+    def set_tx_freq(self, new_freq: float) -> None:
+        self[self.KEY_TX_FREQ] = new_freq
+
+    def get_tx_freq(self) -> float:
+        return self.get(self.KEY_TX_FREQ, 0.0)
+
+    def set_rx_freq(self, new_freq: float) -> None:
+        self[self.KEY_RX_FREQ] = new_freq
+
+    def get_rx_freq(self) -> float:
+        return self.get(self.KEY_RX_FREQ, 0.0)
+
+    def set_callsign(self, new_callsign: str) -> None:
+        self[self.KEY_CALLSIGN] = new_callsign
+
+    def get_callsign(self) -> str:
+        return self.get(self.KEY_CALLSIGN)
+
+    def set_firmware(self, new_firmware: str) -> None:
+        self[self.KEY_FIRMWARE] = new_firmware
+
+    def get_firmware(self) -> str:
+        return self.get(self.KEY_FIRMWARE)
+
+    def set_hardware(self, new_hardware: str) -> None:
+        self[self.KEY_HARDWARE] = new_hardware
+
+    def get_hardware(self) -> str:
+        return self.get(self.KEY_HARDWARE)
+
+    def get_repeater_id(self) -> int:
+        return self.get(self.KEY_REPEATER_ID, 0)
+
+    def set_repeater_id(self, new_repeater_id: int) -> None:
+        self[self.KEY_REPEATER_ID] = new_repeater_id
 
     def get_ip(self) -> str:
         return self.get(self.KEY_IP)
