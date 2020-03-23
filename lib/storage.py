@@ -3,11 +3,62 @@ from .constants import *
 
 
 class RepeaterInfo(dict):
+    KEY_IP = "ip"
+    KEY_ID = "id"
+    KEY_LAST_RDAC_RESPONSE = "last_rdac_response"
+    KEY_LAST_P2P_RESPONSE = "last_p2p_response"
+    KEY_LAST_DMR_RESPONSE = "last_dmr_response"
+    KEY_REMOTE_P2P_PORT = 'remote_p2p_port'
+    KEY_REMOTE_RDAC_PORT = 'remote_rdac_port'
+    KEY_REMOTE_DMR_PORT = 'remote_dmr_port'
+
     def get_ip(self):
-        return self.get("ip")
+        return self.get(self.KEY_IP)
+
+    def set_ip(self, ip: str):
+        self[self.KEY_IP] = ip
 
     def get_id(self):
-        return self.get("id")
+        return self.get(self.KEY_ID)
+
+    def set_id(self, id: int):
+        self[self.KEY_ID] = id
+
+    def get_p2p_port(self):
+        return self.get(self.KEY_REMOTE_P2P_PORT)
+
+    def set_p2p_port(self, port: int):
+        self[self.KEY_REMOTE_P2P_PORT] = int(port)
+
+    def get_rdac_port(self):
+        return self.get(self.KEY_REMOTE_RDAC_PORT)
+
+    def set_rdac_port(self, port: int):
+        self[self.KEY_REMOTE_RDAC_PORT] = int(port)
+
+    def get_dmr_port(self):
+        return self.get(self.KEY_REMOTE_DMR_PORT)
+
+    def set_dmr_port(self, port: int):
+        self[self.KEY_REMOTE_DMR_PORT] = int(port)
+
+    def get_last_rdac_response(self):
+        return self.get(self.KEY_LAST_RDAC_RESPONSE, 0)
+
+    def set_last_rdac_response(self, time):
+        self[self.KEY_LAST_RDAC_RESPONSE] = time
+
+    def get_last_p2p_response(self):
+        return self.get(self.KEY_LAST_P2P_RESPONSE, 0)
+
+    def set_last_p2p_response(self, time):
+        self[self.KEY_LAST_P2P_RESPONSE] = time
+
+    def get_last_dmr_response(self):
+        return self.get(self.KEY_LAST_DMR_RESPONSE, 0)
+
+    def set_last_dmr_response(self, time):
+        self[self.KEY_LAST_DMR_RESPONSE] = time
 
 
 class Storage(dict):
@@ -57,9 +108,10 @@ class Storage(dict):
         return self.get_repeater_id_for_remote_address((ip, 0))
 
     def get_repeater_id_for_remote_address(
-        self, address: tuple, create_if_not_exists=False
+            self, address: tuple, create_if_not_exists=False
     ) -> int:
         storage_key = self.get_repeater_info_storage_key_for_address(address)
+        ip, port = address
         with self.storageMutex:
             repeater_data: RepeaterInfo = self.get(storage_key)
             if not repeater_data:
@@ -68,7 +120,9 @@ class Storage(dict):
                 repeater_data = RepeaterInfo()
                 repeater_idx = self.get("repeaters_count", 1) + 1
                 self["repeaters_count"] = repeater_idx
-                repeater_data["id"] = repeater_idx
+                repeater_data.set_id(repeater_idx)
+                repeater_data.set_ip(ip)
+                repeater_data.set_p2p_port(port)
                 self[storage_key] = repeater_data
                 return repeater_idx
             return repeater_data.get_id()
@@ -79,3 +133,7 @@ class Storage(dict):
     def get_repeater_info_by_address(self, address: tuple) -> RepeaterInfo:
         storage_key = self.get_repeater_info_storage_key_for_address(address)
         return self.get(storage_key)
+
+    def set_repeater_info_by_address(self, address: tuple, info: RepeaterInfo) -> None:
+        with self.storageMutex:
+            self[self.get_repeater_info_storage_key_for_address(address)] = info

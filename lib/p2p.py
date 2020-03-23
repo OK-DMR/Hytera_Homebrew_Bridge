@@ -1,4 +1,5 @@
 from .generic_service import GenericService
+import time
 
 
 class P2PService(GenericService):
@@ -37,9 +38,21 @@ class P2PService(GenericService):
         self.log(
             "registration of remote %s.%s assigned id %d" % (ip, port, repeater_idx)
         )
+
+        repeater_data = self.storage.get_repeater_info_by_address(address)
+        now = time.time()
+        if now - repeater_data.get_last_p2p_response() < 10:
+            self.log(
+                "Ignoring registration request, last response was before %d seconds" % (
+                        now - repeater_data.get_last_p2p_response())
+            )
+            return
+        repeater_data.set_last_p2p_response(now)
+        self.storage.set_repeater_info_by_address(address, repeater_data)
+
         data = bytearray(data)
         # set repeater ID
-        data[4] = repeater_idx
+        data[4] += 1
         # set operation result status code
         data[13] = 0x01
         data.append(0x01)
@@ -48,6 +61,7 @@ class P2PService(GenericService):
         self.log(data.hex())
 
     def handle_rdac_request(self, data: bytes, address: tuple) -> None:
+        ip, port = address
         repeater_idx = self.storage.get_repeater_id_for_remote_address(
             address, create_if_not_exists=False
         )
@@ -57,31 +71,50 @@ class P2PService(GenericService):
                 % address
             )
             return
+
+        repeater_data = self.storage.get_repeater_info_by_address(address)
+        now = time.time()
+        if now - repeater_data.get_last_rdac_response() < 10:
+            self.log(
+                "Ignoring DMR request, last response was before %d seconds" % (
+                        now - repeater_data.get_last_rdac_response())
+            )
+            return
+        repeater_data.set_last_rdac_response(now)
+        repeater_data.set_rdac_port(port)
+        self.storage.set_repeater_info_by_address(address, repeater_data)
+        response_address = (repeater_data.get_ip(), repeater_data.get_p2p_port())
+
         data = bytearray(data)
         # set RDAC id
-        data[4] = repeater_idx
+        data[4] += 1
         # set operation result status code
         data[13] = 0x01
         data.append(0x01)
-        self.serverSocket.sendto(data, address)
-        self.log("rdac response for %s.%s" % address)
+        self.serverSocket.sendto(data, response_address)
+        self.log("rdac response for %s.%s" % response_address)
         self.log(data.hex())
 
+        # redirect repeater to correct RDAC port
+        data = data[:len(data) - 1]
         data[4] = 0x0B
-        data[12] = 0x00
+        data[12] = 0xFF
         data[13] = 0xFF
         data[14] = 0x01
         data[15] = 0x00
         data += bytes([0xFF, 0x01])
-        target_rdac_port = self.storage.get_service_port(type(self).__name__)
-        data += target_rdac_port.to_bytes(2, "big")
+        from .rdac import RDACService
+        target_rdac_port = self.storage.get_service_port(RDACService.__name__)
+        data += target_rdac_port.to_bytes(2, "little")
         self.log(
             "rdac redirect to port %s response for %s.%s"
             % (target_rdac_port, address[0], address[1])
         )
-        self.serverSocket.sendto(data, address)
+        self.log(data.hex())
+        self.serverSocket.sendto(data, response_address)
 
     def handle_dmr_request(self, data: bytes, address: tuple) -> None:
+        ip, port = address
         repeater_idx = self.storage.get_repeater_id_for_remote_address(
             address, create_if_not_exists=False
         )
@@ -91,28 +124,47 @@ class P2PService(GenericService):
                 % address
             )
             return
+
+        repeater_data = self.storage.get_repeater_info_by_address(address)
+        now = time.time()
+        if now - repeater_data.get_last_dmr_response() < 10:
+            self.log(
+                "Ignoring DMR request, last response was before %d seconds" % (
+                        now - repeater_data.get_last_dmr_response())
+            )
+            return
+        repeater_data.set_last_dmr_response(now)
+        repeater_data.set_dmr_port(port)
+        self.storage.set_repeater_info_by_address(address, repeater_data)
+        response_address = (repeater_data.get_ip(), repeater_data.get_p2p_port())
+
         data = bytearray(data)
         # set DMR id
-        data[4] = repeater_idx
+        data[4] += 1
         data[13] = 0x01
         data.append(0x01)
-        self.serverSocket.sendto(data, address)
+        self.serverSocket.sendto(data, response_address)
         self.log("dmr response for %s.%s" % address)
         self.log(data.hex())
 
+        # redirect repeater to correct DMRService port
+        data = data[:len(data) - 1]
         data[4] = 0x0B
         data[12] = 0xFF
         data[13] = 0xFF
         data[14] = 0x01
         data[15] = 0x00
+
         data += bytes([0xFF, 0x01])
-        target_dmr_port = self.storage.get_service_port(type(self).__name__)
-        data += target_dmr_port.to_bytes(2, "big")
+        from .dmr import DMRService
+        target_dmr_port = self.storage.get_service_port(DMRService.__name__)
+        data += target_dmr_port.to_bytes(2, "little")
         self.log(
             "dmr redirect to port %s response for %s.%s"
             % (target_dmr_port, address[0], address[1])
         )
-        self.serverSocket.sendto(data, address)
+        self.log(data.hex())
+        self.serverSocket.sendto(data, response_address)
 
     def handle_ping(self, data: bytes, address: tuple) -> None:
         data = bytearray(data)
