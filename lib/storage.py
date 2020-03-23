@@ -8,9 +8,9 @@ class RepeaterInfo(dict):
     KEY_LAST_RDAC_RESPONSE = "last_rdac_response"
     KEY_LAST_P2P_RESPONSE = "last_p2p_response"
     KEY_LAST_DMR_RESPONSE = "last_dmr_response"
-    KEY_REMOTE_P2P_PORT = 'remote_p2p_port'
-    KEY_REMOTE_RDAC_PORT = 'remote_rdac_port'
-    KEY_REMOTE_DMR_PORT = 'remote_dmr_port'
+    KEY_REMOTE_P2P_PORT = "remote_p2p_port"
+    KEY_REMOTE_RDAC_PORT = "remote_rdac_port"
+    KEY_REMOTE_DMR_PORT = "remote_dmr_port"
 
     def get_ip(self):
         return self.get(self.KEY_IP)
@@ -108,7 +108,7 @@ class Storage(dict):
         return self.get_repeater_id_for_remote_address((ip, 0))
 
     def get_repeater_id_for_remote_address(
-            self, address: tuple, create_if_not_exists=False
+        self, address: tuple, create_if_not_exists=False
     ) -> int:
         storage_key = self.get_repeater_info_storage_key_for_address(address)
         ip, port = address

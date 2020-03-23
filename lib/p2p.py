@@ -43,8 +43,8 @@ class P2PService(GenericService):
         now = time.time()
         if now - repeater_data.get_last_p2p_response() < 10:
             self.log(
-                "Ignoring registration request, last response was before %d seconds" % (
-                        now - repeater_data.get_last_p2p_response())
+                "Ignoring registration request, last response was before %d seconds"
+                % (now - repeater_data.get_last_p2p_response())
             )
             return
         repeater_data.set_last_p2p_response(now)
@@ -76,8 +76,8 @@ class P2PService(GenericService):
         now = time.time()
         if now - repeater_data.get_last_rdac_response() < 10:
             self.log(
-                "Ignoring DMR request, last response was before %d seconds" % (
-                        now - repeater_data.get_last_rdac_response())
+                "Ignoring DMR request, last response was before %d seconds"
+                % (now - repeater_data.get_last_rdac_response())
             )
             return
         repeater_data.set_last_rdac_response(now)
@@ -96,7 +96,7 @@ class P2PService(GenericService):
         self.log(data.hex())
 
         # redirect repeater to correct RDAC port
-        data = data[:len(data) - 1]
+        data = data[: len(data) - 1]
         data[4] = 0x0B
         data[12] = 0xFF
         data[13] = 0xFF
@@ -104,6 +104,7 @@ class P2PService(GenericService):
         data[15] = 0x00
         data += bytes([0xFF, 0x01])
         from .rdac import RDACService
+
         target_rdac_port = self.storage.get_service_port(RDACService.__name__)
         data += target_rdac_port.to_bytes(2, "little")
         self.log(
@@ -129,8 +130,8 @@ class P2PService(GenericService):
         now = time.time()
         if now - repeater_data.get_last_dmr_response() < 10:
             self.log(
-                "Ignoring DMR request, last response was before %d seconds" % (
-                        now - repeater_data.get_last_dmr_response())
+                "Ignoring DMR request, last response was before %d seconds"
+                % (now - repeater_data.get_last_dmr_response())
             )
             return
         repeater_data.set_last_dmr_response(now)
@@ -148,7 +149,7 @@ class P2PService(GenericService):
         self.log(data.hex())
 
         # redirect repeater to correct DMRService port
-        data = data[:len(data) - 1]
+        data = data[: len(data) - 1]
         data[4] = 0x0B
         data[12] = 0xFF
         data[13] = 0xFF
@@ -157,6 +158,7 @@ class P2PService(GenericService):
 
         data += bytes([0xFF, 0x01])
         from .dmr import DMRService
+
         target_dmr_port = self.storage.get_service_port(DMRService.__name__)
         data += target_dmr_port.to_bytes(2, "little")
         self.log(
