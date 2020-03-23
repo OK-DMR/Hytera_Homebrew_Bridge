@@ -1,5 +1,6 @@
 from threading import Lock
 from .constants import *
+from time import time
 
 
 class RepeaterInfo(dict):
@@ -13,56 +14,59 @@ class RepeaterInfo(dict):
     KEY_REMOTE_DMR_PORT = "remote_dmr_port"
     KEY_DMR_STEP = "current_dmr_step"
 
-    def get_ip(self):
+    def get_ip(self) -> str:
         return self.get(self.KEY_IP)
 
-    def set_ip(self, ip: str):
+    def set_ip(self, ip: str) -> None:
         self[self.KEY_IP] = ip
 
-    def get_id(self):
+    def get_id(self) -> int:
         return self.get(self.KEY_ID)
 
-    def set_id(self, new_id: int):
+    def set_id(self, new_id: int) -> None:
         self[self.KEY_ID] = new_id
 
-    def get_dmr_step(self):
+    def get_dmr_step(self) -> int:
         return self.get(self.KEY_DMR_STEP, 0)
 
-    def get_p2p_port(self):
+    def set_dmr_step(self, step: int) -> None:
+        self[self.KEY_DMR_STEP] = int(step)
+
+    def get_p2p_port(self) -> int:
         return self.get(self.KEY_REMOTE_P2P_PORT)
 
-    def set_p2p_port(self, port: int):
+    def set_p2p_port(self, port: int) -> None:
         self[self.KEY_REMOTE_P2P_PORT] = int(port)
 
-    def get_rdac_port(self):
+    def get_rdac_port(self) -> int:
         return self.get(self.KEY_REMOTE_RDAC_PORT)
 
-    def set_rdac_port(self, port: int):
+    def set_rdac_port(self, port: int) -> None:
         self[self.KEY_REMOTE_RDAC_PORT] = int(port)
 
-    def get_dmr_port(self):
+    def get_dmr_port(self) -> int:
         return self.get(self.KEY_REMOTE_DMR_PORT)
 
-    def set_dmr_port(self, port: int):
+    def set_dmr_port(self, port: int) -> None:
         self[self.KEY_REMOTE_DMR_PORT] = int(port)
 
-    def get_last_rdac_response(self):
+    def get_last_rdac_response(self) -> time:
         return self.get(self.KEY_LAST_RDAC_RESPONSE, 0)
 
-    def set_last_rdac_response(self, time):
-        self[self.KEY_LAST_RDAC_RESPONSE] = time
+    def set_last_rdac_response(self, set_time: time) -> None:
+        self[self.KEY_LAST_RDAC_RESPONSE] = set_time
 
-    def get_last_p2p_response(self):
+    def get_last_p2p_response(self) -> time:
         return self.get(self.KEY_LAST_P2P_RESPONSE, 0)
 
-    def set_last_p2p_response(self, time):
-        self[self.KEY_LAST_P2P_RESPONSE] = time
+    def set_last_p2p_response(self, set_time: time) -> None:
+        self[self.KEY_LAST_P2P_RESPONSE] = set_time
 
-    def get_last_dmr_response(self):
+    def get_last_dmr_response(self) -> time:
         return self.get(self.KEY_LAST_DMR_RESPONSE, 0)
 
-    def set_last_dmr_response(self, time):
-        self[self.KEY_LAST_DMR_RESPONSE] = time
+    def set_last_dmr_response(self, set_time: time) -> None:
+        self[self.KEY_LAST_DMR_RESPONSE] = set_time
 
 
 class Storage(dict):
@@ -106,10 +110,10 @@ class Storage(dict):
         elif service_name == DMRService.__name__:
             self[self.STORAGE_KEY_DMR_PORT] = port if port else DEFAULT_DMR_PORT
 
-    def get_service_ip(self):
+    def get_service_ip(self) -> str:
         return self.get(self.STORAGE_KEY_SERVICE_IP, DEFAULT_SERVICE_IP)
 
-    def set_service_ip(self, new_ip: str):
+    def set_service_ip(self, new_ip: str) -> None:
         self[self.STORAGE_KEY_SERVICE_IP] = new_ip if new_ip else DEFAULT_SERVICE_IP
 
     def get_repeater_id_for_remote_ip(self, ip: str) -> int:

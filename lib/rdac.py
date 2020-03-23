@@ -1,6 +1,7 @@
 from .generic_service import GenericService
 from .storage import Storage
 
+
 class RDACService(GenericService):
     def run(self) -> None:
         self.create_socket()
