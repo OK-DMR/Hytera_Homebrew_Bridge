@@ -12,7 +12,7 @@ class GenericService(Thread):
     selfLogger: logging.Logger = None
     storage: Storage = None
 
-    def log(self, msg, level=logging.INFO):
+    def log(self, msg, level=logging.INFO) -> None:
         if not self.selfLogger:
             self.selfLogger = logging.getLogger(type(self).__name__)
             self.selfLogger.setLevel(logging.DEBUG)
@@ -30,12 +30,12 @@ class GenericService(Thread):
         return self
 
     def get_ip(self) -> str:
-        if self.storage:
+        if isinstance(self.storage, Storage):
             return self.storage.get_service_ip()
-        raise AssertionError("no storage set")
+        raise AssertionError("no storage set %s" % type(self.storage))
 
     def get_port(self) -> int:
-        if self.storage:
+        if isinstance(self.storage, Storage):
             return self.storage.get_service_port(type(self).__name__)
         raise AssertionError("no storage set")
 

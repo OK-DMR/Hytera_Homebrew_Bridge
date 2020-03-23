@@ -1,5 +1,5 @@
 from .generic_service import GenericService
-
+from .storage import Storage
 
 class RDACService(GenericService):
     def run(self) -> None:
@@ -16,4 +16,4 @@ class RDACService(GenericService):
 
 if __name__ == "__main__":
     t = RDACService()
-    t.start()
+    t.set_storage(Storage()).start()

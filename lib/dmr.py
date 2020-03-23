@@ -1,4 +1,5 @@
 from .generic_service import GenericService
+from .storage import Storage
 
 
 class DMRService(GenericService):
@@ -16,4 +17,4 @@ class DMRService(GenericService):
 
 if __name__ == "__main__":
     t = DMRService()
-    t.start()
+    t.set_storage(Storage()).start()

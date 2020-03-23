@@ -1,4 +1,5 @@
 from .generic_service import GenericService
+from .storage import Storage
 import time
 
 
@@ -202,4 +203,4 @@ class P2PService(GenericService):
 
 if __name__ == "__main__":
     t = P2PService()
-    t.start()
+    t.set_storage(Storage()).start()
