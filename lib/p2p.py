@@ -169,14 +169,13 @@ class P2PService(GenericService):
         self.log(data.hex())
         self.serverSocket.sendto(data, response_address)
 
-    def handle_ping(self, data: bytes, address: tuple) -> None:   
+    def handle_ping(self, data: bytes, address: tuple) -> None:
         repeater_idx = self.storage.get_repeater_id_for_remote_address(
             address, create_if_not_exists=False
         )
         if repeater_idx <= 0:
             self.log(
-                "Ignoring ping for unknown repeater (originated from %s.%s)"
-                % address
+                "Ignoring ping for unknown repeater (originated from %s.%s)" % address
             )
             return
 
