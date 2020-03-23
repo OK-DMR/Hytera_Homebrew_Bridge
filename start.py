@@ -12,7 +12,7 @@ class HyteraHomebrewBridge(Thread):
     p2p_service: P2PService = P2PService()
     dmr_service: DMRService = DMRService()
     rdac_service: RDACService = RDACService()
-    storage: Storage = Storage.instance()
+    storage: Storage = Storage()
 
     def load_settings(self):
         config = configparser.ConfigParser()
@@ -20,23 +20,25 @@ class HyteraHomebrewBridge(Thread):
         config.read("settings.ini")
         if "constants" in config:
             constants = config["constants"]
-            if "DEFAULT_SERVICE_PORT" in constants:
-                self.storage.set_default_port_p2p(
-                    config["constants"]["DEFAULT_SERVICE_PORT"]
+            if "default_service_port" in constants:
+                self.storage.set_service_port(
+                    P2PService.__name__, int(constants["default_service_port"])
                 )
-            if "DEFAULT_DMR_PORT" in constants:
-                self.storage.set_default_port_dmr(
-                    config["constants"]["DEFAULT_DMR_PORT"]
+            if "default_dmr_port" in constants:
+                self.storage.set_service_port(
+                    DMRService.__name__, int(constants["default_dmr_port"])
                 )
-            if "DEFAULT_RDAC_PORT" in constants:
-                self.storage.set_default_port_rdac(
-                    config["constants"]["DEFAULT_RDAC_PORT"]
+            if "default_rdac_port" in constants:
+                self.storage.set_service_port(
+                    RDACService.__name__, int(constants["default_rdac_port"])
                 )
 
     def start(self) -> None:
-        self.p2p_service.start()
-        self.dmr_service.start()
-        self.rdac_service.start()
+        self.load_settings()
+
+        self.dmr_service.set_storage(self.storage).start()
+        self.rdac_service.set_storage(self.storage).start()
+        self.p2p_service.set_storage(self.storage).start()
 
 
 if __name__ == "__main__":

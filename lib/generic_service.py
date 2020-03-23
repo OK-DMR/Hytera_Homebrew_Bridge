@@ -1,7 +1,6 @@
 from __future__ import annotations
 from threading import Thread
 from .storage import Storage
-from .constants import *
 import logging
 import socket
 
@@ -9,11 +8,9 @@ import socket
 class GenericService(Thread):
     DEFAULT_LISTEN_PORT: int
 
-    listenPort: int
-    listenIP: str = DEFAULT_SERVICE_IP
     serverSocket: socket
     selfLogger: logging.Logger = None
-    storage: Storage = Storage.instance()
+    storage: Storage = None
 
     def log(self, msg, level=logging.INFO):
         if not self.selfLogger:
@@ -28,21 +25,25 @@ class GenericService(Thread):
             self.selfLogger.addHandler(console_log_output)
         self.selfLogger.log(level, msg)
 
-    def set_port(self, port: int) -> GenericService:
-        self.listenPort = self.DEFAULT_LISTEN_PORT if not port else port
-        self.log("Listen on Port set %s" % self.listenPort)
+    def set_storage(self, storage_instance: Storage) -> GenericService:
+        self.storage = storage_instance
         return self
 
-    def set_ip(self, ip: str) -> GenericService:
-        self.listenIP = DEFAULT_SERVICE_IP if not ip else ip
-        self.log("Listen on IP set %s" % self.listenIP)
-        return self
+    def get_ip(self) -> str:
+        if self.storage:
+            return self.storage.get_service_ip()
+        raise AssertionError("no storage set")
+
+    def get_port(self) -> int:
+        if self.storage:
+            return self.storage.get_service_port(type(self).__name__)
+        raise AssertionError("no storage set")
 
     def create_socket(self) -> GenericService:
         self.serverSocket = socket.socket(
             socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP
         )
         self.serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.serverSocket.bind((self.listenIP, self.listenPort))
-        self.log("server socket created %s:%s" % (self.listenIP, self.listenPort))
+        self.serverSocket.bind((self.get_ip(), self.get_port()))
+        self.log("server socket created %s:%s" % (self.get_ip(), self.get_port()))
         return self

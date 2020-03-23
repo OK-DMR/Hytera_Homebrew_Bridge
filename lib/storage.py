@@ -1,5 +1,4 @@
 from threading import Lock
-from .singleton import Singleton
 from .constants import *
 
 
@@ -11,7 +10,6 @@ class RepeaterInfo(dict):
         return self.get("id")
 
 
-@Singleton
 class Storage(dict):
     STORAGE_KEY_P2P_PORT = "P2P_port"
     STORAGE_KEY_RDAC_PORT = "RDAC_port"
@@ -24,29 +22,36 @@ class Storage(dict):
         ip, port = address
         return "repeater_" + ip
 
-    def get_default_port_p2p(self):
-        with self.storageMutex:
+    def get_service_port(self, service_name: str) -> int:
+        from .p2p import P2PService
+        from .rdac import RDACService
+        from .dmr import DMRService
+
+        if service_name == P2PService.__name__:
             return self.get(self.STORAGE_KEY_P2P_PORT, DEFAULT_P2P_PORT)
-
-    def get_default_port_rdac(self):
-        with self.storageMutex:
+        elif service_name == RDACService.__name__:
             return self.get(self.STORAGE_KEY_RDAC_PORT, DEFAULT_RDAC_PORT)
-
-    def get_default_port_dmr(self):
-        with self.storageMutex:
+        elif service_name == DMRService.__name__:
             return self.get(self.STORAGE_KEY_DMR_PORT, DEFAULT_DMR_PORT)
+        raise TypeError("Unknown service type: %s" % service_name)
 
-    def set_default_port_p2p(self, port: int) -> None:
-        with self.storageMutex:
-            self[self.STORAGE_KEY_P2P_PORT] = port
+    def set_service_port(self, service_name: str, port: int) -> None:
+        if port > 65535 or port < 1:
+            port = None
 
-    def set_default_port_rdac(self, port: int) -> None:
-        with self.storageMutex:
-            self[self.STORAGE_KEY_RDAC_PORT] = port
+        from .p2p import P2PService
+        from .rdac import RDACService
+        from .dmr import DMRService
 
-    def set_default_port_dmr(self, port: int) -> None:
-        with self.storageMutex:
-            self[self.STORAGE_KEY_DMR_PORT] = port
+        if service_name == P2PService.__name__:
+            self[self.STORAGE_KEY_P2P_PORT] = port if port else DEFAULT_P2P_PORT
+        elif service_name == RDACService.__name__:
+            self[self.STORAGE_KEY_RDAC_PORT] = port if port else DEFAULT_RDAC_PORT
+        elif service_name == DMRService.__name__:
+            self[self.STORAGE_KEY_DMR_PORT] = port if port else DEFAULT_DMR_PORT
+
+    def get_service_ip(self):
+        return DEFAULT_SERVICE_IP
 
     def get_repeater_id_for_remote_ip(self, ip: str) -> int:
         return self.get_repeater_id_for_remote_address((ip, 0))
@@ -73,5 +78,4 @@ class Storage(dict):
 
     def get_repeater_info_by_address(self, address: tuple) -> RepeaterInfo:
         storage_key = self.get_repeater_info_storage_key_for_address(address)
-        with self.storageMutex:
-            return self.get(storage_key)
+        return self.get(storage_key)
