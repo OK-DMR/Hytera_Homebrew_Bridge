@@ -44,5 +44,5 @@ class GenericService(Thread):
         )
         self.serverSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.serverSocket.bind((self.listenIP, self.listenPort))
-        self.log("server socket created")
+        self.log("server socket created %s:%s" % (self.listenIP, self.listenPort))
         return self

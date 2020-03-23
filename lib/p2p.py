@@ -73,6 +73,17 @@ class P2PService(GenericService):
         self.log("rdac response for %s.%s" % address)
         self.log(data.hex())
 
+        data[4] = 0x0b
+        data[12] = 0x00
+        data[13] = 0xff
+        data[14] = 0x01
+        data[15] = 0x00
+        data += bytes([0xff, 0x01])
+        target_rdac_port = self.storage.get_default_port_rdac()
+        data += target_rdac_port.to_bytes(2, 'big')
+        self.log('rdac redirect to port %s response for %s.%s' % (target_rdac_port, address[0], address[1]))
+        self.serverSocket.sendto(data, address)
+
     def handle_dmr_request(self, data: bytes, address: tuple) -> None:
         repeater_idx = self.storage.get_repeater_id_for_remote_address(
             address, create_if_not_exists=False
@@ -91,6 +102,17 @@ class P2PService(GenericService):
         self.serverSocket.sendto(data, address)
         self.log("dmr response for %s.%s" % address)
         self.log(data.hex())
+
+        data[4] = 0x0b
+        data[12] = 0xff
+        data[13] = 0xff
+        data[14] = 0x01
+        data[15] = 0x00
+        data += bytes([0xff, 0x01])
+        target_dmr_port = self.storage.get_default_port_dmr()
+        data += target_dmr_port.to_bytes(2, 'big')
+        self.log('dmr redirect to port %s response for %s.%s' % (target_dmr_port, address[0], address[1]))
+        self.serverSocket.sendto(data, address)
 
     def handle_ping(self, data: bytes, address: tuple) -> None:
         data = bytearray(data)

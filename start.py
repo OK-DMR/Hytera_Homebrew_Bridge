@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from threading import Thread
 from lib.p2p import P2PService
 from lib.dmr import DMRService
