@@ -1,9 +1,7 @@
 from .generic_service import GenericService
-from .constants import *
 
 
 class P2PService(GenericService):
-
     COMMAND_PREFIX: bytes = bytes([0x50, 0x32, 0x50])
     PING_PREFIX: bytes = bytes([0x0A, 0x00, 0x00, 0x00, 0x14])
 
@@ -18,7 +16,7 @@ class P2PService(GenericService):
 
     def __init__(self):
         super().__init__()
-        self.listenPort = self.DEFAULT_LISTEN_PORT = DEFAULT_P2P_PORT
+        self.listenPort = self.DEFAULT_LISTEN_PORT = self.storage.get_default_port_p2p()
 
     def packet_is_command(self, data: bytes) -> bool:
         ret = data[:3] == self.COMMAND_PREFIX
@@ -73,15 +71,18 @@ class P2PService(GenericService):
         self.log("rdac response for %s.%s" % address)
         self.log(data.hex())
 
-        data[4] = 0x0b
+        data[4] = 0x0B
         data[12] = 0x00
-        data[13] = 0xff
+        data[13] = 0xFF
         data[14] = 0x01
         data[15] = 0x00
-        data += bytes([0xff, 0x01])
+        data += bytes([0xFF, 0x01])
         target_rdac_port = self.storage.get_default_port_rdac()
-        data += target_rdac_port.to_bytes(2, 'big')
-        self.log('rdac redirect to port %s response for %s.%s' % (target_rdac_port, address[0], address[1]))
+        data += target_rdac_port.to_bytes(2, "big")
+        self.log(
+            "rdac redirect to port %s response for %s.%s"
+            % (target_rdac_port, address[0], address[1])
+        )
         self.serverSocket.sendto(data, address)
 
     def handle_dmr_request(self, data: bytes, address: tuple) -> None:
@@ -103,15 +104,18 @@ class P2PService(GenericService):
         self.log("dmr response for %s.%s" % address)
         self.log(data.hex())
 
-        data[4] = 0x0b
-        data[12] = 0xff
-        data[13] = 0xff
+        data[4] = 0x0B
+        data[12] = 0xFF
+        data[13] = 0xFF
         data[14] = 0x01
         data[15] = 0x00
-        data += bytes([0xff, 0x01])
+        data += bytes([0xFF, 0x01])
         target_dmr_port = self.storage.get_default_port_dmr()
-        data += target_dmr_port.to_bytes(2, 'big')
-        self.log('dmr redirect to port %s response for %s.%s' % (target_dmr_port, address[0], address[1]))
+        data += target_dmr_port.to_bytes(2, "big")
+        self.log(
+            "dmr redirect to port %s response for %s.%s"
+            % (target_dmr_port, address[0], address[1])
+        )
         self.serverSocket.sendto(data, address)
 
     def handle_ping(self, data: bytes, address: tuple) -> None:
