@@ -32,6 +32,8 @@ class HyteraHomebrewBridge(Thread):
                 self.storage.set_service_port(
                     RDACService.__name__, int(constants["default_rdac_port"])
                 )
+            if "default_service_ip" in constants:
+                self.storage.set_service_ip(str(constants["default_service_ip"]))
 
     def start(self) -> None:
         self.load_settings()

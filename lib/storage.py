@@ -11,6 +11,7 @@ class RepeaterInfo(dict):
     KEY_REMOTE_P2P_PORT = "remote_p2p_port"
     KEY_REMOTE_RDAC_PORT = "remote_rdac_port"
     KEY_REMOTE_DMR_PORT = "remote_dmr_port"
+    KEY_DMR_STEP = "current_dmr_step"
 
     def get_ip(self):
         return self.get(self.KEY_IP)
@@ -21,8 +22,11 @@ class RepeaterInfo(dict):
     def get_id(self):
         return self.get(self.KEY_ID)
 
-    def set_id(self, id: int):
-        self[self.KEY_ID] = id
+    def set_id(self, new_id: int):
+        self[self.KEY_ID] = new_id
+
+    def get_dmr_step(self):
+        return self.get(self.KEY_DMR_STEP, 0)
 
     def get_p2p_port(self):
         return self.get(self.KEY_REMOTE_P2P_PORT)
@@ -65,6 +69,7 @@ class Storage(dict):
     STORAGE_KEY_P2P_PORT = "P2P_port"
     STORAGE_KEY_RDAC_PORT = "RDAC_port"
     STORAGE_KEY_DMR_PORT = "DMR_port"
+    STORAGE_KEY_SERVICE_IP = "Service_IP"
 
     storageMutex: Lock = Lock()
 
@@ -102,7 +107,10 @@ class Storage(dict):
             self[self.STORAGE_KEY_DMR_PORT] = port if port else DEFAULT_DMR_PORT
 
     def get_service_ip(self):
-        return DEFAULT_SERVICE_IP
+        return self.get(self.STORAGE_KEY_SERVICE_IP, DEFAULT_SERVICE_IP)
+
+    def set_service_ip(self, new_ip: str):
+        self[self.STORAGE_KEY_SERVICE_IP] = new_ip if new_ip else DEFAULT_SERVICE_IP
 
     def get_repeater_id_for_remote_ip(self, ip: str) -> int:
         return self.get_repeater_id_for_remote_address((ip, 0))
