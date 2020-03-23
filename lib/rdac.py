@@ -180,7 +180,6 @@ class RDACService(GenericService):
     def _update_step(self, new_step: int, address: tuple) -> None:
         repeater_info = self.storage.get_repeater_info_by_address(address)
         if repeater_info:
-            self.log("_update_step to %d" % new_step)
             repeater_info.set_dmr_step(new_step)
             self.storage.set_repeater_info_by_address(address, repeater_info)
 
@@ -221,7 +220,7 @@ class RDACService(GenericService):
         if data[: len(self.STEP4_RESPONSE_2)] == self.STEP4_RESPONSE_2:
             repeater_info = self.storage.get_repeater_info_by_address(address)
             repeater_info.set_callsign(
-                data[88 : 88 + 20]
+                data[88:108]
                 .decode("utf_16_le")
                 .encode("utf-8")
                 .strip(b"\x00")
@@ -253,7 +252,7 @@ class RDACService(GenericService):
 
     def step8(self, data: bytes, address: tuple) -> None:
         if data[: len(self.STEP7_RESPONSE_1)] == self.STEP7_RESPONSE_1:
-            self._update_step(9, address)
+            self._update_step(10, address)
 
     def step10(self, data: bytes, address: tuple) -> None:
         if data[: len(self.STEP7_RESPONSE_2)] == self.STEP7_RESPONSE_2:
@@ -278,30 +277,30 @@ class RDACService(GenericService):
     def step13(self, data: bytes, address: tuple) -> None:
         if data[: len(self.STEP12_RESPONSE)] == self.STEP12_RESPONSE:
             self._update_step(14, address)
+            self.log("rdac completed identification")
+            self.log(self.storage.get_repeater_info_by_address(address))
 
     def step14(self, data: bytes, address: tuple) -> None:
-        self.log("rdac completed identification")
-        self.log(list(self.storage.get_repeater_info_by_address(address)))
+        pass
 
     def run(self) -> None:
         self.create_socket()
         while True:
             try:
                 data, address = self.serverSocket.recvfrom(4096)
-                ip, port = address
-                self.log("data (%d) received from %s.%s" % (len(data), ip, port))
-                self.log(data.hex())
                 repeater_info = self.storage.get_repeater_info_by_address(address)
                 if not repeater_info:
                     # ignoring packet from unknown repeater
                     continue
-                if len(data) == 1:
+                if len(data) == 1 and repeater_info.get_dmr_step() != 14:
                     # restart process if response is zero
                     self._update_step(0, address)
                     self.step0(data, address)
                     continue
+                elif len(data) != 1 and repeater_info.get_dmr_step() == 14:
+                    # single 0x00 byte comes in once in a while, probably heartbeat?
+                    self.log("extra data received %s" % data.hex())
                 # call correct step function by name
-                self.log("running current step: %d" % repeater_info.get_dmr_step())
                 step_function = getattr(self, "step%d" % repeater_info.get_dmr_step())
                 step_function(data, address)
             except Exception as err:

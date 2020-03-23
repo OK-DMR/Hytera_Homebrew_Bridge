@@ -25,6 +25,7 @@ class RepeaterInfo(dict):
         self[self.KEY_REPEATER_MODE] = new_repeater_mode
 
     def get_repeater_mode(self) -> int:
+        # 0 => DIGITAL, 1 => ANALOG, 2 => MIXED
         return self.get(self.KEY_REPEATER_MODE, 0)
 
     def set_tx_freq(self, new_freq: float) -> None:

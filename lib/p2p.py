@@ -16,20 +16,17 @@ class P2PService(GenericService):
         PACKET_TYPE_REQUEST_REGISTRATION,
     ]
 
-    def packet_is_command(self, data: bytes) -> bool:
-        ret = data[:3] == self.COMMAND_PREFIX
-        self.log("packet_is_command:%s" % ret)
-        return ret
+    @staticmethod
+    def packet_is_command(data: bytes) -> bool:
+        return data[:3] == P2PService.COMMAND_PREFIX
 
-    def packet_is_ping(self, data: bytes) -> bool:
-        ret = data[4:9] == self.PING_PREFIX
-        self.log("packet_is_ping:%s" % ret)
-        return ret
+    @staticmethod
+    def packet_is_ping(data: bytes) -> bool:
+        return data[4:9] == P2PService.PING_PREFIX
 
-    def command_get_type(self, data: bytes) -> int:
-        ret = data[20] if len(data) > 20 else 0
-        self.log("command_get_type:%s (datalen:%s)" % (ret, len(data)))
-        return ret
+    @staticmethod
+    def command_get_type(data: bytes) -> int:
+        return data[20] if len(data) > 20 else 0
 
     def handle_registration(self, data: bytes, address: tuple) -> None:
         ip, port = address
@@ -93,8 +90,7 @@ class P2PService(GenericService):
         data[13] = 0x01
         data.append(0x01)
         self.serverSocket.sendto(data, response_address)
-        self.log("rdac response for %s.%s" % response_address)
-        self.log(data.hex())
+        self.log("RDAC Accept for %s.%s" % response_address)
 
         # redirect repeater to correct RDAC port
         data = data[: len(data) - 1]
@@ -109,10 +105,9 @@ class P2PService(GenericService):
         target_rdac_port = self.storage.get_service_port(RDACService.__name__)
         data += target_rdac_port.to_bytes(2, "little")
         self.log(
-            "rdac redirect to port %s response for %s.%s"
+            "RDAC Redirect to port %s response for %s.%s"
             % (target_rdac_port, address[0], address[1])
         )
-        self.log(data.hex())
         self.serverSocket.sendto(data, response_address)
 
     def handle_dmr_request(self, data: bytes, address: tuple) -> None:
@@ -146,8 +141,7 @@ class P2PService(GenericService):
         data[13] = 0x01
         data.append(0x01)
         self.serverSocket.sendto(data, response_address)
-        self.log("dmr response for %s.%s" % address)
-        self.log(data.hex())
+        self.log("DMR Accept for %s.%s" % address)
 
         # redirect repeater to correct DMRService port
         data = data[: len(data) - 1]
@@ -163,10 +157,9 @@ class P2PService(GenericService):
         target_dmr_port = self.storage.get_service_port(DMRService.__name__)
         data += target_dmr_port.to_bytes(2, "little")
         self.log(
-            "dmr redirect to port %s response for %s.%s"
+            "DMR Redirect to port %s response for %s.%s"
             % (target_dmr_port, address[0], address[1])
         )
-        self.log(data.hex())
         self.serverSocket.sendto(data, response_address)
 
     def handle_ping(self, data: bytes, address: tuple) -> None:
@@ -182,8 +175,6 @@ class P2PService(GenericService):
         data = bytearray(data)
         data[12] += 1
         self.serverSocket.sendto(data, address)
-        self.log("pong sent to %s.%s" % address)
-        self.log(data.hex())
 
     def run(self) -> None:
         self.create_socket()
@@ -193,10 +184,10 @@ class P2PService(GenericService):
                 ip, port = address
                 packet_type = self.command_get_type(data)
                 is_command = self.packet_is_command(data)
-                self.log("Received %s bytes from %s:%s" % (len(data), ip, port))
-                self.log(data.hex())
                 if is_command:
                     if packet_type not in self.KNOWN_PACKET_TYPES:
+                        self.log("Received %s bytes from %s:%s" % (len(data), ip, port))
+                        self.log(data.hex())
                         self.log("Unknown packet of type:%s received" % packet_type)
                     if packet_type == self.PACKET_TYPE_REQUEST_REGISTRATION:
                         self.handle_registration(data, address)
