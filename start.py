@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 from threading import Thread
-from lib.p2p import P2PService
-from lib.dmr import DMRService
-from lib.rdac import RDACService
-from lib.storage import Storage
+from hytera.p2p import P2PService
+from hytera.dmr import DMRService
+from hytera.rdac import RDACService
+from hytera.storage import Storage
 import configparser
 
 
