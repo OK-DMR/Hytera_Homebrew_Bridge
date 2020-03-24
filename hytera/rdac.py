@@ -183,6 +183,7 @@ class RDACService(GenericService):
             repeater_info.set_dmr_step(new_step)
             self.storage.set_repeater_info_by_address(address, repeater_info)
 
+    # noinspection PyUnusedLocal
     def step0(self, data: bytes, address: tuple) -> None:
         self._update_step(1, address)
         self.serverSocket.sendto(self.STEP0_REQUEST, address)
