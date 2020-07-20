@@ -11,8 +11,8 @@ class GenericHyteraService(Thread):
     DEFAULT_LISTEN_PORT: int
 
     serverSocket: socket
-    selfLogger: logging.Logger = None
     storage: Storage = None
+    selfLogger: logging.Logger = None
 
     def log(self, msg, level=logging.INFO) -> None:
         if not self.selfLogger:
