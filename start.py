@@ -1,46 +1,32 @@
 #!/usr/bin/env python3
 
-from threading import Thread
-from hytera.p2p import P2PService
-from hytera.dmr import DMRService
-from hytera.rdac import RDACService
-from hytera.storage import Storage
 import configparser
+from threading import Thread
+
+from hytera_common.hytera_service_interface import HyteraServiceInterface
+from hytera_forward_to_pc.hytera_forward_to_pc import HyteraForwardToPC
+from hytera_ip_site_connect.hytera_ipsc import HyteraIPSiteConnect
 
 
 class HyteraHomebrewBridge(Thread):
-    p2p_service: P2PService = P2PService()
-    dmr_service: DMRService = DMRService()
-    rdac_service: RDACService = RDACService()
-    storage: Storage = Storage()
+    hytera_service: HyteraServiceInterface = None
 
     def load_settings(self):
         config = configparser.ConfigParser()
         config.sections()
         config.read("settings.ini")
-        if "constants" in config:
-            constants = config["constants"]
-            if "default_service_port" in constants:
-                self.storage.set_service_port(
-                    P2PService.__name__, int(constants["default_service_port"])
-                )
-            if "default_dmr_port" in constants:
-                self.storage.set_service_port(
-                    DMRService.__name__, int(constants["default_dmr_port"])
-                )
-            if "default_rdac_port" in constants:
-                self.storage.set_service_port(
-                    RDACService.__name__, int(constants["default_rdac_port"])
-                )
-            if "default_service_ip" in constants:
-                self.storage.set_service_ip(str(constants["default_service_ip"]))
+        if 'general' in config:
+            if 'mode' in config:
+                if config['general']['mode'] == 'ip-site-connect':
+                    self.hytera_service = HyteraIPSiteConnect()
 
-    def start(self) -> None:
-        self.load_settings()
+        # fallback
+        if self.hytera_service is None:
+            self.hytera_service = HyteraForwardToPC()
 
-        self.dmr_service.set_storage(self.storage).start()
-        self.rdac_service.set_storage(self.storage).start()
-        self.p2p_service.set_storage(self.storage).start()
+        # run the hytera service
+        self.hytera_service.start()
+        # run the homebrew service
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
-from .generic_service import GenericService
+from .generic_service import GenericHyteraService
 from .storage import Storage
 
 
-class RDACService(GenericService):
+class RDACHyteraService(GenericHyteraService):
     STEP0_REQUEST = bytes(
         [0x7E, 0x04, 0x00, 0xFE, 0x20, 0x10, 0x00, 0x00, 0x00, 0x0C, 0x60, 0xE1]
     )
@@ -222,24 +222,24 @@ class RDACService(GenericService):
             repeater_info = self.storage.get_repeater_info_by_address(address)
             repeater_info.set_callsign(
                 data[88:108]
-                .decode("utf_16_le")
-                .encode("utf-8")
-                .strip(b"\x00")
-                .decode("utf-8")
+                    .decode("utf_16_le")
+                    .encode("utf-8")
+                    .strip(b"\x00")
+                    .decode("utf-8")
             )
             repeater_info.set_hardware(
                 data[120:184]
-                .decode("utf_16_le")
-                .encode("utf-8")
-                .strip(b"\x00")
-                .decode("utf-8")
+                    .decode("utf_16_le")
+                    .encode("utf-8")
+                    .strip(b"\x00")
+                    .decode("utf-8")
             )
             repeater_info.set_firmware(
                 data[56:88]
-                .decode("utf_16_le")
-                .encode("utf-8")
-                .strip(b"\x00")
-                .decode("utf-8")
+                    .decode("utf_16_le")
+                    .encode("utf-8")
+                    .strip(b"\x00")
+                    .decode("utf-8")
             )
             self.storage.set_repeater_info_by_address(address, repeater_info)
             self._update_step(7, address)
@@ -309,5 +309,5 @@ class RDACService(GenericService):
 
 
 if __name__ == "__main__":
-    t = RDACService()
+    t = RDACHyteraService()
     t.set_storage(Storage()).start()

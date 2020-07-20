@@ -1,11 +1,13 @@
 from __future__ import annotations
-from threading import Thread
-from .storage import Storage
+
 import logging
 import socket
+from threading import Thread
+
+from .storage import Storage
 
 
-class GenericService(Thread):
+class GenericHyteraService(Thread):
     DEFAULT_LISTEN_PORT: int
 
     serverSocket: socket
@@ -25,7 +27,7 @@ class GenericService(Thread):
             self.selfLogger.addHandler(console_log_output)
         self.selfLogger.log(level, msg)
 
-    def set_storage(self, storage_instance: Storage) -> GenericService:
+    def set_storage(self, storage_instance: Storage) -> GenericHyteraService:
         self.storage = storage_instance
         return self
 
@@ -39,7 +41,7 @@ class GenericService(Thread):
             return self.storage.get_service_port(type(self).__name__)
         raise AssertionError("no storage set")
 
-    def create_socket(self) -> GenericService:
+    def create_socket(self) -> GenericHyteraService:
         self.serverSocket = socket.socket(
             socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP
         )

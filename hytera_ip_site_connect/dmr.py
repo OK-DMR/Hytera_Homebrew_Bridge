@@ -1,8 +1,8 @@
-from .generic_service import GenericService
+from .generic_service import GenericHyteraService
 from .storage import Storage
 
 
-class DMRService(GenericService):
+class DMRHyteraService(GenericHyteraService):
     def run(self) -> None:
         self.create_socket()
         while True:
@@ -16,5 +16,5 @@ class DMRService(GenericService):
 
 
 if __name__ == "__main__":
-    t = DMRService()
+    t = DMRHyteraService()
     t.set_storage(Storage()).start()

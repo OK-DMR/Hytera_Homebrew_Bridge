@@ -1,6 +1,7 @@
 from threading import Lock
-from .constants import *
 from time import time
+
+from .constants import *
 
 
 class RepeaterInfo(dict):
@@ -133,15 +134,15 @@ class Storage(dict):
         return "repeater_" + ip
 
     def get_service_port(self, service_name: str) -> int:
-        from .p2p import P2PService
-        from .rdac import RDACService
-        from .dmr import DMRService
+        from .p2p import P2PHyteraService
+        from .rdac import RDACHyteraService
+        from .dmr import DMRHyteraService
 
-        if service_name == P2PService.__name__:
+        if service_name == P2PHyteraService.__name__:
             return self.get(self.STORAGE_KEY_P2P_PORT, DEFAULT_P2P_PORT)
-        elif service_name == RDACService.__name__:
+        elif service_name == RDACHyteraService.__name__:
             return self.get(self.STORAGE_KEY_RDAC_PORT, DEFAULT_RDAC_PORT)
-        elif service_name == DMRService.__name__:
+        elif service_name == DMRHyteraService.__name__:
             return self.get(self.STORAGE_KEY_DMR_PORT, DEFAULT_DMR_PORT)
         raise TypeError("Unknown service type: %s" % service_name)
 
@@ -149,15 +150,15 @@ class Storage(dict):
         if port > 65535 or port < 1:
             port = None
 
-        from .p2p import P2PService
-        from .rdac import RDACService
-        from .dmr import DMRService
+        from .p2p import P2PHyteraService
+        from .rdac import RDACHyteraService
+        from .dmr import DMRHyteraService
 
-        if service_name == P2PService.__name__:
+        if service_name == P2PHyteraService.__name__:
             self[self.STORAGE_KEY_P2P_PORT] = port if port else DEFAULT_P2P_PORT
-        elif service_name == RDACService.__name__:
+        elif service_name == RDACHyteraService.__name__:
             self[self.STORAGE_KEY_RDAC_PORT] = port if port else DEFAULT_RDAC_PORT
-        elif service_name == DMRService.__name__:
+        elif service_name == DMRHyteraService.__name__:
             self[self.STORAGE_KEY_DMR_PORT] = port if port else DEFAULT_DMR_PORT
 
     def get_service_ip(self) -> str:
@@ -170,7 +171,7 @@ class Storage(dict):
         return self.get_repeater_id_for_remote_address((ip, 0))
 
     def get_repeater_id_for_remote_address(
-        self, address: tuple, create_if_not_exists=False
+            self, address: tuple, create_if_not_exists=False
     ) -> int:
         storage_key = self.get_repeater_info_storage_key_for_address(address)
         ip, port = address

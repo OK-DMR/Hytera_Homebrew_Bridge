@@ -1,9 +1,10 @@
-from .generic_service import GenericService
-from .storage import Storage
 import time
 
+from .generic_service import GenericHyteraService
+from .storage import Storage
 
-class P2PService(GenericService):
+
+class P2PHyteraService(GenericHyteraService):
     COMMAND_PREFIX: bytes = bytes([0x50, 0x32, 0x50])
     PING_PREFIX: bytes = bytes([0x0A, 0x00, 0x00, 0x00, 0x14])
 
@@ -18,11 +19,11 @@ class P2PService(GenericService):
 
     @staticmethod
     def packet_is_command(data: bytes) -> bool:
-        return data[:3] == P2PService.COMMAND_PREFIX
+        return data[:3] == P2PHyteraService.COMMAND_PREFIX
 
     @staticmethod
     def packet_is_ping(data: bytes) -> bool:
-        return data[4:9] == P2PService.PING_PREFIX
+        return data[4:9] == P2PHyteraService.PING_PREFIX
 
     @staticmethod
     def command_get_type(data: bytes) -> int:
@@ -100,9 +101,9 @@ class P2PService(GenericService):
         data[14] = 0x01
         data[15] = 0x00
         data += bytes([0xFF, 0x01])
-        from .rdac import RDACService
+        from .rdac import RDACHyteraService
 
-        target_rdac_port = self.storage.get_service_port(RDACService.__name__)
+        target_rdac_port = self.storage.get_service_port(RDACHyteraService.__name__)
         data += target_rdac_port.to_bytes(2, "little")
         self.log(
             "RDAC Redirect to port %s response for %s.%s"
@@ -152,9 +153,9 @@ class P2PService(GenericService):
         data[15] = 0x00
 
         data += bytes([0xFF, 0x01])
-        from .dmr import DMRService
+        from .dmr import DMRHyteraService
 
-        target_dmr_port = self.storage.get_service_port(DMRService.__name__)
+        target_dmr_port = self.storage.get_service_port(DMRHyteraService.__name__)
         data += target_dmr_port.to_bytes(2, "little")
         self.log(
             "DMR Redirect to port %s response for %s.%s"
@@ -202,5 +203,5 @@ class P2PService(GenericService):
 
 
 if __name__ == "__main__":
-    t = P2PService()
+    t = P2PHyteraService()
     t.set_storage(Storage()).start()
