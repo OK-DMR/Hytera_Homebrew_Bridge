@@ -12,7 +12,7 @@ class HRNPPacket(object):
     1b Destination ID
     2b Packet Number (PN) => start with 1, packet counter
     2b Length
-    2b Checksum => 0=no check,
+    2b Checksum => 0=no check
     0+b Payload
     """
 

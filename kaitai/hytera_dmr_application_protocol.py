@@ -5,14 +5,11 @@ from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, 
 from enum import Enum
 
 
-if parse_version(ks_version) < parse_version("0.7"):
-    raise Exception(
-        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
-        % (ks_version)
-    )
-
+if parse_version(ks_version) < parse_version('0.7'):
+    raise Exception("Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s" % (ks_version))
 
 class HyteraDmrApplicationProtocol(KaitaiStruct):
+
     class MessageHeaderTypes(Enum):
         radio_control_protocol = 2
         location_protocol = 8
@@ -21,7 +18,6 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
         telemetry_protocol = 18
         data_transmit_protocol = 19
         data_delivery_states = 20
-
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
@@ -49,3 +45,5 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
         self.payload = self._io.read_bytes(self.payload_size)
         self.checksum = self._io.read_u1()
         self.message_footer = self._io.ensure_fixed_contents(b"\x03")
+
+

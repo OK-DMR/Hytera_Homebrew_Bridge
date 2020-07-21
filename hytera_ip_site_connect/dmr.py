@@ -17,6 +17,12 @@ class DMRHyteraService(GenericHyteraService):
                     self.serverSocket.sendto(bytes([0x41]), address)
                     continue
 
+                slot = data[16]
+                packetType = data[8]
+                slotType = data[18:19]
+                frameType = data[22:23]
+                self.log('recv slot:%s packetType:%s slotType:%s frameType:%s' % (hex(slot), hex(packetType), slotType.hex(), frameType.hex()))
+
             except Exception as err:
                 self.selfLogger.error(err, exc_info=True)
 

@@ -1,4 +1,4 @@
 dmr-utils3>=0.1.28
 configparser>=4.0.2
-kaitaistruct
+kaitaistruct @ git+https://github.com/kaitai-io/kaitai_struct_python_runtime.git
 pprint
