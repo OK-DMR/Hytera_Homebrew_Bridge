@@ -18,6 +18,7 @@ seq:
     type: u1
   - id: opcode
     type: u1
+    enum: opcodes
   - id: source_id
     type: u1
   - id: destination_id
@@ -30,3 +31,4 @@ seq:
     type: u2be
   - id: data
     size-eos: true
+    if: opcode == opcodes::data

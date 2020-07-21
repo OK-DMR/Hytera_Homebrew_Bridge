@@ -28,12 +28,14 @@ class HyteraRadioNetworkProtocol(KaitaiStruct):
         self.header_identifier = self._io.ensure_fixed_contents(b"\x7E")
         self.version = self._io.read_u1()
         self.block = self._io.read_u1()
-        self.opcode = self._io.read_u1()
+        self.opcode = KaitaiStream.resolve_enum(self._root.Opcodes, self._io.read_u1())
         self.source_id = self._io.read_u1()
         self.destination_id = self._io.read_u1()
         self.packet_number = self._io.read_u2be()
         self.hrnp_packet_length = self._io.read_u2be()
         self.checksum = self._io.read_u2be()
-        self.data = self._io.read_bytes_full()
+        if self.opcode == self._root.Opcodes.data:
+            self.data = self._io.read_bytes_full()
+
 
 
