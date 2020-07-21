@@ -11,6 +11,7 @@ class HDAPPacket(object):
     1b checksum = ~ (Opcode + # of bytes + Payload) + 0x33
     1b message footer => always 0x03
     """
+
     minimum_size: int = 7
     raw: bytes = None
     packet: HyteraDmrApplicationProtocol = None

@@ -5,6 +5,7 @@ from .storage import Storage
 
 
 class P2PHyteraService(GenericHyteraService):
+    # letters P2P
     COMMAND_PREFIX: bytes = bytes([0x50, 0x32, 0x50])
     PING_PREFIX: bytes = bytes([0x0A, 0x00, 0x00, 0x00, 0x14])
 
@@ -66,7 +67,7 @@ class P2PHyteraService(GenericHyteraService):
         )
         if repeater_idx <= 0:
             self.log(
-                "Ignoring RDAC request for unknown repeater (originated from %s.%s)"
+                "Ignoring RDAC request for unknown repeater (originated from %s:%s)"
                 % address
             )
             return
@@ -198,6 +199,12 @@ class P2PHyteraService(GenericHyteraService):
                         self.handle_dmr_request(data, address)
                 elif self.packet_is_ping(data):
                     self.handle_ping(data, address)
+                else:
+                    self.log(
+                        "Unknown packet received, %d bytes from %s:%s"
+                        % (len(data), ip, port)
+                    )
+                    self.log(data.hex())
             except Exception as err:
                 self.selfLogger.error(err, exc_info=True)
 

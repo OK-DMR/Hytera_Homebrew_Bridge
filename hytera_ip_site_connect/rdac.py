@@ -201,7 +201,7 @@ class RDACHyteraService(GenericHyteraService):
         if data[: len(self.STEP2_RESPONSE)] == self.STEP2_RESPONSE:
             repeater_info = self.storage.get_repeater_info_by_address(address)
             repeater_info.set_repeater_id(
-                int.from_bytes(data[18:3], byteorder="little")
+                int.from_bytes(data[18:21], byteorder="little")
             )
             self.storage.set_repeater_info_by_address(address, repeater_info)
             self._update_step(4, address)
@@ -222,24 +222,24 @@ class RDACHyteraService(GenericHyteraService):
             repeater_info = self.storage.get_repeater_info_by_address(address)
             repeater_info.set_callsign(
                 data[88:108]
-                    .decode("utf_16_le")
-                    .encode("utf-8")
-                    .strip(b"\x00")
-                    .decode("utf-8")
+                .decode("utf_16_le")
+                .encode("utf-8")
+                .strip(b"\x00")
+                .decode("utf-8")
             )
             repeater_info.set_hardware(
                 data[120:184]
-                    .decode("utf_16_le")
-                    .encode("utf-8")
-                    .strip(b"\x00")
-                    .decode("utf-8")
+                .decode("utf_16_le")
+                .encode("utf-8")
+                .strip(b"\x00")
+                .decode("utf-8")
             )
             repeater_info.set_firmware(
                 data[56:88]
-                    .decode("utf_16_le")
-                    .encode("utf-8")
-                    .strip(b"\x00")
-                    .decode("utf-8")
+                .decode("utf_16_le")
+                .encode("utf-8")
+                .strip(b"\x00")
+                .decode("utf-8")
             )
             self.storage.set_repeater_info_by_address(address, repeater_info)
             self._update_step(7, address)
@@ -291,19 +291,35 @@ class RDACHyteraService(GenericHyteraService):
                 data, address = self.serverSocket.recvfrom(4096)
                 repeater_info = self.storage.get_repeater_info_by_address(address)
                 if not repeater_info:
-                    # ignoring packet from unknown repeater
+                    self.log("ignoring packet from unknown repeater")
                     continue
-                if len(data) == 1 and repeater_info.get_dmr_step() != 14:
-                    # restart process if response is zero
+                if len(data) == 1 and repeater_info.get_dmr_step() not in [14]:
+                    if repeater_info.get_dmr_step() == 4:
+                        self.log(
+                            "check repeater zone programming, if Digital IP"
+                            "Multi-Site Connect mode allows data pass from timeslots"
+                        )
+                    self.log(
+                        "restart process if response is zero and current step is not 14"
+                    )
                     self._update_step(0, address)
                     self.step0(data, address)
                     continue
                 elif len(data) != 1 and repeater_info.get_dmr_step() == 14:
                     # single 0x00 byte comes in once in a while, probably heartbeat?
                     self.log("extra data received %s" % data.hex())
+
                 # call correct step function by name
+                self.log(
+                    "rdac step %d current data %s"
+                    % (repeater_info.get_dmr_step(), data.hex())
+                )
                 step_function = getattr(self, "step%d" % repeater_info.get_dmr_step())
                 step_function(data, address)
+                self.log(
+                    "repeater info after step executed %s"
+                    % self.storage.get_repeater_info_by_address(address)
+                )
             except Exception as err:
                 self.selfLogger.error(err, exc_info=True)
 

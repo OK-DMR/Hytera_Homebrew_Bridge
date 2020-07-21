@@ -15,6 +15,7 @@ class HRNPPacket(object):
     2b Checksum => 0=no check,
     0+b Payload
     """
+
     minimum_size: int = 12
     raw: bytes = None
     packet: HyteraRadioNetworkProtocol = None

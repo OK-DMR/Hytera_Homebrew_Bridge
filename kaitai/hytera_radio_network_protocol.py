@@ -5,11 +5,14 @@ from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, 
 from enum import Enum
 
 
-if parse_version(ks_version) < parse_version('0.7'):
-    raise Exception("Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s" % (ks_version))
+if parse_version(ks_version) < parse_version("0.7"):
+    raise Exception(
+        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
+        % (ks_version)
+    )
+
 
 class HyteraRadioNetworkProtocol(KaitaiStruct):
-
     class Opcodes(Enum):
         data = 0
         data_ack = 16
@@ -18,6 +21,7 @@ class HyteraRadioNetworkProtocol(KaitaiStruct):
         reject = 252
         accept = 253
         connect = 254
+
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
@@ -35,5 +39,3 @@ class HyteraRadioNetworkProtocol(KaitaiStruct):
         self.hrnp_packet_length = self._io.read_u2be()
         self.checksum = self._io.read_u2be()
         self.data = self._io.read_bytes_full()
-
-

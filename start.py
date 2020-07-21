@@ -22,15 +22,15 @@ class HyteraHomebrewBridge(Thread):
         config = configparser.ConfigParser()
         config.sections()
         config.read("settings.ini")
-        if 'general' in config:
-            if 'mode' in config['general']:
-                if config['general']['mode'] == 'ip-site-connect':
-                    print('ip-site-connect mode')
+        if "general" in config:
+            if "mode" in config["general"]:
+                if config["general"]["mode"] == "ip-site-connect":
+                    print("ip-site-connect mode")
                     self.hytera_service = HyteraIPSiteConnect()
 
         # fallback
         if self.hytera_service is None:
-            print('forward-to-pc mode')
+            print("forward-to-pc mode")
             self.hytera_service = HyteraForwardToPC()
 
 

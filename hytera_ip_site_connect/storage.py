@@ -171,7 +171,7 @@ class Storage(dict):
         return self.get_repeater_id_for_remote_address((ip, 0))
 
     def get_repeater_id_for_remote_address(
-            self, address: tuple, create_if_not_exists=False
+        self, address: tuple, create_if_not_exists=False
     ) -> int:
         storage_key = self.get_repeater_info_storage_key_for_address(address)
         ip, port = address
