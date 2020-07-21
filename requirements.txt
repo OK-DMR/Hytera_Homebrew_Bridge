@@ -1,3 +1,4 @@
 dmr-utils3>=0.1.28
 configparser>=4.0.2
 kaitaistruct
+pprint

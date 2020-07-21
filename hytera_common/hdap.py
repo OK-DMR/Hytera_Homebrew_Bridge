@@ -8,7 +8,7 @@ class HDAPPacket(object):
     2b opcode
     2b number of bytes / payload size
     0+b payload
-    1b checksum
+    1b checksum = ~ (Opcode + # of bytes + Payload) + 0x33
     1b message footer => always 0x03
     """
     minimum_size: int = 7
