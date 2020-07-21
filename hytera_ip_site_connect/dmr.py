@@ -11,6 +11,12 @@ class DMRHyteraService(GenericHyteraService):
                 ip, port = address
                 self.log("data (%d) received from %s.%s" % (len(data), ip, port))
                 self.log(data.hex())
+
+                if len(data) == 1 and data[0] == 0x00:
+                    # RPTL
+                    self.serverSocket.sendto(bytes([0x41]), address)
+                    continue
+
             except Exception as err:
                 self.selfLogger.error(err, exc_info=True)
 

@@ -175,7 +175,9 @@ class P2PHyteraService(GenericHyteraService):
             return
 
         data = bytearray(data)
+        self.log('ping request: %s' % bytes(data).hex())
         data[12] += 1
+        self.log('ping response: %s' % bytes(data).hex())
         self.serverSocket.sendto(data, address)
 
     def run(self) -> None:

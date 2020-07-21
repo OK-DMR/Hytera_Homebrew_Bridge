@@ -16,6 +16,7 @@ class RepeaterInfo(dict):
     KEY_DMR_STEP = "current_dmr_step"
     KEY_REPEATER_ID = "repeater_id"
     KEY_FIRMWARE = "repeater_firmware"
+    KEY_SERIALNO = "repeater_serialno"
     KEY_HARDWARE = "repeater_hardware"
     KEY_CALLSIGN = "repeater_callsign"
     KEY_REPEATER_MODE = "repeater_mode"
@@ -49,6 +50,12 @@ class RepeaterInfo(dict):
 
     def set_firmware(self, new_firmware: str) -> None:
         self[self.KEY_FIRMWARE] = new_firmware
+
+    def set_serial_number(self, new_serialno: str) -> None:
+        self[self.KEY_SERIALNO] = new_serialno
+
+    def get_serial_number(self) -> str:
+        return self.get(self.KEY_SERIALNO)
 
     def get_firmware(self) -> str:
         return self.get(self.KEY_FIRMWARE)

@@ -222,24 +222,31 @@ class RDACHyteraService(GenericHyteraService):
             repeater_info = self.storage.get_repeater_info_by_address(address)
             repeater_info.set_callsign(
                 data[88:108]
-                .decode("utf_16_le")
-                .encode("utf-8")
-                .strip(b"\x00")
-                .decode("utf-8")
+                    .decode("utf_16_le")
+                    .encode("utf-8")
+                    .strip(b"\x00")
+                    .decode("utf-8")
             )
             repeater_info.set_hardware(
                 data[120:184]
-                .decode("utf_16_le")
-                .encode("utf-8")
-                .strip(b"\x00")
-                .decode("utf-8")
+                    .decode("utf_16_le")
+                    .encode("utf-8")
+                    .strip(b"\x00")
+                    .decode("utf-8")
             )
             repeater_info.set_firmware(
                 data[56:88]
-                .decode("utf_16_le")
-                .encode("utf-8")
-                .strip(b"\x00")
-                .decode("utf-8")
+                    .decode("utf_16_le")
+                    .encode("utf-8")
+                    .strip(b"\x00")
+                    .decode("utf-8")
+            )
+            repeater_info.set_serial_number(
+                data[184:216]
+                    .decode("utf_16_le")
+                    .encode("utf-8")
+                    .strip(b"\x00")
+                    .decode("utf-8")
             )
             self.storage.set_repeater_info_by_address(address, repeater_info)
             self._update_step(7, address)
@@ -306,8 +313,12 @@ class RDACHyteraService(GenericHyteraService):
                     self.step0(data, address)
                     continue
                 elif len(data) != 1 and repeater_info.get_dmr_step() == 14:
-                    # single 0x00 byte comes in once in a while, probably heartbeat?
                     self.log("extra data received %s" % data.hex())
+                elif len(data) == 1 and repeater_info.get_dmr_step() == 14:
+                    # RPTL
+                    if data[0] == 0x00:
+                        self.serverSocket.sendto(bytes([0x41]), address)
+                    continue
 
                 # call correct step function by name
                 self.log(
