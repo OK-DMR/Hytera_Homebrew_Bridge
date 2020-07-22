@@ -23,5 +23,7 @@ pip3 install -r requirements.txt --user
 from this folder
 ```bash
 kaitai-struct-compiler -t python --python-package kaitai *.ksy
+# this is for unified formatting of generated sources, if this command fails for you, skip it
+black .
 ```
 
