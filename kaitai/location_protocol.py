@@ -5,15 +5,19 @@ from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, 
 from enum import Enum
 
 
-if parse_version(ks_version) < parse_version('0.7'):
-    raise Exception("Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s" % (ks_version))
+if parse_version(ks_version) < parse_version("0.7"):
+    raise Exception(
+        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
+        % (ks_version)
+    )
 
 from kaitai import radio_ip
 from kaitai import datetimestring
 from kaitai import intervalstring
 from kaitai import gpsdata
-class LocationProtocol(KaitaiStruct):
 
+
+class LocationProtocol(KaitaiStruct):
     class CmdTypes(Enum):
         cancel_request = 0
         start_request = 1
@@ -52,6 +56,7 @@ class LocationProtocol(KaitaiStruct):
         ok = 0
         position_method_failure = 6
         request_format_error = 105
+
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
@@ -65,7 +70,9 @@ class LocationProtocol(KaitaiStruct):
         if _on == self._root.LpSpecificTypes.triggered_report_answer:
             self.data = self._root.TriggeredReportAnswer(self._io, self, self._root)
         elif _on == self._root.LpSpecificTypes.emergency_report_stop_request:
-            self.data = self._root.EmergencyReportStopRequest(self._io, self, self._root)
+            self.data = self._root.EmergencyReportStopRequest(
+                self._io, self, self._root
+            )
         elif _on == self._root.LpSpecificTypes.condition_quick_gps_request:
             self.data = self._root.ConditionQuickGpsRequest(self._io, self, self._root)
         elif _on == self._root.LpSpecificTypes.condition_report:
@@ -83,7 +90,9 @@ class LocationProtocol(KaitaiStruct):
         elif _on == self._root.LpSpecificTypes.triggered_report_stop_answer:
             self.data = self._root.TriggeredReportStopAnswer(self._io, self, self._root)
         elif _on == self._root.LpSpecificTypes.triggered_report_stop_request:
-            self.data = self._root.TriggeredReportStopRequest(self._io, self, self._root)
+            self.data = self._root.TriggeredReportStopRequest(
+                self._io, self, self._root
+            )
         elif _on == self._root.LpSpecificTypes.emergency_report:
             self.data = self._root.EmergencyReport(self._io, self, self._root)
         elif _on == self._root.LpSpecificTypes.condition_report_request:
@@ -103,8 +112,9 @@ class LocationProtocol(KaitaiStruct):
         def _read(self):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
-            self.result = KaitaiStream.resolve_enum(self._root.ResultCodes, self._io.read_u2be())
-
+            self.result = KaitaiStream.resolve_enum(
+                self._root.ResultCodes, self._io.read_u2be()
+            )
 
     class ConditionReportRequest(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -123,7 +133,6 @@ class LocationProtocol(KaitaiStruct):
             self.interval = intervalstring.Intervalstring(self._io)
             self.max_interval = intervalstring.Intervalstring(self._io)
 
-
     class ConditionQuickGpsRequest(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
@@ -134,11 +143,13 @@ class LocationProtocol(KaitaiStruct):
         def _read(self):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
-            self.cmd_type = KaitaiStream.resolve_enum(self._root.CmdTypes, self._io.read_u1())
+            self.cmd_type = KaitaiStream.resolve_enum(
+                self._root.CmdTypes, self._io.read_u1()
+            )
             if self.cmd_type == self._root.CmdTypes.start_request:
-                self.quick_gps_payload = self._root.QuickGpsPayload(self._io, self, self._root)
-
-
+                self.quick_gps_payload = self._root.QuickGpsPayload(
+                    self._io, self, self._root
+                )
 
     class ConditionReport(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -152,7 +163,6 @@ class LocationProtocol(KaitaiStruct):
             self.radio_ip = radio_ip.RadioIp(self._io)
             self.gpsdata = gpsdata.Gpsdata(self._io)
 
-
     class EmergencyReport(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
@@ -165,7 +175,6 @@ class LocationProtocol(KaitaiStruct):
             self.emergency_type = self._io.read_u1()
             self.gpsdata = gpsdata.Gpsdata(self._io)
 
-
     class TriggeredReportAnswer(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
@@ -176,8 +185,9 @@ class LocationProtocol(KaitaiStruct):
         def _read(self):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
-            self.result = KaitaiStream.resolve_enum(self._root.ResultCodes, self._io.read_u2be())
-
+            self.result = KaitaiStream.resolve_enum(
+                self._root.ResultCodes, self._io.read_u2be()
+            )
 
     class QuickGpsPayload(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -194,7 +204,6 @@ class LocationProtocol(KaitaiStruct):
             self.channel_use_percentage = self._io.read_u1()
             self.send_order = self._io.read_u2be()
 
-
     class StandardRequest(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
@@ -205,7 +214,6 @@ class LocationProtocol(KaitaiStruct):
         def _read(self):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
-
 
     class TriggeredReportRequest(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -221,7 +229,6 @@ class LocationProtocol(KaitaiStruct):
             self.stop_time = datetimestring.Datetimestring(self._io)
             self.interval = intervalstring.Intervalstring(self._io)
 
-
     class StandardAnswer(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
@@ -232,9 +239,10 @@ class LocationProtocol(KaitaiStruct):
         def _read(self):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
-            self.result = KaitaiStream.resolve_enum(self._root.ResultCodes, self._io.read_u2be())
+            self.result = KaitaiStream.resolve_enum(
+                self._root.ResultCodes, self._io.read_u2be()
+            )
             self.gpsdata = gpsdata.Gpsdata(self._io)
-
 
     class ConditionReportAnswer(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -246,9 +254,12 @@ class LocationProtocol(KaitaiStruct):
         def _read(self):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
-            self.trigger_type = KaitaiStream.resolve_enum(self._root.TriggerTypes, self._io.read_u1())
-            self.result = KaitaiStream.resolve_enum(self._root.ResultCodes, self._io.read_u2be())
-
+            self.trigger_type = KaitaiStream.resolve_enum(
+                self._root.TriggerTypes, self._io.read_u1()
+            )
+            self.result = KaitaiStream.resolve_enum(
+                self._root.ResultCodes, self._io.read_u2be()
+            )
 
     class EmergencyReportStopRequest(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -261,7 +272,6 @@ class LocationProtocol(KaitaiStruct):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
 
-
     class ConditionQuickGpsAnswer(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
@@ -272,9 +282,12 @@ class LocationProtocol(KaitaiStruct):
         def _read(self):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
-            self.cmd_type = KaitaiStream.resolve_enum(self._root.CmdTypes, self._io.read_u1())
-            self.result = KaitaiStream.resolve_enum(self._root.ResultCodes, self._io.read_u2be())
-
+            self.cmd_type = KaitaiStream.resolve_enum(
+                self._root.CmdTypes, self._io.read_u1()
+            )
+            self.result = KaitaiStream.resolve_enum(
+                self._root.ResultCodes, self._io.read_u2be()
+            )
 
     class TriggeredReport(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -289,7 +302,6 @@ class LocationProtocol(KaitaiStruct):
             self.time_remaining = intervalstring.Intervalstring(self._io)
             self.gpsdata = gpsdata.Gpsdata(self._io)
 
-
     class EmergencyReportStopAnswer(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
@@ -300,8 +312,9 @@ class LocationProtocol(KaitaiStruct):
         def _read(self):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
-            self.result = KaitaiStream.resolve_enum(self._root.ResultCodes, self._io.read_u2be())
-
+            self.result = KaitaiStream.resolve_enum(
+                self._root.ResultCodes, self._io.read_u2be()
+            )
 
     class TriggeredReportStopRequest(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -314,27 +327,34 @@ class LocationProtocol(KaitaiStruct):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
 
-
     @property
     def opcode(self):
-        if hasattr(self, '_m_opcode'):
-            return self._m_opcode if hasattr(self, '_m_opcode') else None
+        if hasattr(self, "_m_opcode"):
+            return self._m_opcode if hasattr(self, "_m_opcode") else None
 
         _pos = self._io.pos()
         self._io.seek(0)
-        self._m_opcode = KaitaiStream.resolve_enum(self._root.LpGeneralTypes, self._io.read_u1())
+        self._m_opcode = KaitaiStream.resolve_enum(
+            self._root.LpGeneralTypes, self._io.read_u1()
+        )
         self._io.seek(_pos)
-        return self._m_opcode if hasattr(self, '_m_opcode') else None
+        return self._m_opcode if hasattr(self, "_m_opcode") else None
 
     @property
     def opcode_header_int(self):
-        if hasattr(self, '_m_opcode_header_int'):
-            return self._m_opcode_header_int if hasattr(self, '_m_opcode_header_int') else None
+        if hasattr(self, "_m_opcode_header_int"):
+            return (
+                self._m_opcode_header_int
+                if hasattr(self, "_m_opcode_header_int")
+                else None
+            )
 
         _pos = self._io.pos()
         self._io.seek(0)
-        self._m_opcode_header_int = KaitaiStream.resolve_enum(self._root.LpSpecificTypes, self._io.read_u2be())
+        self._m_opcode_header_int = KaitaiStream.resolve_enum(
+            self._root.LpSpecificTypes, self._io.read_u2be()
+        )
         self._io.seek(_pos)
-        return self._m_opcode_header_int if hasattr(self, '_m_opcode_header_int') else None
-
-
+        return (
+            self._m_opcode_header_int if hasattr(self, "_m_opcode_header_int") else None
+        )

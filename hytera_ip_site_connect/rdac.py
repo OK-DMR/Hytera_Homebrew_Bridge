@@ -222,31 +222,31 @@ class RDACHyteraService(GenericHyteraService):
             repeater_info = self.storage.get_repeater_info_by_address(address)
             repeater_info.set_callsign(
                 data[88:108]
-                    .decode("utf_16_le")
-                    .encode("utf-8")
-                    .strip(b"\x00")
-                    .decode("utf-8")
+                .decode("utf_16_le")
+                .encode("utf-8")
+                .strip(b"\x00")
+                .decode("utf-8")
             )
             repeater_info.set_hardware(
                 data[120:184]
-                    .decode("utf_16_le")
-                    .encode("utf-8")
-                    .strip(b"\x00")
-                    .decode("utf-8")
+                .decode("utf_16_le")
+                .encode("utf-8")
+                .strip(b"\x00")
+                .decode("utf-8")
             )
             repeater_info.set_firmware(
                 data[56:88]
-                    .decode("utf_16_le")
-                    .encode("utf-8")
-                    .strip(b"\x00")
-                    .decode("utf-8")
+                .decode("utf_16_le")
+                .encode("utf-8")
+                .strip(b"\x00")
+                .decode("utf-8")
             )
             repeater_info.set_serial_number(
                 data[184:216]
-                    .decode("utf_16_le")
-                    .encode("utf-8")
-                    .strip(b"\x00")
-                    .decode("utf-8")
+                .decode("utf_16_le")
+                .encode("utf-8")
+                .strip(b"\x00")
+                .decode("utf-8")
             )
             self.storage.set_repeater_info_by_address(address, repeater_info)
             self._update_step(7, address)

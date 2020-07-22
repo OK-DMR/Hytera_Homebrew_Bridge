@@ -1,4 +1,6 @@
-from kaitai.hytera_simple_transport_reliability_protocol import HyteraSimpleTransportReliabilityProtocol
+from kaitai.hytera_simple_transport_reliability_protocol import (
+    HyteraSimpleTransportReliabilityProtocol,
+)
 
 
 class HSTRPPacket(object):
@@ -11,6 +13,7 @@ class HSTRPPacket(object):
     ?b options (might not be present at all, or multiple)
     ?b payload (multiple messages, such as RRS, LP, TMP, RCP, TP or DTP, not RTP)
     """
+
     raw: bytes = None
     packet: HyteraSimpleTransportReliabilityProtocol = None
     minimum_size: int = 6

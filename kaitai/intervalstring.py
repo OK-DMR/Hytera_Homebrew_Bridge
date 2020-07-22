@@ -4,12 +4,17 @@ from pkg_resources import parse_version
 from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
 
 
-if parse_version(ks_version) < parse_version('0.7'):
-    raise Exception("Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s" % (ks_version))
+if parse_version(ks_version) < parse_version("0.7"):
+    raise Exception(
+        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
+        % (ks_version)
+    )
+
 
 class Intervalstring(KaitaiStruct):
     """interval in format ddhhmmss, eg. “00010000” means every 1 hour
     """
+
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
@@ -18,5 +23,3 @@ class Intervalstring(KaitaiStruct):
 
     def _read(self):
         self.interval = (self._io.read_bytes(8)).decode(u"UTF-8")
-
-
