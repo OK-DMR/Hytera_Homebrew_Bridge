@@ -29,13 +29,14 @@ seq:
     type: u2be
     doc: number equal for ACK and retransmited messages, and raised for each reply/new message
   - id: options
-    if: is_heartbeat == false and is_ack == false
+    if: _io.eof == false and is_heartbeat == false
     type: option
     repeat: until
     repeat-until: _.expect_more_options == false
   - id: data
     type: hytera_dmr_application_protocol
-    if: has_option == true or is_ack == true
+    if: _io.eof == false and has_option == true and is_reject == false and is_close == false and is_connect == false
+    repeat: eos
 enums:
   option_commands:
     1: realtime

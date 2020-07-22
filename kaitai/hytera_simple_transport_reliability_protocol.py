@@ -38,7 +38,7 @@ class HyteraSimpleTransportReliabilityProtocol(KaitaiStruct):
         self.is_ack = self._io.read_bits_int(1) != 0
         self._io.align_to_byte()
         self.sequence_number = self._io.read_u2be()
-        if (self.is_heartbeat == False) and (self.is_ack == False):
+        if (self._io.is_eof() == False) and (self.is_heartbeat == False):
             self.options = []
             i = 0
             while True:
@@ -48,10 +48,22 @@ class HyteraSimpleTransportReliabilityProtocol(KaitaiStruct):
                     break
                 i += 1
 
-        if (self.has_option == True) or (self.is_ack == True):
-            self.data = hytera_dmr_application_protocol.HyteraDmrApplicationProtocol(
-                self._io
-            )
+        if (
+            (self._io.is_eof() == False)
+            and (self.has_option == True)
+            and (self.is_reject == False)
+            and (self.is_close == False)
+            and (self.is_connect == False)
+        ):
+            self.data = []
+            i = 0
+            while not self._io.is_eof():
+                self.data.append(
+                    hytera_dmr_application_protocol.HyteraDmrApplicationProtocol(
+                        self._io
+                    )
+                )
+                i += 1
 
     class Option(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):

@@ -11,7 +11,6 @@ meta:
 enums:
   message_header_types:
     0x02: radio_control_protocol
-    0x82: radio_control_protocol_reliable
     0x08: location_protocol
     0x09: text_message_protocol
     0x11: radio_registration
@@ -24,7 +23,7 @@ instances:
     pos: 0
   message_type:
     enum: message_header_types
-    value: message_header ^ 0x80
+    value: message_header & 0x8F
 seq:
   - id: message_header
     type: u1
@@ -35,7 +34,6 @@ seq:
       switch-on: message_type
       cases:
         message_header_types::radio_control_protocol: radio_control_protocol
-        message_header_types::radio_control_protocol_reliable: radio_control_protocol
         message_header_types::location_protocol: location_protocol
         message_header_types::text_message_protocol: text_message_protocol
         message_header_types::radio_registration: radio_registration_service

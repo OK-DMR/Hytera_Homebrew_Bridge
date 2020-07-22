@@ -14,9 +14,9 @@ if parse_version(ks_version) < parse_version("0.7"):
 from kaitai import telemetry_protocol
 from kaitai import location_protocol
 from kaitai import data_delivery_states
+from kaitai import radio_registration_service
 from kaitai import text_message_protocol
 from kaitai import data_transmit_protocol
-from kaitai import radio_registration_service
 from kaitai import radio_control_protocol
 
 
@@ -29,7 +29,6 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
         telemetry_protocol = 18
         data_transmit_protocol = 19
         data_delivery_states = 20
-        radio_control_protocol_reliable = 130
 
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
@@ -40,9 +39,7 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
     def _read(self):
         self.message_header = self._io.read_u1()
         _on = self.message_type
-        if _on == self._root.MessageHeaderTypes.radio_control_protocol_reliable:
-            self.data = radio_control_protocol.RadioControlProtocol(self._io)
-        elif _on == self._root.MessageHeaderTypes.radio_registration:
+        if _on == self._root.MessageHeaderTypes.radio_registration:
             self.data = radio_registration_service.RadioRegistrationService(self._io)
         elif _on == self._root.MessageHeaderTypes.telemetry_protocol:
             self.data = telemetry_protocol.TelemetryProtocol(self._io)
@@ -84,6 +81,6 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
             return self._m_message_type if hasattr(self, "_m_message_type") else None
 
         self._m_message_type = KaitaiStream.resolve_enum(
-            self._root.MessageHeaderTypes, (self.message_header ^ 128)
+            self._root.MessageHeaderTypes, (self.message_header & 143)
         )
         return self._m_message_type if hasattr(self, "_m_message_type") else None
