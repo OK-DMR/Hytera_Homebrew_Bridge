@@ -45,7 +45,7 @@ seq:
     size: 2
   - id: message_length
     type: u2be
-    doc: length of the message from next field to the end of RRS message
+    doc: length of the message from next field to the end of LP message
   - id: data
     type:
       switch-on: opcode_header_int
