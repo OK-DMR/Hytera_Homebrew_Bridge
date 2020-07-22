@@ -43,7 +43,7 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
 
         _pos = self._io.pos()
         self._io.seek(0)
-        self._m_is_reliable_message = self._io.read_u1()
+        self._m_is_reliable_message = self._io.read_bits_int(1) != 0
         self._io.seek(_pos)
         return self._m_is_reliable_message if hasattr(self, '_m_is_reliable_message') else None
 

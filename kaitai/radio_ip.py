@@ -8,7 +8,9 @@ if parse_version(ks_version) < parse_version('0.7'):
     raise Exception("Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s" % (ks_version))
 
 class RadioIp(KaitaiStruct):
-    """10.0.0.80 means the subnet is set to 10.x.x.x (C) and radio ID is 80
+    """represented as 4 bytes, each byte interpreted as number (0-255)
+    10.0.0.80 means the subnet is set to 10.x.x.x (C) and radio ID is 80
+    10.22.0.0 means the subnet is set to 10.x.x.x (C) and radio ID is 2200
     """
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
@@ -18,6 +20,16 @@ class RadioIp(KaitaiStruct):
 
     def _read(self):
         self.subnet = self._io.read_u1()
-        self.radio_id = self._io.read_bytes(3)
+        self.radio_id_1 = self._io.read_u1()
+        self.radio_id_2 = self._io.read_u1()
+        self.radio_id_3 = self._io.read_u1()
+
+    @property
+    def radio_id(self):
+        if hasattr(self, '_m_radio_id'):
+            return self._m_radio_id if hasattr(self, '_m_radio_id') else None
+
+        self._m_radio_id = str(self.radio_id_1) + str(self.radio_id_2) + str(self.radio_id_3)
+        return self._m_radio_id if hasattr(self, '_m_radio_id') else None
 
 

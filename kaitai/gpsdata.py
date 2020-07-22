@@ -16,7 +16,7 @@ class Gpsdata(KaitaiStruct):
 
     def _read(self):
         self.gps_status = self._io.read_bytes(1)
-        self.gps_time = self._io.read_bytes(5)
+        self.gps_time = self._io.read_bytes(6)
         self.gps_date = self._io.read_bytes(6)
         self.north_south = self._io.read_bytes(1)
         self.latitude = self._io.read_bytes(9)

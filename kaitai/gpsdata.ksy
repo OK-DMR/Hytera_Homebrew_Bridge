@@ -4,7 +4,7 @@ seq:
   - id: gps_status
     size: 1
   - id: gps_time
-    size: 5
+    size: 6
   - id: gps_date
     size: 6
   - id: north_south

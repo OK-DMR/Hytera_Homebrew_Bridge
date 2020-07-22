@@ -14,7 +14,7 @@ enums:
     0x14: data_delivery_states
 instances:
   is_reliable_message:
-    type: u1
+    type: b1
     pos: 0
   message_type:
     enum: message_header_types
