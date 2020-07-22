@@ -8,7 +8,7 @@ from enum import Enum
 if parse_version(ks_version) < parse_version('0.7'):
     raise Exception("Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s" % (ks_version))
 
-import radio_ip
+from kaitai import radio_ip
 class RadioRegistrationService(KaitaiStruct):
 
     class RrsTypes(Enum):
@@ -26,6 +26,7 @@ class RadioRegistrationService(KaitaiStruct):
     def _read(self):
         self.opcode = self._io.ensure_fixed_contents(b"\x00")
         self.rrs_type = KaitaiStream.resolve_enum(self._root.RrsTypes, self._io.read_u1())
+        self.message_length = self._io.read_u2le()
         self.radio_ip = radio_ip.RadioIp(self._io)
         if  ((self.rrs_type == self._root.RrsTypes.registration_ack) or (self.rrs_type == self._root.RrsTypes.online_check_ack)) :
             self.result = self._io.read_u1()

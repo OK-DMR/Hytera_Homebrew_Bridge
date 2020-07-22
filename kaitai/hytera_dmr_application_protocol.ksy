@@ -1,5 +1,8 @@
 meta:
   id: hytera_dmr_application_protocol
+  imports:
+    - location_protocol
+    - radio_registration_service
 enums:
   message_header_types:
     0x02: radio_control_protocol
@@ -9,27 +12,29 @@ enums:
     0x12: telemetry_protocol
     0x13: data_transmit_protocol
     0x14: data_delivery_states
+instances:
+  is_reliable_message:
+    type: u1
+    pos: 0
+  message_type:
+    enum: message_header_types
+    value: message_header ^ 0x80
 seq:
   - id: message_header
     type: u1
-  - id: is_reliable_message
-    type: b1
-  - id: opcode
+  - id: data
+    doc: |
+      contains opcode (2 bytes), payload length (2 bytes) and payload (if length > 0)
     type:
-      switch-on: message_header
+      switch-on: message_type
       cases:
-        0x02: u2le
-        0x82: u2le
-        _: u2be
-  - id: payload_size
-    type:
-      switch-on: message_header
-      cases:
-        0x02: u2le
-        0x82: u2le
-        _: u2be
-  - id: payload
-    size: payload_size
+        #message_header_types::radio_control_protocol: radio_control_protocol
+        message_header_types::location_protocol: location_protocol
+        #message_header_types::text_message_protocol: text_message_protocol
+        message_header_types::radio_registration: radio_registration_service
+        #message_header_types::telemetry_protocol: telemetry_protocol
+        #message_header_types::data_transmit_protocol: data_transmit_protocol
+        #message_header_types::data_delivery_states: data_delivery_states
   - id: checksum
     type: u1
   - id: message_footer

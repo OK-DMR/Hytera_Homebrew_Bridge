@@ -22,6 +22,6 @@ pip3 install -r requirements.txt --user
 ## re-compiling
 from this folder
 ```bash
-kaitai-struct-compiler -t python *.ksy
+kaitai-struct-compiler -t python --python-package kaitai *.ksy
 ```
 

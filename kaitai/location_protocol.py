@@ -8,10 +8,10 @@ from enum import Enum
 if parse_version(ks_version) < parse_version('0.7'):
     raise Exception("Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s" % (ks_version))
 
-import datetimestring
-import radio_ip
-import intervalstring
-import gpsdata
+from kaitai import datetimestring
+from kaitai import radio_ip
+from kaitai import intervalstring
+from kaitai import gpsdata
 class LocationProtocol(KaitaiStruct):
 
     class LpGeneralTypes(Enum):
@@ -41,6 +41,9 @@ class LocationProtocol(KaitaiStruct):
             self.request_id = self._io.read_bytes(4)
 
         self.radio_ip = radio_ip.RadioIp(self._io)
+        if  ((self.opcode == self._root.LpGeneralTypes.emergency_location_immediate_service) and (self.subtype == self._root.Subtypes.report)) :
+            self.emergency_data = self._root.AppendEmergencyReport(self._io, self, self._root)
+
 
     class AppendEmergencyReport(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):

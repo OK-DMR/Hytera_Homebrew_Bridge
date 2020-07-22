@@ -15,6 +15,9 @@ seq:
   - id: rrs_type
     enum: rrs_types
     type: u1
+  - id: message_length
+    type: u2le
+    doc: length of the message from next field to the end of RRS message
   - id: radio_ip
     type: radio_ip
   - id: result

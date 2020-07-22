@@ -61,8 +61,6 @@ seq:
   - id: subtype
     type: u1
     enum: subtypes
-  - id: request_id
-    size: 4
-    if: opcode != lp_general_types::emergency_location_immediate_service and subtype != subtypes::report
-  - id: radio_ip
-    type: radio_ip
+  - id: message_length
+    type: u2le
+    doc: length of the message from next field to the end of RRS message
