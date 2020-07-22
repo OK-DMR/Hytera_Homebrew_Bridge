@@ -1,5 +1,7 @@
 meta:
   id: hytera_simple_transport_reliability_protocol
+  imports:
+    - hytera_dmr_application_protocol
 seq:
   - id: header
     type: str
@@ -32,7 +34,8 @@ seq:
     repeat: until
     repeat-until: _.expect_more_options == false
   - id: data
-    size-eos: true
+    type: hytera_dmr_application_protocol
+    if: has_option == true or is_ack == true
 enums:
   option_commands:
     1: realtime

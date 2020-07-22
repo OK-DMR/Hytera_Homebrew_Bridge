@@ -11,7 +11,11 @@ if parse_version(ks_version) < parse_version("0.7"):
         % (ks_version)
     )
 
+from kaitai import telemetry_protocol
 from kaitai import location_protocol
+from kaitai import data_delivery_states
+from kaitai import text_message_protocol
+from kaitai import data_transmit_protocol
 from kaitai import radio_registration_service
 
 
@@ -34,10 +38,18 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
     def _read(self):
         self.message_header = self._io.read_u1()
         _on = self.message_type
-        if _on == self._root.MessageHeaderTypes.location_protocol:
-            self.data = location_protocol.LocationProtocol(self._io)
-        elif _on == self._root.MessageHeaderTypes.radio_registration:
+        if _on == self._root.MessageHeaderTypes.radio_registration:
             self.data = radio_registration_service.RadioRegistrationService(self._io)
+        elif _on == self._root.MessageHeaderTypes.telemetry_protocol:
+            self.data = telemetry_protocol.TelemetryProtocol(self._io)
+        elif _on == self._root.MessageHeaderTypes.text_message_protocol:
+            self.data = text_message_protocol.TextMessageProtocol(self._io)
+        elif _on == self._root.MessageHeaderTypes.data_delivery_states:
+            self.data = data_delivery_states.DataDeliveryStates(self._io)
+        elif _on == self._root.MessageHeaderTypes.location_protocol:
+            self.data = location_protocol.LocationProtocol(self._io)
+        elif _on == self._root.MessageHeaderTypes.data_transmit_protocol:
+            self.data = data_transmit_protocol.DataTransmitProtocol(self._io)
         self.checksum = self._io.read_u1()
         self.message_footer = self._io.ensure_fixed_contents(b"\x03")
 

@@ -27,7 +27,7 @@ types:
         doc: size in bytes
       - id: file_name
         type: str
-        terminator: 0
+        size: _parent.message_length - 10
         encoding: UTF16-LE
         doc: maximum of 256 bytes including file extension, if longer, recipient should refuse the transmission
   dtp_answer:
@@ -49,7 +49,7 @@ types:
         type: u2be
         doc: sequence number in transfer, starting with 1
       - id: file_data
-        size: 448
+        size: _parent.message_length - 10
         doc: 448 bytes slice of transmitted file, or shorter if current slice is the last one
   data_slice_answer:
     seq:

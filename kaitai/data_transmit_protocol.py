@@ -82,9 +82,9 @@ class DataTransmitProtocol(KaitaiStruct):
             self.destination_ip = radio_ip.RadioIp(self._io)
             self.source_ip = radio_ip.RadioIp(self._io)
             self.file_size = self._io.read_u2be()
-            self.file_name = (self._io.read_bytes_term(0, False, True, True)).decode(
-                u"UTF16-LE"
-            )
+            self.file_name = (
+                self._io.read_bytes((self._parent.message_length - 10))
+            ).decode(u"UTF16-LE")
 
     class DataSliceAnswer(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -112,7 +112,7 @@ class DataTransmitProtocol(KaitaiStruct):
             self.destination_ip = radio_ip.RadioIp(self._io)
             self.source_ip = radio_ip.RadioIp(self._io)
             self.block_number = self._io.read_u2be()
-            self.file_data = self._io.read_bytes(448)
+            self.file_data = self._io.read_bytes((self._parent.message_length - 10))
 
     class LastDataSliceAnswer(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):

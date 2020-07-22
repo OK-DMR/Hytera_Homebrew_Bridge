@@ -3,6 +3,10 @@ meta:
   imports:
     - location_protocol
     - radio_registration_service
+    - data_transmit_protocol
+    - text_message_protocol
+    - telemetry_protocol
+    - data_delivery_states
 enums:
   message_header_types:
     0x02: radio_control_protocol
@@ -30,11 +34,11 @@ seq:
       cases:
         #message_header_types::radio_control_protocol: radio_control_protocol
         message_header_types::location_protocol: location_protocol
-        #message_header_types::text_message_protocol: text_message_protocol
+        message_header_types::text_message_protocol: text_message_protocol
         message_header_types::radio_registration: radio_registration_service
-        #message_header_types::telemetry_protocol: telemetry_protocol
-        #message_header_types::data_transmit_protocol: data_transmit_protocol
-        #message_header_types::data_delivery_states: data_delivery_states
+        message_header_types::telemetry_protocol: telemetry_protocol
+        message_header_types::data_transmit_protocol: data_transmit_protocol
+        message_header_types::data_delivery_states: data_delivery_states
   - id: checksum
     type: u1
   - id: message_footer

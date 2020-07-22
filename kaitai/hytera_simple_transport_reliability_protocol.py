@@ -11,6 +11,8 @@ if parse_version(ks_version) < parse_version("0.7"):
         % (ks_version)
     )
 
+from kaitai import hytera_dmr_application_protocol
+
 
 class HyteraSimpleTransportReliabilityProtocol(KaitaiStruct):
     class OptionCommands(Enum):
@@ -46,7 +48,10 @@ class HyteraSimpleTransportReliabilityProtocol(KaitaiStruct):
                     break
                 i += 1
 
-        self.data = self._io.read_bytes_full()
+        if (self.has_option == True) or (self.is_ack == True):
+            self.data = hytera_dmr_application_protocol.HyteraDmrApplicationProtocol(
+                self._io
+            )
 
     class Option(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
