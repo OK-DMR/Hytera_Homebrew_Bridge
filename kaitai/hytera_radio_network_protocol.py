@@ -11,6 +11,8 @@ if parse_version(ks_version) < parse_version("0.7"):
         % (ks_version)
     )
 
+from kaitai import hytera_dmr_application_protocol
+
 
 class HyteraRadioNetworkProtocol(KaitaiStruct):
     class Opcodes(Enum):
@@ -39,4 +41,6 @@ class HyteraRadioNetworkProtocol(KaitaiStruct):
         self.hrnp_packet_length = self._io.read_u2be()
         self.checksum = self._io.read_u2be()
         if self.opcode == self._root.Opcodes.data:
-            self.data = self._io.read_bytes_full()
+            self.data = hytera_dmr_application_protocol.HyteraDmrApplicationProtocol(
+                self._io
+            )

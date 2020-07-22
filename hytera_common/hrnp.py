@@ -25,6 +25,3 @@ class HRNPPacket(object):
         if len(data) < self.minimum_size:
             return
         self.packet = HyteraRadioNetworkProtocol.from_bytes(data)
-
-    def get_opcode_name(self):
-        return self.packet.Opcodes(self.packet.opcode).name.upper()

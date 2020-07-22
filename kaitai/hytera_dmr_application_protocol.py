@@ -17,6 +17,7 @@ from kaitai import data_delivery_states
 from kaitai import text_message_protocol
 from kaitai import data_transmit_protocol
 from kaitai import radio_registration_service
+from kaitai import radio_control_protocol
 
 
 class HyteraDmrApplicationProtocol(KaitaiStruct):
@@ -28,6 +29,7 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
         telemetry_protocol = 18
         data_transmit_protocol = 19
         data_delivery_states = 20
+        radio_control_protocol_reliable = 130
 
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
@@ -38,10 +40,14 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
     def _read(self):
         self.message_header = self._io.read_u1()
         _on = self.message_type
-        if _on == self._root.MessageHeaderTypes.radio_registration:
+        if _on == self._root.MessageHeaderTypes.radio_control_protocol_reliable:
+            self.data = radio_control_protocol.RadioControlProtocol(self._io)
+        elif _on == self._root.MessageHeaderTypes.radio_registration:
             self.data = radio_registration_service.RadioRegistrationService(self._io)
         elif _on == self._root.MessageHeaderTypes.telemetry_protocol:
             self.data = telemetry_protocol.TelemetryProtocol(self._io)
+        elif _on == self._root.MessageHeaderTypes.radio_control_protocol:
+            self.data = radio_control_protocol.RadioControlProtocol(self._io)
         elif _on == self._root.MessageHeaderTypes.text_message_protocol:
             self.data = text_message_protocol.TextMessageProtocol(self._io)
         elif _on == self._root.MessageHeaderTypes.data_delivery_states:

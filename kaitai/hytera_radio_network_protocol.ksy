@@ -1,5 +1,7 @@
 meta:
   id: hytera_radio_network_protocol
+  imports:
+    - hytera_dmr_application_protocol
 enums:
   opcodes:
     0xFE: connect
@@ -30,5 +32,5 @@ seq:
   - id: checksum
     type: u2be
   - id: data
-    size-eos: true
     if: opcode == opcodes::data
+    type: hytera_dmr_application_protocol

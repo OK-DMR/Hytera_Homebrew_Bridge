@@ -24,7 +24,7 @@ def _prettyprint(data: KaitaiStruct) -> dict:
     acceptable_items = {
         key: value
         for (key, value) in data.__dict__.items()
-        if key not in ["_io", "_parent", "_root"]
+        if key not in ['_io', '_parent', '_root', '_debug']
     }
     return {
         key: (

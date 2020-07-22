@@ -7,9 +7,11 @@ meta:
     - text_message_protocol
     - telemetry_protocol
     - data_delivery_states
+    - radio_control_protocol
 enums:
   message_header_types:
     0x02: radio_control_protocol
+    0x82: radio_control_protocol_reliable
     0x08: location_protocol
     0x09: text_message_protocol
     0x11: radio_registration
@@ -32,7 +34,8 @@ seq:
     type:
       switch-on: message_type
       cases:
-        #message_header_types::radio_control_protocol: radio_control_protocol
+        message_header_types::radio_control_protocol: radio_control_protocol
+        message_header_types::radio_control_protocol_reliable: radio_control_protocol
         message_header_types::location_protocol: location_protocol
         message_header_types::text_message_protocol: text_message_protocol
         message_header_types::radio_registration: radio_registration_service

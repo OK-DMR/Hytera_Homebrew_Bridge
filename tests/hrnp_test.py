@@ -14,4 +14,5 @@ for hrnp_testfile in sorted(glob("data/hrnp.*")):
         from hytera_common.hrnp import HRNPPacket
 
         packet = HRNPPacket(file.read())
+
         prettyprint(packet.packet)
