@@ -43,6 +43,9 @@ seq:
   - id: message_length
     type: u2be
     doc: length of the message from next field to the end of TMP message
+  - id: option_field_len
+    type: u2be
+    if: option_flag.to_i == 1
   - id: request_id
     type: u4be
   - id: destination_ip
@@ -61,9 +64,6 @@ seq:
     encoding: UTF16-LE
     terminator: 0
     if: service_type == service_types::send_private_message or service_type == service_types::send_group_message
-  - id: option_field_len
-    type: u2be
-    if: option_flag.to_i == 1
   - id: option_field
     type: str
     encoding: UTF16-LE

@@ -62,6 +62,9 @@ class TextMessageProtocol(KaitaiStruct):
             self._root.ServiceTypes, self._io.read_u1()
         )
         self.message_length = self._io.read_u2be()
+        if self.option_flag.value == 1:
+            self.option_field_len = self._io.read_u2be()
+
         self.request_id = self._io.read_u4be()
         self.destination_ip = radio_ip.RadioIp(self._io)
         if self.service_type != self._root.ServiceTypes.send_group_message_ack:
@@ -80,9 +83,6 @@ class TextMessageProtocol(KaitaiStruct):
             self.tmdata = (self._io.read_bytes_term(0, False, True, True)).decode(
                 u"UTF16-LE"
             )
-
-        if self.option_flag.value == 1:
-            self.option_field_len = self._io.read_u2be()
 
         if self.option_flag.value == 1:
             self.option_field = (self._io.read_bytes(self.option_field_len)).decode(
