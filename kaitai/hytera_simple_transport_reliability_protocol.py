@@ -38,22 +38,22 @@ class HyteraSimpleTransportReliabilityProtocol(KaitaiStruct):
         self.is_ack = self._io.read_bits_int(1) != 0
         self._io.align_to_byte()
         self.sequence_number = self._io.read_u2be()
-        if (self._io.is_eof() == False) and (self.is_heartbeat == False):
+        if (not (self._io.is_eof())) and (not (self.is_heartbeat)):
             self.options = []
             i = 0
             while True:
                 _ = self._root.Option(self._io, self, self._root)
                 self.options.append(_)
-                if _.expect_more_options == False:
+                if not (_.expect_more_options):
                     break
                 i += 1
 
         if (
-            (self._io.is_eof() == False)
+            (not (self._io.is_eof()))
             and (self.has_option == True)
-            and (self.is_reject == False)
-            and (self.is_close == False)
-            and (self.is_connect == False)
+            and (not (self.is_reject))
+            and (not (self.is_close))
+            and (not (self.is_connect))
         ):
             self.data = []
             i = 0

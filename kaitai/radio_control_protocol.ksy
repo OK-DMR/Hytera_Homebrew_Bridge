@@ -32,6 +32,10 @@ types:
       - id: result
         type: u1
         enum: call_reply_results
+  generic_data:
+    seq:
+      - id: data
+        size: _parent.message_length
 seq:
   - id: service_type
     type: u2le
@@ -45,3 +49,4 @@ seq:
       cases:
         service_types::call_request: call_request
         service_types::call_reply: call_reply
+        _: generic_data

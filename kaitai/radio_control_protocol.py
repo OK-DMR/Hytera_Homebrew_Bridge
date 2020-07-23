@@ -48,6 +48,8 @@ class RadioControlProtocol(KaitaiStruct):
             self.data = self._root.CallRequest(self._io, self, self._root)
         elif _on == self._root.ServiceTypes.call_reply:
             self.data = self._root.CallReply(self._io, self, self._root)
+        else:
+            self.data = self._root.GenericData(self._io, self, self._root)
 
     class CallRequest(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -73,3 +75,13 @@ class RadioControlProtocol(KaitaiStruct):
             self.result = KaitaiStream.resolve_enum(
                 self._root.CallReplyResults, self._io.read_u1()
             )
+
+    class GenericData(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.data = self._io.read_bytes(self._parent.message_length)

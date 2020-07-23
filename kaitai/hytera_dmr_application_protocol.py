@@ -13,11 +13,11 @@ if parse_version(ks_version) < parse_version("0.7"):
 
 from kaitai import telemetry_protocol
 from kaitai import location_protocol
+from kaitai import radio_control_protocol
 from kaitai import data_delivery_states
 from kaitai import radio_registration_service
 from kaitai import text_message_protocol
 from kaitai import data_transmit_protocol
-from kaitai import radio_control_protocol
 
 
 class HyteraDmrApplicationProtocol(KaitaiStruct):
