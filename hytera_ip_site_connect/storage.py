@@ -20,6 +20,7 @@ class RepeaterInfo(dict):
     KEY_HARDWARE = "repeater_hardware"
     KEY_CALLSIGN = "repeater_callsign"
     KEY_REPEATER_MODE = "repeater_mode"
+    KEY_SNMP_DATA = "snmp_data"
     KEY_TX_FREQ = "tx_freq"
     KEY_RX_FREQ = "rx_freq"
 
@@ -125,6 +126,12 @@ class RepeaterInfo(dict):
 
     def set_last_dmr_response(self, set_time: time) -> None:
         self[self.KEY_LAST_DMR_RESPONSE] = set_time
+
+    def set_snmp_data(self, snmp_data: list) -> None:
+        self[self.KEY_SNMP_DATA] = snmp_data
+
+    def get_snmp_data(self) -> list:
+        return self.get(self.KEY_SNMP_DATA, list())
 
 
 class Storage(dict):

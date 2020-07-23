@@ -2,7 +2,7 @@ import time
 
 from .generic_service import GenericHyteraService
 from .storage import Storage
-
+from hytera_common.snmp import SNMP
 
 class P2PHyteraService(GenericHyteraService):
     # letters P2P
@@ -59,6 +59,10 @@ class P2PHyteraService(GenericHyteraService):
         self.serverSocket.sendto(data, address)
         self.log("registration response for %s.%s" % address)
         self.log(data.hex())
+        # will take a second or two, or none if snmp not enabled in settings.ini
+        snmp = SNMP()
+        snmp.load_settings()
+        snmp.walk_ip(address, self.storage)
 
     def handle_rdac_request(self, data: bytes, address: tuple) -> None:
         ip, port = address

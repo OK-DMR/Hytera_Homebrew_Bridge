@@ -3,3 +3,4 @@ configparser>=4.0.2
 kaitaistruct @ git+https://github.com/kaitai-io/kaitai_struct_python_runtime.git
 pprint
 black
+easysnmp
