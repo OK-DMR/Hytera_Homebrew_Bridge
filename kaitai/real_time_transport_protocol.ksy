@@ -1,5 +1,7 @@
 meta:
   id: real_time_transport_protocol
+  imports:
+    - radio_id
 doc: |
   each packet should contain 60ms of voice data for AMBE compatibility
 enums:
@@ -13,17 +15,6 @@ enums:
     0x01: group_call
     0x02: all_call
 types:
-  radio_id:
-    seq:
-      - id: radio_id_1
-        type: u1
-      - id: radio_id_2
-        type: u1
-      - id: radio_id_3
-        type: u1
-    instances:
-      id:
-        value: radio_id_1.to_s + radio_id_2.to_s + radio_id_3.to_s
   fixed_header:
     seq:
       - id: version

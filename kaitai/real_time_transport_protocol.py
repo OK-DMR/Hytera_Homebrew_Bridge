@@ -11,6 +11,8 @@ if parse_version(ks_version) < parse_version("0.7"):
         % (ks_version)
     )
 
+from kaitai import radio_id
+
 
 class RealTimeTransportProtocol(KaitaiStruct):
     """each packet should contain 60ms of voice data for AMBE compatibility
@@ -39,28 +41,6 @@ class RealTimeTransportProtocol(KaitaiStruct):
             )
 
         self.audio_data = self._io.read_bytes_full()
-
-    class RadioId(KaitaiStruct):
-        def __init__(self, _io, _parent=None, _root=None):
-            self._io = _io
-            self._parent = _parent
-            self._root = _root if _root else self
-            self._read()
-
-        def _read(self):
-            self.radio_id_1 = self._io.read_u1()
-            self.radio_id_2 = self._io.read_u1()
-            self.radio_id_3 = self._io.read_u1()
-
-        @property
-        def id(self):
-            if hasattr(self, "_m_id"):
-                return self._m_id if hasattr(self, "_m_id") else None
-
-            self._m_id = (
-                str(self.radio_id_1) + str(self.radio_id_2) + str(self.radio_id_3)
-            )
-            return self._m_id if hasattr(self, "_m_id") else None
 
     class FixedHeader(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -97,8 +77,8 @@ class RealTimeTransportProtocol(KaitaiStruct):
             self.slot = self._io.read_bits_int(7)
             self.last_flag = self._io.read_bits_int(1) != 0
             self._io.align_to_byte()
-            self.source_id = self._root.RadioId(self._io, self, self._root)
-            self.destination_id = self._root.RadioId(self._io, self, self._root)
+            self.source_id = radio_id.RadioId(self._io)
+            self.destination_id = radio_id.RadioId(self._io)
             self.call_type = KaitaiStream.resolve_enum(
                 self._root.CallTypes, self._io.read_u1()
             )
