@@ -1,4 +1,4 @@
-name: Sanity tests
+name: Sanity
 
 on:
   push:
@@ -24,15 +24,13 @@ jobs:
         pip install -r requirements.txt
     - name: run tests with embedded data
       run: |
-	python tests/lp_test.py
-	python tests/hrnp_test.py
-	python tests/hstrp_test.py
+        python tests/lp_test.py
+        python tests/hrnp_test.py
+        python tests/hstrp_test.py
     - name: Lint with flake8
       run: |
-	# kaitai is auto-generated, black formatted, so no need to flake
-	flake8 . --count --exclude kaitai,tests --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-	flake8 . --count --ignore E402 --exclude kaitai --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 . --count --exclude kaitai,tests --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 . --count --ignore E402 --exclude kaitai --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
         pytest
-
