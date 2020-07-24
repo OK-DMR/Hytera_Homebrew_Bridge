@@ -5,3 +5,4 @@ pprint
 black
 easysnmp
 pre-commit
+yamllint
