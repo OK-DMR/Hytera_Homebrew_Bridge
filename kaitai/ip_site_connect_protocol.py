@@ -11,8 +11,6 @@ if parse_version(ks_version) < parse_version("0.7"):
         % (ks_version)
     )
 
-from kaitai import radio_ip
-
 
 class IpSiteConnectProtocol(KaitaiStruct):
     """Hytera IP Multi-Site Protocol re-implementation from dmrshark original
@@ -74,6 +72,32 @@ class IpSiteConnectProtocol(KaitaiStruct):
         self.call_type = KaitaiStream.resolve_enum(
             self._root.CallTypes, self._io.read_u1()
         )
-        self.destination_radio_id = radio_ip.RadioIp(self._io)
-        self.source_radio_id = radio_ip.RadioIp(self._io)
+        self.destination_radio_id_raw = self._io.read_u4le()
+        self.source_radio_id_raw = self._io.read_u4le()
         self.reserved_1b = self._io.read_u1()
+
+    @property
+    def source_radio_id(self):
+        if hasattr(self, "_m_source_radio_id"):
+            return (
+                self._m_source_radio_id if hasattr(self, "_m_source_radio_id") else None
+            )
+
+        self._m_source_radio_id = self.source_radio_id_raw >> 8
+        return self._m_source_radio_id if hasattr(self, "_m_source_radio_id") else None
+
+    @property
+    def destination_radio_id(self):
+        if hasattr(self, "_m_destination_radio_id"):
+            return (
+                self._m_destination_radio_id
+                if hasattr(self, "_m_destination_radio_id")
+                else None
+            )
+
+        self._m_destination_radio_id = self.destination_radio_id_raw >> 8
+        return (
+            self._m_destination_radio_id
+            if hasattr(self, "_m_destination_radio_id")
+            else None
+        )

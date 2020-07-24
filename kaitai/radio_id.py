@@ -22,16 +22,12 @@ class RadioId(KaitaiStruct):
         self._read()
 
     def _read(self):
-        self.radio_id_1 = self._io.read_u1()
-        self.radio_id_2 = self._io.read_u1()
-        self.radio_id_3 = self._io.read_u1()
+        self.radio_id_raw = self._io.read_u4le()
 
     @property
     def radio_id(self):
         if hasattr(self, "_m_radio_id"):
             return self._m_radio_id if hasattr(self, "_m_radio_id") else None
 
-        self._m_radio_id = (
-            str(self.radio_id_1) + str(self.radio_id_2) + str(self.radio_id_3)
-        )
+        self._m_radio_id = self.radio_id_raw >> 8
         return self._m_radio_id if hasattr(self, "_m_radio_id") else None

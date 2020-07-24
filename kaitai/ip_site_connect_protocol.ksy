@@ -1,7 +1,6 @@
 meta:
   id: ip_site_connect_protocol
-  imports:
-    - radio_ip
+  endian: le
 doc: |
   Hytera IP Multi-Site Protocol re-implementation from dmrshark original
 enums:
@@ -29,6 +28,11 @@ enums:
   call_types:
     0x00: private_call
     0x01: group_call
+instances:
+  source_radio_id:
+    value: source_radio_id_raw >> 8
+  destination_radio_id:
+    value: destination_radio_id_raw >> 8
 seq:
   - id: fixed_header
     contents: [0x5a, 0x5a, 0x5a, 0x5a]
@@ -61,9 +65,9 @@ seq:
   - id: call_type
     type: u1
     enum: call_types
-  - id: destination_radio_id
-    type: radio_ip
-  - id: source_radio_id
-    type: radio_ip
+  - id: destination_radio_id_raw
+    type: u4le
+  - id: source_radio_id_raw
+    type: u4le
   - id: reserved_1b
     type: u1

@@ -15,9 +15,9 @@ from kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
 packet = IpSiteConnectProtocol.from_bytes(bytes.fromhex(sys.argv[1]))
 
 print("%s\t%s\tcall:%s\tTS:%s\tpacket_type:%s\tslot_type:%s" % (
-    packet.source_radio_id.radio_id,
-    packet.destination_radio_id.radio_id,
-    packet.call_type,
+    packet.source_radio_id,
+    packet.destination_radio_id,
+    IpSiteConnectProtocol.CallTypes(packet.call_type),
     packet.Timeslots(packet.timeslot_raw),
     packet.PacketTypes(packet.packet_type),
     packet.slot_type
