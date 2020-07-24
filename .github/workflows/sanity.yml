@@ -24,6 +24,7 @@ jobs:
         python tests/lp_test.py
         python tests/hrnp_test.py
         python tests/hstrp_test.py
+        python tests/ipsc_test.py
     - name: Lint with flake8
       run: |
         flake8 . --count --exclude kaitai,tests --exit-zero --max-complexity=10 --max-line-length=127 --statistics

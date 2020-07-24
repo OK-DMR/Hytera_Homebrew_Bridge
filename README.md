@@ -1,6 +1,6 @@
 # Hytera Homebrew Bridge
 
-![.github/workflows/sanity.yml](https://github.com/smarek/Hytera_Homebrew_Bridge/workflows/.github/workflows/sanity.yml/badge.svg)
+![.github/workflows/sanity.yml](https://github.com/smarek/Hytera_Homebrew_Bridge/workflows/Sanity/badge.svg?branch=master)
 ![Code Style: Python Black](https://img.shields.io/badge/code%20style-black-000000.svg)
 ![License](https://img.shields.io/github/license/smarek/Hytera_Homebrew_Bridge)
 

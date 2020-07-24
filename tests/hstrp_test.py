@@ -5,7 +5,6 @@ if __name__ == "__main__":
     import os
 
     sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    print(sys.path)
 
     from kaitai.hytera_simple_transport_reliability_protocol import (
         HyteraSimpleTransportReliabilityProtocol,

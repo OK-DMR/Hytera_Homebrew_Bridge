@@ -18,7 +18,6 @@ if __name__ == "__main__":
     import os
 
     sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-    print(sys.path)
 
     from kaitai.location_protocol import LocationProtocol
     from tests.common import parse_test_data

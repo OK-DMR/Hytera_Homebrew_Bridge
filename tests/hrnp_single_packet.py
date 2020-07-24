@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
-import sys
+if __name__ == "__main__":
+    import sys
+    import os
 
-sys.path.append("..")
+    if len(sys.argv) < 2:
+        print("use as %s <hexstring>" % sys.argv[0])
+        exit(0)
 
-from tests.prettyprint import prettyprint
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-if len(sys.argv) < 2:
-    print("use as %s <hexstring>" % sys.argv[0])
-    exit(0)
+    from tests.prettyprint import prettyprint
+    from kaitai.hytera_radio_network_protocol import HyteraRadioNetworkProtocol
 
-from kaitai.hytera_radio_network_protocol import HyteraRadioNetworkProtocol
-
-packet = HyteraRadioNetworkProtocol.from_bytes(bytes.fromhex(sys.argv[1]))
-prettyprint(packet)
+    packet = HyteraRadioNetworkProtocol.from_bytes(bytes.fromhex(sys.argv[1]))
+    prettyprint(packet)
