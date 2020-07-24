@@ -4,3 +4,4 @@ kaitaistruct @ git+https://github.com/kaitai-io/kaitai_struct_python_runtime.git
 pprint
 black
 easysnmp
+pre-commit

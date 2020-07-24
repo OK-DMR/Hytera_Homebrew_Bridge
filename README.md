@@ -1,5 +1,8 @@
 # Hytera Homebrew Bridge
 
+![Code Style: Python Black](https://img.shields.io/badge/code%20style-black-000000.svg "Code Style: Python Black")
+![License](https://img.shields.io/github/license/smarek/Hytera_Homebrew_Bridge)
+
 **This project is currently non-functional and under heavy development**
 
 **Once the project is working and ready for alpha/beta testing, i'll update this README**

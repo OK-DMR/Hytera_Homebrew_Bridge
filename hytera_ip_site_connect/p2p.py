@@ -4,6 +4,7 @@ from .generic_service import GenericHyteraService
 from .storage import Storage
 from hytera_common.snmp import SNMP
 
+
 class P2PHyteraService(GenericHyteraService):
     # letters P2P
     COMMAND_PREFIX: bytes = bytes([0x50, 0x32, 0x50])
