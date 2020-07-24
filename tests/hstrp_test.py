@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
-import sys
-from glob import glob
-from prettyprint import prettyprint
+if __name__ == "__main__":
+    import sys
+    import os
 
-sys.path.append("..")
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    print(sys.path)
 
-for testfile in sorted(glob("data/hstrp.*")):
-    with open(testfile, "rb") as file:
-        print("----------")
-        print(testfile)
-        from hytera_common.hstrp import HSTRPPacket
+    from kaitai.hytera_simple_transport_reliability_protocol import (
+        HyteraSimpleTransportReliabilityProtocol,
+    )
+    from tests.common import parse_test_data
 
-        packet = HSTRPPacket(file.read())
-        prettyprint(packet.packet)
+    datapath = "%s/data/hstrp.*" % os.path.dirname(os.path.realpath(__file__))
+    parse_test_data(
+        class_name=HyteraSimpleTransportReliabilityProtocol, glob_string=datapath
+    )

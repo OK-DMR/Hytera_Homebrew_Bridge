@@ -1,6 +1,7 @@
 # Hytera Homebrew Bridge
 
-![Code Style: Python Black](https://img.shields.io/badge/code%20style-black-000000.svg "Code Style: Python Black")
+![Sanity checks](https://img.shields.io/github/workflow/status/smarek/Hytera_Homebrew_Bridge/sanity/master)
+![Code Style: Python Black](https://img.shields.io/badge/code%20style-black-000000.svg)
 ![License](https://img.shields.io/github/license/smarek/Hytera_Homebrew_Bridge)
 
 **This project is currently non-functional and under heavy development**

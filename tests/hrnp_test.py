@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 
-import sys
-from glob import glob
+if __name__ == "__main__":
+    import sys
+    import os
 
-from prettyprint import prettyprint
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    print(sys.path)
 
-sys.path.append("..")
+    from kaitai.hytera_radio_network_protocol import HyteraRadioNetworkProtocol
+    from tests.common import parse_test_data
 
-for hrnp_testfile in sorted(glob("data/hrnp.*")):
-    with open(hrnp_testfile, "rb") as file:
-        print("----------")
-        print(hrnp_testfile)
-        from hytera_common.hrnp import HRNPPacket
-
-        packet = HRNPPacket(file.read())
-
-        prettyprint(packet.packet)
+    datapath = "%s/data/hrnp.*" % os.path.dirname(os.path.realpath(__file__))
+    parse_test_data(class_name=HyteraRadioNetworkProtocol, glob_string=datapath)

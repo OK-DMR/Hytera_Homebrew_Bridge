@@ -1,7 +1,12 @@
 from threading import Lock
 from time import time
 
-from .constants import *
+from hytera_ip_site_connect.constants import (
+    DEFAULT_RDAC_PORT,
+    DEFAULT_DMR_PORT,
+    DEFAULT_P2P_PORT,
+    DEFAULT_SERVICE_IP,
+)
 
 
 class RepeaterInfo(dict):

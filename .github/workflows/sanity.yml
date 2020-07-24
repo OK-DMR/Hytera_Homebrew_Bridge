@@ -1,0 +1,38 @@
+name: Sanity tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        pip install -r requirements.txt
+    - name: run tests with embedded data
+      run: |
+	python tests/lp_test.py
+	python tests/hrnp_test.py
+	python tests/hstrp_test.py
+    - name: Lint with flake8
+      run: |
+	# kaitai is auto-generated, black formatted, so no need to flake
+	flake8 . --count --exclude kaitai,tests --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+	flake8 . --count --ignore E402 --exclude kaitai --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Test with pytest
+      run: |
+        pytest
+
