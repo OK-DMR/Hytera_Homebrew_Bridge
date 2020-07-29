@@ -35,7 +35,7 @@ instances:
     value: destination_radio_id_raw >> 8
 seq:
   - id: fixed_header
-    contents: [0x5a, 0x5a, 0x5a, 0x5a]
+    size: 4
   - id: sequence_number
     type: u1
   - id: reserved_3

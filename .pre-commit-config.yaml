@@ -8,4 +8,4 @@ repos:
     rev: v1.24.2
     hooks:
       - id: yamllint
-        args: [-c=.yamllint]
+        args: [-c=.yamllint, .]
