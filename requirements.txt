@@ -1,8 +1,10 @@
 dmr-utils3>=0.1.28
 configparser>=4.0.2
 kaitaistruct @ git+https://github.com/kaitai-io/kaitai_struct_python_runtime.git
-pprint
 black
 easysnmp
 pre-commit
 yamllint
+python-pcapng
+pcapng
+kamene
