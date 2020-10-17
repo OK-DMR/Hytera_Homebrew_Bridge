@@ -17,6 +17,11 @@ enums:
     0x12: telemetry_protocol
     0x13: data_transmit_protocol
     0x14: data_delivery_states
+types:
+  undefined_protocol:
+    seq:
+      - id: data
+        size-eos: true
 instances:
   is_reliable_message:
     type: b1
@@ -40,7 +45,10 @@ seq:
         message_header_types::telemetry_protocol: telemetry_protocol
         message_header_types::data_transmit_protocol: data_transmit_protocol
         message_header_types::data_delivery_states: data_delivery_states
+        #_: undefined_protocol
   - id: checksum
     type: u1
+    #if: not _io.eof
   - id: message_footer
     contents: [0x03]
+    #if: not _io.eof

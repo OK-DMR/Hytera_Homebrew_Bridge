@@ -15,8 +15,8 @@ from kaitai import telemetry_protocol
 from kaitai import location_protocol
 from kaitai import radio_control_protocol
 from kaitai import data_delivery_states
-from kaitai import radio_registration_service
 from kaitai import text_message_protocol
+from kaitai import radio_registration_service
 from kaitai import data_transmit_protocol
 
 
@@ -55,6 +55,16 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
             self.data = data_transmit_protocol.DataTransmitProtocol(self._io)
         self.checksum = self._io.read_u1()
         self.message_footer = self._io.ensure_fixed_contents(b"\x03")
+
+    class UndefinedProtocol(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.data = self._io.read_bytes_full()
 
     @property
     def is_reliable_message(self):

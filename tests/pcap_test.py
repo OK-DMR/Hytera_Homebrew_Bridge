@@ -1,10 +1,30 @@
 #!/usr/bin/env python3
 
 import io
+import traceback
 from datetime import datetime
+
+from kamene.config import conf
+
+conf.ipv6_enabled = False
 
 import kamene.all
 from kamene.layers.l2 import Ether
+
+
+def parse_hytera_data(bytedata):
+    print(bytedata.hex())
+    if bytedata[0:2] == bytes([0x32, 0x42]):
+        # HSTRP
+        return HyteraSimpleTransportReliabilityProtocol.from_bytes(bytedata)
+    elif bytedata[0:1] == bytes([0x7E]):
+        # HRNP
+        return HyteraRadioNetworkProtocol.from_bytes(bytedata)
+    elif int.from_bytes(bytedata[0:1], byteorder="big") & 0x80 == 0x80:
+        return RealTimeTransportProtocol.from_bytes(bytedata)
+    else:
+        # HDAP
+        return HyteraDmrApplicationProtocol.from_bytes(bytedata)
 
 
 def col256(text, fg=None, bg=None, bold=False):
@@ -120,6 +140,21 @@ def format_kamene_packet(packet):
         if f.name in packet.fields:
             if isinstance(packet.fields[f.name], (bytes, bytearray)):
                 val = packet.fields[f.name].hex()
+                if packet.__class__.__name__ == "Raw":
+                    try:
+                        hpd = parse_hytera_data(packet.fields[f.name])
+                        if hpd:
+                            fields.append(
+                                "{0}={1}".format(
+                                    col256(hpd.__class__.__name__, bg="001", fg="345"),
+                                    col256(str(_prettyprint(hpd)), "352"),
+                                )
+                            )
+                        # hrnp = HyteraRadioNetworkProtocol.from_bytes(packet.fields[f.name])
+                        # fields.append("{0}={1}".format(col256("HRNP", "542"), col256(str(_prettyprint(hrnp)), "352")))
+                    except:
+                        # traceback.print_exc()
+                        raise
             else:
                 val = f.i2repr(packet, packet.fields[f.name])
 
@@ -157,17 +192,25 @@ if __name__ == "__main__":
 
     from pcapng.scanner import FileScanner
     from pcapng.blocks import EnhancedPacket
+    from kaitai.hytera_dmr_application_protocol import HyteraDmrApplicationProtocol
+    from kaitai.hytera_radio_network_protocol import HyteraRadioNetworkProtocol
+    from kaitai.hytera_simple_transport_reliability_protocol import (
+        HyteraSimpleTransportReliabilityProtocol,
+    )
+    from kaitai.real_time_transport_protocol import RealTimeTransportProtocol
+    from tests.prettyprint import _prettyprint
     import kamene.packet
 
     with open(sys.argv[1], "rb") as testfile:
         scanner = FileScanner(testfile)
-        print("print first 100 packets")
+        # print("print first 100 packets")
         limit = 100
         counter = 0
         for block in scanner:
             if isinstance(block, EnhancedPacket):
                 counter += 1
                 pprint_enhanced_packet(block)
-                if counter >= limit:
-                    print("100 packets printed")
-                    break
+                # if counter >= limit:
+                #    print("100 packets printed")
+                #    break
+        print("{0} packets worked through".format(counter))

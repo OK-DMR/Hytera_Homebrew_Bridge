@@ -12,8 +12,7 @@ if parse_version(ks_version) < parse_version("0.7"):
 
 
 class RadioId(KaitaiStruct):
-    """represented as 3 bytes, each byte interpreted as number (0-255)
-    """
+    """represented as 3 bytes, each byte interpreted as number (0-255)"""
 
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io

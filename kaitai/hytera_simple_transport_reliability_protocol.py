@@ -27,7 +27,7 @@ class HyteraSimpleTransportReliabilityProtocol(KaitaiStruct):
         self._read()
 
     def _read(self):
-        self.header = (self._io.read_bytes(2)).decode(u"UTF-8")
+        self.header = self._io.ensure_fixed_contents(b"\x32\x42")
         self.version = self._io.read_u1()
         self.reserved = self._io.read_bits_int(2)
         self.has_option = self._io.read_bits_int(1) != 0

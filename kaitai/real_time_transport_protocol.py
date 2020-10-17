@@ -15,8 +15,7 @@ from kaitai import radio_id
 
 
 class RealTimeTransportProtocol(KaitaiStruct):
-    """each packet should contain 60ms of voice data for AMBE compatibility
-    """
+    """each packet should contain 60ms of voice data for AMBE compatibility"""
 
     class RtpPayloadTypes(Enum):
         mu_law = 0

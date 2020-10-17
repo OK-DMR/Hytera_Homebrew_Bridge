@@ -13,8 +13,7 @@ if parse_version(ks_version) < parse_version("0.7"):
 
 
 class IpSiteConnectProtocol(KaitaiStruct):
-    """Hytera IP Multi-Site Protocol re-implementation from dmrshark original
-    """
+    """Hytera IP Multi-Site Protocol re-implementation from dmrshark original"""
 
     class SlotTypes(Enum):
         slot_type_unknown = 0
@@ -51,7 +50,7 @@ class IpSiteConnectProtocol(KaitaiStruct):
         self._read()
 
     def _read(self):
-        self.fixed_header = self._io.ensure_fixed_contents(b"\x5A\x5A\x5A\x5A")
+        self.fixed_header = self._io.read_bytes(4)
         self.sequence_number = self._io.read_u1()
         self.reserved_3 = self._io.read_bytes(3)
         self.packet_type = KaitaiStream.resolve_enum(

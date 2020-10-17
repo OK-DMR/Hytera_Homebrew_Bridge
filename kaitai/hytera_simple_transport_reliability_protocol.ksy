@@ -4,9 +4,7 @@ meta:
     - hytera_dmr_application_protocol
 seq:
   - id: header
-    type: str
-    size: 2
-    encoding: UTF-8
+    contents: 2B
     doc: should be ascii 2B
   - id: version
     type: u1

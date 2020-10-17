@@ -12,8 +12,7 @@ if parse_version(ks_version) < parse_version("0.7"):
 
 
 class Datetimestring(KaitaiStruct):
-    """time in format yyyyMMddhhmmss, timezone GMT
-    """
+    """time in format yyyyMMddhhmmss, timezone GMT"""
 
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
