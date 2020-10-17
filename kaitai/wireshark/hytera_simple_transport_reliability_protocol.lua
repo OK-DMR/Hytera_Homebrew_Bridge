@@ -1,11 +1,10 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.3
+-- This file is compatible with Lua 5.1
 
 local class = require("class")
 require("kaitaistruct")
 local enum = require("enum")
-local str_decode = require("string_decode")
 
 require("hytera_dmr_application_protocol")
 HyteraSimpleTransportReliabilityProtocol = class.class(KaitaiStruct)
@@ -24,23 +23,26 @@ function HyteraSimpleTransportReliabilityProtocol:_init(io, parent, root)
 end
 
 function HyteraSimpleTransportReliabilityProtocol:_read()
-  self.header = str_decode.decode(self._io:read_bytes(2), "UTF-8")
+  self.header = self._io:read_bytes(2)
+  if not(self.header == "\050\066") then
+    error("not equal, expected " ..  "\050\066" .. ", but got " .. self.header)
+  end
   self.version = self._io:read_u1()
-  self.reserved = self._io:read_bits_int(2)
-  self.has_option = self._io:read_bits_int(1)
-  self.is_reject = self._io:read_bits_int(1)
-  self.is_close = self._io:read_bits_int(1)
-  self.is_connect = self._io:read_bits_int(1)
-  self.is_heartbeat = self._io:read_bits_int(1)
-  self.is_ack = self._io:read_bits_int(1)
+  self.reserved = self._io:read_bits_int_be(2)
+  self.has_option = self._io:read_bits_int_be(1)
+  self.is_reject = self._io:read_bits_int_be(1)
+  self.is_close = self._io:read_bits_int_be(1)
+  self.is_connect = self._io:read_bits_int_be(1)
+  self.is_heartbeat = self._io:read_bits_int_be(1)
+  self.is_ack = self._io:read_bits_int_be(1)
   self._io:align_to_byte()
   self.sequence_number = self._io:read_u2be()
   if  ((not(self._io:is_eof())) and (not(self.is_heartbeat)))  then
     self.options = {}
-    local i = 1
+    local i = 0
     while true do
       _ = HyteraSimpleTransportReliabilityProtocol.Option(self._io, self, self._root)
-      self.options[i] = _
+      self.options[i + 1] = _
       if not(_.expect_more_options) then
         break
       end
@@ -49,9 +51,9 @@ function HyteraSimpleTransportReliabilityProtocol:_read()
 end
 if  ((not(self._io:is_eof())) and (self.has_option == 1) and (not(self.is_reject)) and (not(self.is_close)) and (not(self.is_connect)))  then
   self.data = {}
-  local i = 1
+  local i = 0
   while not self._io:is_eof() do
-    self.data[i] = HyteraDmrApplicationProtocol(self._io)
+    self.data[i + 1] = HyteraDmrApplicationProtocol(self._io)
     i = i + 1
   end
 end
@@ -74,8 +76,8 @@ self:_read()
 end
 
 function HyteraSimpleTransportReliabilityProtocol.Option:_read()
-self.expect_more_options = self._io:read_bits_int(1)
-self.command = HyteraSimpleTransportReliabilityProtocol.OptionCommands(self._io:read_bits_int(7))
+self.expect_more_options = self._io:read_bits_int_be(1)
+self.command = HyteraSimpleTransportReliabilityProtocol.OptionCommands(self._io:read_bits_int_be(7))
 self._io:align_to_byte()
 self.option_data_length = self._io:read_u1()
 self.option_payload = self._io:read_bytes(self.option_data_length)

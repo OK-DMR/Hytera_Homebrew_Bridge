@@ -1,14 +1,15 @@
 # This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
 from pkg_resources import parse_version
-from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
+import kaitaistruct
+from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
 from enum import Enum
 
 
-if parse_version(ks_version) < parse_version("0.7"):
+if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
     raise Exception(
-        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
-        % (ks_version)
+        "Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s"
+        % (kaitaistruct.__version__)
     )
 
 
@@ -40,16 +41,16 @@ class RadioControlProtocol(KaitaiStruct):
 
     def _read(self):
         self.service_type = KaitaiStream.resolve_enum(
-            self._root.ServiceTypes, self._io.read_u2le()
+            RadioControlProtocol.ServiceTypes, self._io.read_u2le()
         )
         self.message_length = self._io.read_u2le()
         _on = self.service_type
-        if _on == self._root.ServiceTypes.call_request:
-            self.data = self._root.CallRequest(self._io, self, self._root)
-        elif _on == self._root.ServiceTypes.call_reply:
-            self.data = self._root.CallReply(self._io, self, self._root)
+        if _on == RadioControlProtocol.ServiceTypes.call_request:
+            self.data = RadioControlProtocol.CallRequest(self._io, self, self._root)
+        elif _on == RadioControlProtocol.ServiceTypes.call_reply:
+            self.data = RadioControlProtocol.CallReply(self._io, self, self._root)
         else:
-            self.data = self._root.GenericData(self._io, self, self._root)
+            self.data = RadioControlProtocol.GenericData(self._io, self, self._root)
 
     class CallRequest(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -60,7 +61,7 @@ class RadioControlProtocol(KaitaiStruct):
 
         def _read(self):
             self.call_type = KaitaiStream.resolve_enum(
-                self._root.CallTypes, self._io.read_u1()
+                RadioControlProtocol.CallTypes, self._io.read_u1()
             )
             self.target_id = self._io.read_u4le()
 
@@ -73,7 +74,7 @@ class RadioControlProtocol(KaitaiStruct):
 
         def _read(self):
             self.result = KaitaiStream.resolve_enum(
-                self._root.CallReplyResults, self._io.read_u1()
+                RadioControlProtocol.CallReplyResults, self._io.read_u1()
             )
 
     class GenericData(KaitaiStruct):

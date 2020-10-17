@@ -1,14 +1,15 @@
 # This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
 from pkg_resources import parse_version
-from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
+import kaitaistruct
+from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
 from enum import Enum
 
 
-if parse_version(ks_version) < parse_version("0.7"):
+if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
     raise Exception(
-        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
-        % (ks_version)
+        "Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s"
+        % (kaitaistruct.__version__)
     )
 
 
@@ -54,22 +55,26 @@ class IpSiteConnectProtocol(KaitaiStruct):
         self.sequence_number = self._io.read_u1()
         self.reserved_3 = self._io.read_bytes(3)
         self.packet_type = KaitaiStream.resolve_enum(
-            self._root.PacketTypes, self._io.read_u1()
+            IpSiteConnectProtocol.PacketTypes, self._io.read_u1()
         )
         self.reserved_7a = self._io.read_bytes(7)
         self.timeslot_raw = KaitaiStream.resolve_enum(
-            self._root.Timeslots, self._io.read_u2be()
+            IpSiteConnectProtocol.Timeslots, self._io.read_u2be()
         )
         self.slot_type = KaitaiStream.resolve_enum(
-            self._root.SlotTypes, self._io.read_u2be()
+            IpSiteConnectProtocol.SlotTypes, self._io.read_u2be()
         )
-        self.delimiter = self._io.ensure_fixed_contents(b"\x11\x11")
+        self.delimiter = self._io.read_bytes(2)
+        if not self.delimiter == b"\x11\x11":
+            raise kaitaistruct.ValidationNotEqualError(
+                b"\x11\x11", self.delimiter, self._io, u"/seq/7"
+            )
         self.frame_type = self._io.read_u2be()
         self.reserved_2a = self._io.read_bytes(2)
         self.ipsc_payload = self._io.read_bytes(34)
         self.reserved_2b = self._io.read_bytes(2)
         self.call_type = KaitaiStream.resolve_enum(
-            self._root.CallTypes, self._io.read_u1()
+            IpSiteConnectProtocol.CallTypes, self._io.read_u1()
         )
         self.destination_radio_id_raw = self._io.read_u4le()
         self.source_radio_id_raw = self._io.read_u4le()

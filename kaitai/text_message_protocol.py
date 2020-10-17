@@ -1,14 +1,15 @@
 # This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
 from pkg_resources import parse_version
-from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
+import kaitaistruct
+from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
 from enum import Enum
 
 
-if parse_version(ks_version) < parse_version("0.7"):
+if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
     raise Exception(
-        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
-        % (ks_version)
+        "Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s"
+        % (kaitaistruct.__version__)
     )
 
 from kaitai import radio_ip
@@ -51,15 +52,15 @@ class TextMessageProtocol(KaitaiStruct):
 
     def _read(self):
         self.ack_flag = KaitaiStream.resolve_enum(
-            self._root.AckFlags, self._io.read_bits_int(1)
+            TextMessageProtocol.AckFlags, self._io.read_bits_int_be(1)
         )
         self.option_flag = KaitaiStream.resolve_enum(
-            self._root.OptionFlags, self._io.read_bits_int(1)
+            TextMessageProtocol.OptionFlags, self._io.read_bits_int_be(1)
         )
-        self.reserved = self._io.read_bits_int(6)
+        self.reserved = self._io.read_bits_int_be(6)
         self._io.align_to_byte()
         self.service_type = KaitaiStream.resolve_enum(
-            self._root.ServiceTypes, self._io.read_u1()
+            TextMessageProtocol.ServiceTypes, self._io.read_u1()
         )
         self.message_length = self._io.read_u2be()
         if self.option_flag.value == 1:
@@ -67,19 +68,22 @@ class TextMessageProtocol(KaitaiStruct):
 
         self.request_id = self._io.read_u4be()
         self.destination_ip = radio_ip.RadioIp(self._io)
-        if self.service_type != self._root.ServiceTypes.send_group_message_ack:
+        if self.service_type != TextMessageProtocol.ServiceTypes.send_group_message_ack:
             self.source_ip = radio_ip.RadioIp(self._io)
 
-        if (self.service_type == self._root.ServiceTypes.send_private_message_ack) or (
-            self.service_type == self._root.ServiceTypes.send_group_message_ack
+        if (
+            self.service_type
+            == TextMessageProtocol.ServiceTypes.send_private_message_ack
+        ) or (
+            self.service_type == TextMessageProtocol.ServiceTypes.send_group_message_ack
         ):
             self.result = KaitaiStream.resolve_enum(
-                self._root.ResultCodes, self._io.read_u1()
+                TextMessageProtocol.ResultCodes, self._io.read_u1()
             )
 
-        if (self.service_type == self._root.ServiceTypes.send_private_message) or (
-            self.service_type == self._root.ServiceTypes.send_group_message
-        ):
+        if (
+            self.service_type == TextMessageProtocol.ServiceTypes.send_private_message
+        ) or (self.service_type == TextMessageProtocol.ServiceTypes.send_group_message):
             self.tmdata = (self._io.read_bytes_term(0, False, True, True)).decode(
                 u"UTF16-LE"
             )

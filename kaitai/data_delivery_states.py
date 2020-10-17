@@ -1,14 +1,15 @@
 # This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
 from pkg_resources import parse_version
-from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
+import kaitaistruct
+from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
 from enum import Enum
 
 
-if parse_version(ks_version) < parse_version("0.7"):
+if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
     raise Exception(
-        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
-        % (ks_version)
+        "Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s"
+        % (kaitaistruct.__version__)
     )
 
 from kaitai import radio_ip
@@ -41,9 +42,11 @@ class DataDeliveryStates(KaitaiStruct):
     def _read(self):
         self.reserved = self._io.read_bytes(1)
         self.state_type = KaitaiStream.resolve_enum(
-            self._root.StateTypes, self._io.read_u1()
+            DataDeliveryStates.StateTypes, self._io.read_u1()
         )
         self.message_length = self._io.read_u2be()
         self.radio_ip = radio_ip.RadioIp(self._io)
         self.protocol_opcode = self._io.read_u2be()
-        self.result = KaitaiStream.resolve_enum(self._root.Results, self._io.read_u1())
+        self.result = KaitaiStream.resolve_enum(
+            DataDeliveryStates.Results, self._io.read_u1()
+        )

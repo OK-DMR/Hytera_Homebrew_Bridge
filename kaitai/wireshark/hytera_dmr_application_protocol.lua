@@ -1,6 +1,6 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.3
+-- This file is compatible with Lua 5.1
 
 local class = require("class")
 require("kaitaistruct")
@@ -8,11 +8,11 @@ local enum = require("enum")
 
 require("telemetry_protocol")
 require("location_protocol")
-require("radio_control_protocol")
-require("data_delivery_states")
 require("text_message_protocol")
-require("data_transmit_protocol")
+require("data_delivery_states")
 require("radio_registration_service")
+require("radio_control_protocol")
+require("data_transmit_protocol")
 HyteraDmrApplicationProtocol = class.class(KaitaiStruct)
 
 HyteraDmrApplicationProtocol.MessageHeaderTypes = enum.Enum {
@@ -51,7 +51,10 @@ function HyteraDmrApplicationProtocol:_read()
     self.data = DataTransmitProtocol(self._io)
   end
   self.checksum = self._io:read_u1()
-  self.message_footer = self._io:ensure_fixed_contents("\003")
+  self.message_footer = self._io:read_bytes(1)
+  if not(self.message_footer == "\003") then
+    error("not equal, expected " ..  "\003" .. ", but got " .. self.message_footer)
+  end
 end
 
 HyteraDmrApplicationProtocol.property.is_reliable_message = {}
@@ -62,7 +65,7 @@ function HyteraDmrApplicationProtocol.property.is_reliable_message:get()
 
   local _pos = self._io:pos()
   self._io:seek(0)
-  self._m_is_reliable_message = self._io:read_bits_int(1)
+  self._m_is_reliable_message = self._io:read_bits_int_be(1)
   self._io:seek(_pos)
   return self._m_is_reliable_message
 end
@@ -79,4 +82,18 @@ end
 
 -- 
 -- contains opcode (2 bytes), payload length (2 bytes) and payload (if length > 0)
+
+HyteraDmrApplicationProtocol.UndefinedProtocol = class.class(KaitaiStruct)
+
+function HyteraDmrApplicationProtocol.UndefinedProtocol:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function HyteraDmrApplicationProtocol.UndefinedProtocol:_read()
+  self.data = self._io:read_bytes_full()
+end
+
 

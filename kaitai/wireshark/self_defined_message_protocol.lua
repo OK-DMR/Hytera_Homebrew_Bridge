@@ -1,6 +1,6 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.3
+-- This file is compatible with Lua 5.1
 
 local class = require("class")
 require("kaitaistruct")
@@ -65,9 +65,9 @@ function SelfDefinedMessageProtocol:_init(io, parent, root)
 end
 
 function SelfDefinedMessageProtocol:_read()
-  self.ack_flag = SelfDefinedMessageProtocol.AckFlags(self._io:read_bits_int(1))
-  self.option_flag = SelfDefinedMessageProtocol.OptionFlags(self._io:read_bits_int(1))
-  self.reserved = self._io:read_bits_int(6)
+  self.ack_flag = SelfDefinedMessageProtocol.AckFlags(self._io:read_bits_int_be(1))
+  self.option_flag = SelfDefinedMessageProtocol.OptionFlags(self._io:read_bits_int_be(1))
+  self.reserved = self._io:read_bits_int_be(6)
   self._io:align_to_byte()
   self.service_type = SelfDefinedMessageProtocol.ServiceTypes(self._io:read_u1())
   self.message_length = self._io:read_u2be()
@@ -156,7 +156,10 @@ function SelfDefinedMessageProtocol.WorkOrder:_init(io, parent, root)
 end
 
 function SelfDefinedMessageProtocol.WorkOrder:_read()
-  self.work_order_header = self._io:ensure_fixed_contents("\255\255\255\255")
+  self.work_order_header = self._io:read_bytes(4)
+  if not(self.work_order_header == "\255\255\255\255") then
+    error("not equal, expected " ..  "\255\255\255\255" .. ", but got " .. self.work_order_header)
+  end
   self.date = SelfDefinedMessageProtocol.Date(self._io, self, self._root)
   self.sequence_number = self._io:read_u4be()
   self.work_state = SelfDefinedMessageProtocol.WorkStates(self._io:read_u2be())

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import io
-import traceback
 from datetime import datetime
 
 from kamene.config import conf
@@ -13,7 +12,6 @@ from kamene.layers.l2 import Ether
 
 
 def parse_hytera_data(bytedata):
-    print(bytedata.hex())
     if bytedata[0:2] == bytes([0x32, 0x42]):
         # HSTRP
         return HyteraSimpleTransportReliabilityProtocol.from_bytes(bytedata)
@@ -154,6 +152,11 @@ def format_kamene_packet(packet):
                         # fields.append("{0}={1}".format(col256("HRNP", "542"), col256(str(_prettyprint(hrnp)), "352")))
                     except:
                         # traceback.print_exc()
+                        print(
+                            "Could not parse message {0}".format(
+                                packet.fields[f.name].hex()
+                            )
+                        )
                         raise
             else:
                 val = f.i2repr(packet, packet.fields[f.name])

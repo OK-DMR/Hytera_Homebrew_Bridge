@@ -1,20 +1,21 @@
 # This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
 from pkg_resources import parse_version
-from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
+import kaitaistruct
+from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
 from enum import Enum
 
 
-if parse_version(ks_version) < parse_version("0.7"):
+if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
     raise Exception(
-        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
-        % (ks_version)
+        "Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s"
+        % (kaitaistruct.__version__)
     )
 
-from kaitai import radio_ip
 from kaitai import datetimestring
-from kaitai import intervalstring
 from kaitai import gpsdata
+from kaitai import radio_ip
+from kaitai import intervalstring
 
 
 class LocationProtocol(KaitaiStruct):
@@ -67,40 +68,56 @@ class LocationProtocol(KaitaiStruct):
         self.opcode_header = self._io.read_bytes(2)
         self.message_length = self._io.read_u2be()
         _on = self.opcode_header_int
-        if _on == self._root.LpSpecificTypes.triggered_report_answer:
-            self.data = self._root.TriggeredReportAnswer(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.emergency_report_stop_request:
-            self.data = self._root.EmergencyReportStopRequest(
+        if _on == LocationProtocol.LpSpecificTypes.triggered_report_answer:
+            self.data = LocationProtocol.TriggeredReportAnswer(
                 self._io, self, self._root
             )
-        elif _on == self._root.LpSpecificTypes.condition_quick_gps_request:
-            self.data = self._root.ConditionQuickGpsRequest(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.condition_report:
-            self.data = self._root.ConditionReport(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.emergency_report_stop_answer:
-            self.data = self._root.EmergencyReportStopAnswer(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.condition_report_answer:
-            self.data = self._root.ConditionReportAnswer(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.standard_answer:
-            self.data = self._root.StandardAnswer(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.standard_request:
-            self.data = self._root.StandardRequest(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.triggered_report:
-            self.data = self._root.TriggeredReport(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.triggered_report_stop_answer:
-            self.data = self._root.TriggeredReportStopAnswer(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.triggered_report_stop_request:
-            self.data = self._root.TriggeredReportStopRequest(
+        elif _on == LocationProtocol.LpSpecificTypes.emergency_report_stop_request:
+            self.data = LocationProtocol.EmergencyReportStopRequest(
                 self._io, self, self._root
             )
-        elif _on == self._root.LpSpecificTypes.emergency_report:
-            self.data = self._root.EmergencyReport(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.condition_report_request:
-            self.data = self._root.ConditionReportRequest(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.triggered_report_request:
-            self.data = self._root.TriggeredReportRequest(self._io, self, self._root)
-        elif _on == self._root.LpSpecificTypes.condition_quick_gps_answer:
-            self.data = self._root.ConditionQuickGpsAnswer(self._io, self, self._root)
+        elif _on == LocationProtocol.LpSpecificTypes.condition_quick_gps_request:
+            self.data = LocationProtocol.ConditionQuickGpsRequest(
+                self._io, self, self._root
+            )
+        elif _on == LocationProtocol.LpSpecificTypes.condition_report:
+            self.data = LocationProtocol.ConditionReport(self._io, self, self._root)
+        elif _on == LocationProtocol.LpSpecificTypes.emergency_report_stop_answer:
+            self.data = LocationProtocol.EmergencyReportStopAnswer(
+                self._io, self, self._root
+            )
+        elif _on == LocationProtocol.LpSpecificTypes.condition_report_answer:
+            self.data = LocationProtocol.ConditionReportAnswer(
+                self._io, self, self._root
+            )
+        elif _on == LocationProtocol.LpSpecificTypes.standard_answer:
+            self.data = LocationProtocol.StandardAnswer(self._io, self, self._root)
+        elif _on == LocationProtocol.LpSpecificTypes.standard_request:
+            self.data = LocationProtocol.StandardRequest(self._io, self, self._root)
+        elif _on == LocationProtocol.LpSpecificTypes.triggered_report:
+            self.data = LocationProtocol.TriggeredReport(self._io, self, self._root)
+        elif _on == LocationProtocol.LpSpecificTypes.triggered_report_stop_answer:
+            self.data = LocationProtocol.TriggeredReportStopAnswer(
+                self._io, self, self._root
+            )
+        elif _on == LocationProtocol.LpSpecificTypes.triggered_report_stop_request:
+            self.data = LocationProtocol.TriggeredReportStopRequest(
+                self._io, self, self._root
+            )
+        elif _on == LocationProtocol.LpSpecificTypes.emergency_report:
+            self.data = LocationProtocol.EmergencyReport(self._io, self, self._root)
+        elif _on == LocationProtocol.LpSpecificTypes.condition_report_request:
+            self.data = LocationProtocol.ConditionReportRequest(
+                self._io, self, self._root
+            )
+        elif _on == LocationProtocol.LpSpecificTypes.triggered_report_request:
+            self.data = LocationProtocol.TriggeredReportRequest(
+                self._io, self, self._root
+            )
+        elif _on == LocationProtocol.LpSpecificTypes.condition_quick_gps_answer:
+            self.data = LocationProtocol.ConditionQuickGpsAnswer(
+                self._io, self, self._root
+            )
 
     class TriggeredReportStopAnswer(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -113,7 +130,7 @@ class LocationProtocol(KaitaiStruct):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
             self.result = KaitaiStream.resolve_enum(
-                self._root.ResultCodes, self._io.read_u2be()
+                LocationProtocol.ResultCodes, self._io.read_u2be()
             )
 
     class ConditionReportRequest(KaitaiStruct):
@@ -144,10 +161,10 @@ class LocationProtocol(KaitaiStruct):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
             self.cmd_type = KaitaiStream.resolve_enum(
-                self._root.CmdTypes, self._io.read_u1()
+                LocationProtocol.CmdTypes, self._io.read_u1()
             )
-            if self.cmd_type == self._root.CmdTypes.start_request:
-                self.quick_gps_payload = self._root.QuickGpsPayload(
+            if self.cmd_type == LocationProtocol.CmdTypes.start_request:
+                self.quick_gps_payload = LocationProtocol.QuickGpsPayload(
                     self._io, self, self._root
                 )
 
@@ -186,7 +203,7 @@ class LocationProtocol(KaitaiStruct):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
             self.result = KaitaiStream.resolve_enum(
-                self._root.ResultCodes, self._io.read_u2be()
+                LocationProtocol.ResultCodes, self._io.read_u2be()
             )
 
     class QuickGpsPayload(KaitaiStruct):
@@ -240,7 +257,7 @@ class LocationProtocol(KaitaiStruct):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
             self.result = KaitaiStream.resolve_enum(
-                self._root.ResultCodes, self._io.read_u2be()
+                LocationProtocol.ResultCodes, self._io.read_u2be()
             )
             self.gpsdata = gpsdata.Gpsdata(self._io)
 
@@ -255,10 +272,10 @@ class LocationProtocol(KaitaiStruct):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
             self.trigger_type = KaitaiStream.resolve_enum(
-                self._root.TriggerTypes, self._io.read_u1()
+                LocationProtocol.TriggerTypes, self._io.read_u1()
             )
             self.result = KaitaiStream.resolve_enum(
-                self._root.ResultCodes, self._io.read_u2be()
+                LocationProtocol.ResultCodes, self._io.read_u2be()
             )
 
     class EmergencyReportStopRequest(KaitaiStruct):
@@ -283,10 +300,10 @@ class LocationProtocol(KaitaiStruct):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
             self.cmd_type = KaitaiStream.resolve_enum(
-                self._root.CmdTypes, self._io.read_u1()
+                LocationProtocol.CmdTypes, self._io.read_u1()
             )
             self.result = KaitaiStream.resolve_enum(
-                self._root.ResultCodes, self._io.read_u2be()
+                LocationProtocol.ResultCodes, self._io.read_u2be()
             )
 
     class TriggeredReport(KaitaiStruct):
@@ -313,7 +330,7 @@ class LocationProtocol(KaitaiStruct):
             self.request_id = self._io.read_u4be()
             self.radio_ip = radio_ip.RadioIp(self._io)
             self.result = KaitaiStream.resolve_enum(
-                self._root.ResultCodes, self._io.read_u2be()
+                LocationProtocol.ResultCodes, self._io.read_u2be()
             )
 
     class TriggeredReportStopRequest(KaitaiStruct):
@@ -335,7 +352,7 @@ class LocationProtocol(KaitaiStruct):
         _pos = self._io.pos()
         self._io.seek(0)
         self._m_opcode = KaitaiStream.resolve_enum(
-            self._root.LpGeneralTypes, self._io.read_u1()
+            LocationProtocol.LpGeneralTypes, self._io.read_u1()
         )
         self._io.seek(_pos)
         return self._m_opcode if hasattr(self, "_m_opcode") else None
@@ -352,7 +369,7 @@ class LocationProtocol(KaitaiStruct):
         _pos = self._io.pos()
         self._io.seek(0)
         self._m_opcode_header_int = KaitaiStream.resolve_enum(
-            self._root.LpSpecificTypes, self._io.read_u2be()
+            LocationProtocol.LpSpecificTypes, self._io.read_u2be()
         )
         self._io.seek(_pos)
         return (

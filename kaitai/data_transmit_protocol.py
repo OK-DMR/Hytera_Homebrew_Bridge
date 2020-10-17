@@ -1,14 +1,15 @@
 # This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
 from pkg_resources import parse_version
-from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
+import kaitaistruct
+from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
 from enum import Enum
 
 
-if parse_version(ks_version) < parse_version("0.7"):
+if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
     raise Exception(
-        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
-        % (ks_version)
+        "Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s"
+        % (kaitaistruct.__version__)
     )
 
 from kaitai import radio_ip
@@ -38,25 +39,29 @@ class DataTransmitProtocol(KaitaiStruct):
 
     def _read(self):
         self.service_type = KaitaiStream.resolve_enum(
-            self._root.ServiceTypes, self._io.read_u1()
+            DataTransmitProtocol.ServiceTypes, self._io.read_u1()
         )
         self.service_specific_type = KaitaiStream.resolve_enum(
-            self._root.ServiceSpecificTypes, self._io.read_u1()
+            DataTransmitProtocol.ServiceSpecificTypes, self._io.read_u1()
         )
         self.message_length = self._io.read_u2be()
         _on = self.service_specific_type
-        if _on == self._root.ServiceSpecificTypes.dtp_request:
-            self.data = self._root.DtpRequest(self._io, self, self._root)
-        elif _on == self._root.ServiceSpecificTypes.data_slice_transmit:
-            self.data = self._root.DataSliceTransmit(self._io, self, self._root)
-        elif _on == self._root.ServiceSpecificTypes.data_slice_answer:
-            self.data = self._root.DataSliceAnswer(self._io, self, self._root)
-        elif _on == self._root.ServiceSpecificTypes.last_data_slice_answer:
-            self.data = self._root.LastDataSliceAnswer(self._io, self, self._root)
-        elif _on == self._root.ServiceSpecificTypes.dtp_answer:
-            self.data = self._root.DtpAnswer(self._io, self, self._root)
-        elif _on == self._root.ServiceSpecificTypes.last_data_slice:
-            self.data = self._root.LastDataSlice(self._io, self, self._root)
+        if _on == DataTransmitProtocol.ServiceSpecificTypes.dtp_request:
+            self.data = DataTransmitProtocol.DtpRequest(self._io, self, self._root)
+        elif _on == DataTransmitProtocol.ServiceSpecificTypes.data_slice_transmit:
+            self.data = DataTransmitProtocol.DataSliceTransmit(
+                self._io, self, self._root
+            )
+        elif _on == DataTransmitProtocol.ServiceSpecificTypes.data_slice_answer:
+            self.data = DataTransmitProtocol.DataSliceAnswer(self._io, self, self._root)
+        elif _on == DataTransmitProtocol.ServiceSpecificTypes.last_data_slice_answer:
+            self.data = DataTransmitProtocol.LastDataSliceAnswer(
+                self._io, self, self._root
+            )
+        elif _on == DataTransmitProtocol.ServiceSpecificTypes.dtp_answer:
+            self.data = DataTransmitProtocol.DtpAnswer(self._io, self, self._root)
+        elif _on == DataTransmitProtocol.ServiceSpecificTypes.last_data_slice:
+            self.data = DataTransmitProtocol.LastDataSlice(self._io, self, self._root)
 
     class LastDataSlice(KaitaiStruct):
         """sent by transmit source, requires answer from the destination."""
@@ -98,7 +103,7 @@ class DataTransmitProtocol(KaitaiStruct):
             self.source_ip = radio_ip.RadioIp(self._io)
             self.block_number = self._io.read_u2be()
             self.result = KaitaiStream.resolve_enum(
-                self._root.Results, self._io.read_u1()
+                DataTransmitProtocol.Results, self._io.read_u1()
             )
 
     class DataSliceTransmit(KaitaiStruct):
@@ -125,7 +130,7 @@ class DataTransmitProtocol(KaitaiStruct):
             self.destination_ip = radio_ip.RadioIp(self._io)
             self.source_ip = radio_ip.RadioIp(self._io)
             self.result = KaitaiStream.resolve_enum(
-                self._root.Results, self._io.read_u1()
+                DataTransmitProtocol.Results, self._io.read_u1()
             )
 
     class DtpAnswer(KaitaiStruct):
@@ -139,5 +144,5 @@ class DataTransmitProtocol(KaitaiStruct):
             self.destination_ip = radio_ip.RadioIp(self._io)
             self.source_ip = radio_ip.RadioIp(self._io)
             self.result = KaitaiStream.resolve_enum(
-                self._root.Results, self._io.read_u1()
+                DataTransmitProtocol.Results, self._io.read_u1()
             )

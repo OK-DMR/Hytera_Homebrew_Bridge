@@ -1,6 +1,6 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.3
+-- This file is compatible with Lua 5.1
 
 local class = require("class")
 require("kaitaistruct")
@@ -27,7 +27,10 @@ function HyteraRadioNetworkProtocol:_init(io, parent, root)
 end
 
 function HyteraRadioNetworkProtocol:_read()
-  self.header_identifier = self._io:ensure_fixed_contents("\126")
+  self.header_identifier = self._io:read_bytes(1)
+  if not(self.header_identifier == "\126") then
+    error("not equal, expected " ..  "\126" .. ", but got " .. self.header_identifier)
+  end
   self.version = self._io:read_u1()
   self.block = self._io:read_u1()
   self.opcode = HyteraRadioNetworkProtocol.Opcodes(self._io:read_u1())

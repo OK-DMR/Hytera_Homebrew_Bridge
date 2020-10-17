@@ -42,8 +42,8 @@ function struct.pack(format, ...)
 
       local bytes = {}
       for j = 1, n do
-        table.insert(bytes, string.char(val % (2 ^ 8)))
-        val = math.floor(val / (2 ^ 8))
+        table.insert(bytes, string.char(val % math.floor(2 ^ 8)))
+        val = math.floor(val / math.floor(2 ^ 8))
       end
 
       if not endianness then
@@ -133,10 +133,13 @@ function struct.unpack(format, stream, pos)
       local val = 0
       for j = 1, n do
         local byte = string.byte(stream:sub(iterator, iterator))
+        if byte == nil then
+          break
+        end
         if endianness then
-          val = val + byte * (2 ^ ((j - 1) * 8))
+          val = val + byte * math.floor(2 ^ ((j - 1) * 8))
         else
-          val = val + byte * (2 ^ ((n - j) * 8))
+          val = val + byte * math.floor(2 ^ ((n - j) * 8))
         end
         iterator = iterator + 1
       end

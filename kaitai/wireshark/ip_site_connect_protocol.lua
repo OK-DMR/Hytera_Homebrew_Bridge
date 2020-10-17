@@ -1,6 +1,6 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.3
+-- This file is compatible with Lua 5.1
 
 local class = require("class")
 require("kaitaistruct")
@@ -57,7 +57,10 @@ function IpSiteConnectProtocol:_read()
   self.reserved_7a = self._io:read_bytes(7)
   self.timeslot_raw = IpSiteConnectProtocol.Timeslots(self._io:read_u2be())
   self.slot_type = IpSiteConnectProtocol.SlotTypes(self._io:read_u2be())
-  self.delimiter = self._io:ensure_fixed_contents("\017\017")
+  self.delimiter = self._io:read_bytes(2)
+  if not(self.delimiter == "\017\017") then
+    error("not equal, expected " ..  "\017\017" .. ", but got " .. self.delimiter)
+  end
   self.frame_type = self._io:read_u2be()
   self.reserved_2a = self._io:read_bytes(2)
   self.ipsc_payload = self._io:read_bytes(34)

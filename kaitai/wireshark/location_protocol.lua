@@ -1,15 +1,15 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.3
+-- This file is compatible with Lua 5.1
 
 local class = require("class")
 require("kaitaistruct")
 local enum = require("enum")
 
-require("radio_ip")
 require("datetimestring")
-require("intervalstring")
 require("gpsdata")
+require("radio_ip")
+require("intervalstring")
 LocationProtocol = class.class(KaitaiStruct)
 
 LocationProtocol.CmdTypes = enum.Enum {

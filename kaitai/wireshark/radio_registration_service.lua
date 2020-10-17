@@ -1,6 +1,6 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.3
+-- This file is compatible with Lua 5.1
 
 local class = require("class")
 require("kaitaistruct")
@@ -25,7 +25,10 @@ function RadioRegistrationService:_init(io, parent, root)
 end
 
 function RadioRegistrationService:_read()
-  self.opcode = self._io:ensure_fixed_contents("\000")
+  self.opcode = self._io:read_bytes(1)
+  if not(self.opcode == "\000") then
+    error("not equal, expected " ..  "\000" .. ", but got " .. self.opcode)
+  end
   self.rrs_type = RadioRegistrationService.RrsTypes(self._io:read_u1())
   self.message_length = self._io:read_u2le()
   self.radio_ip = RadioIp(self._io)

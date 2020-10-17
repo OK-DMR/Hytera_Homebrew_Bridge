@@ -1,22 +1,23 @@
 # This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
 from pkg_resources import parse_version
-from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
+import kaitaistruct
+from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
 from enum import Enum
 
 
-if parse_version(ks_version) < parse_version("0.7"):
+if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
     raise Exception(
-        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
-        % (ks_version)
+        "Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s"
+        % (kaitaistruct.__version__)
     )
 
 from kaitai import telemetry_protocol
 from kaitai import location_protocol
-from kaitai import radio_control_protocol
-from kaitai import data_delivery_states
 from kaitai import text_message_protocol
+from kaitai import data_delivery_states
 from kaitai import radio_registration_service
+from kaitai import radio_control_protocol
 from kaitai import data_transmit_protocol
 
 
@@ -39,22 +40,36 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
     def _read(self):
         self.message_header = self._io.read_u1()
         _on = self.message_type
-        if _on == self._root.MessageHeaderTypes.radio_registration:
+        if _on == HyteraDmrApplicationProtocol.MessageHeaderTypes.radio_registration:
             self.data = radio_registration_service.RadioRegistrationService(self._io)
-        elif _on == self._root.MessageHeaderTypes.telemetry_protocol:
+        elif _on == HyteraDmrApplicationProtocol.MessageHeaderTypes.telemetry_protocol:
             self.data = telemetry_protocol.TelemetryProtocol(self._io)
-        elif _on == self._root.MessageHeaderTypes.radio_control_protocol:
+        elif (
+            _on
+            == HyteraDmrApplicationProtocol.MessageHeaderTypes.radio_control_protocol
+        ):
             self.data = radio_control_protocol.RadioControlProtocol(self._io)
-        elif _on == self._root.MessageHeaderTypes.text_message_protocol:
+        elif (
+            _on == HyteraDmrApplicationProtocol.MessageHeaderTypes.text_message_protocol
+        ):
             self.data = text_message_protocol.TextMessageProtocol(self._io)
-        elif _on == self._root.MessageHeaderTypes.data_delivery_states:
+        elif (
+            _on == HyteraDmrApplicationProtocol.MessageHeaderTypes.data_delivery_states
+        ):
             self.data = data_delivery_states.DataDeliveryStates(self._io)
-        elif _on == self._root.MessageHeaderTypes.location_protocol:
+        elif _on == HyteraDmrApplicationProtocol.MessageHeaderTypes.location_protocol:
             self.data = location_protocol.LocationProtocol(self._io)
-        elif _on == self._root.MessageHeaderTypes.data_transmit_protocol:
+        elif (
+            _on
+            == HyteraDmrApplicationProtocol.MessageHeaderTypes.data_transmit_protocol
+        ):
             self.data = data_transmit_protocol.DataTransmitProtocol(self._io)
         self.checksum = self._io.read_u1()
-        self.message_footer = self._io.ensure_fixed_contents(b"\x03")
+        self.message_footer = self._io.read_bytes(1)
+        if not self.message_footer == b"\x03":
+            raise kaitaistruct.ValidationNotEqualError(
+                b"\x03", self.message_footer, self._io, u"/seq/3"
+            )
 
     class UndefinedProtocol(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -77,7 +92,7 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
 
         _pos = self._io.pos()
         self._io.seek(0)
-        self._m_is_reliable_message = self._io.read_bits_int(1) != 0
+        self._m_is_reliable_message = self._io.read_bits_int_be(1) != 0
         self._io.seek(_pos)
         return (
             self._m_is_reliable_message
@@ -91,6 +106,6 @@ class HyteraDmrApplicationProtocol(KaitaiStruct):
             return self._m_message_type if hasattr(self, "_m_message_type") else None
 
         self._m_message_type = KaitaiStream.resolve_enum(
-            self._root.MessageHeaderTypes, (self.message_header & 143)
+            HyteraDmrApplicationProtocol.MessageHeaderTypes, (self.message_header & 143)
         )
         return self._m_message_type if hasattr(self, "_m_message_type") else None

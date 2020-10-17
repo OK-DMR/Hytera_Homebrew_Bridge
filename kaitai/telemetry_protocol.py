@@ -1,14 +1,15 @@
 # This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
 from pkg_resources import parse_version
-from kaitaistruct import __version__ as ks_version, KaitaiStruct, KaitaiStream, BytesIO
+import kaitaistruct
+from kaitaistruct import KaitaiStruct, KaitaiStream, BytesIO
 from enum import Enum
 
 
-if parse_version(ks_version) < parse_version("0.7"):
+if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
     raise Exception(
-        "Incompatible Kaitai Struct Python API: 0.7 or later is required, but you have %s"
-        % (ks_version)
+        "Incompatible Kaitai Struct Python API: 0.9 or later is required, but you have %s"
+        % (kaitaistruct.__version__)
     )
 
 from kaitai import radio_ip
@@ -57,21 +58,31 @@ class TelemetryProtocol(KaitaiStruct):
 
     def _read(self):
         self.service_type_opcode = KaitaiStream.resolve_enum(
-            self._root.ServiceTypes, self._io.read_u1()
+            TelemetryProtocol.ServiceTypes, self._io.read_u1()
         )
         self.specific_service_opcode = self._io.read_u1()
         self.message_length = self._io.read_u2be()
         _on = self.specific_service
-        if _on == self._root.ServiceSpecificTypes.standard_status_request:
-            self.data = self._root.StandardStatusRequest(self._io, self, self._root)
-        elif _on == self._root.ServiceSpecificTypes.remote_control_answer:
-            self.data = self._root.RemoteControlAnswer(self._io, self, self._root)
-        elif _on == self._root.ServiceSpecificTypes.extended_status_report:
-            self.data = self._root.ExtendedStatusReport(self._io, self, self._root)
-        elif _on == self._root.ServiceSpecificTypes.remote_control_request:
-            self.data = self._root.RemoteControlRequest(self._io, self, self._root)
-        elif _on == self._root.ServiceSpecificTypes.standard_status_report:
-            self.data = self._root.StandardStatusReport(self._io, self, self._root)
+        if _on == TelemetryProtocol.ServiceSpecificTypes.standard_status_request:
+            self.data = TelemetryProtocol.StandardStatusRequest(
+                self._io, self, self._root
+            )
+        elif _on == TelemetryProtocol.ServiceSpecificTypes.remote_control_answer:
+            self.data = TelemetryProtocol.RemoteControlAnswer(
+                self._io, self, self._root
+            )
+        elif _on == TelemetryProtocol.ServiceSpecificTypes.extended_status_report:
+            self.data = TelemetryProtocol.ExtendedStatusReport(
+                self._io, self, self._root
+            )
+        elif _on == TelemetryProtocol.ServiceSpecificTypes.remote_control_request:
+            self.data = TelemetryProtocol.RemoteControlRequest(
+                self._io, self, self._root
+            )
+        elif _on == TelemetryProtocol.ServiceSpecificTypes.standard_status_report:
+            self.data = TelemetryProtocol.StandardStatusReport(
+                self._io, self, self._root
+            )
 
     class StandardStatusReport(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -84,14 +95,14 @@ class TelemetryProtocol(KaitaiStruct):
             self.source_ip = radio_ip.RadioIp(self._io)
             self.target_ip = radio_ip.RadioIp(self._io)
             self.pc_flag = KaitaiStream.resolve_enum(
-                self._root.PcFlagTypes, self._io.read_u1()
+                TelemetryProtocol.PcFlagTypes, self._io.read_u1()
             )
             self.call_type = KaitaiStream.resolve_enum(
-                self._root.CallTypes, self._io.read_u1()
+                TelemetryProtocol.CallTypes, self._io.read_u1()
             )
             self.vio_select = self._io.read_bytes(1)
             self.result = KaitaiStream.resolve_enum(
-                self._root.ResultTypes, self._io.read_u1()
+                TelemetryProtocol.ResultTypes, self._io.read_u1()
             )
 
     class VioExtendedStatus(KaitaiStruct):
@@ -103,7 +114,7 @@ class TelemetryProtocol(KaitaiStruct):
 
         def _read(self):
             self.result = KaitaiStream.resolve_enum(
-                self._root.ResultTypes, self._io.read_u1()
+                TelemetryProtocol.ResultTypes, self._io.read_u1()
             )
             self.message_length = self._io.read_u2be()
             self.message = (self._io.read_bytes(self.message_length)).decode(
@@ -121,14 +132,14 @@ class TelemetryProtocol(KaitaiStruct):
             self.source_ip = radio_ip.RadioIp(self._io)
             self.target_ip = radio_ip.RadioIp(self._io)
             self.pc_flag = KaitaiStream.resolve_enum(
-                self._root.PcFlagTypes, self._io.read_u1()
+                TelemetryProtocol.PcFlagTypes, self._io.read_u1()
             )
             self.call_type = KaitaiStream.resolve_enum(
-                self._root.CallTypes, self._io.read_u1()
+                TelemetryProtocol.CallTypes, self._io.read_u1()
             )
             self.vio_select = self._io.read_bytes(1)
             self.result = KaitaiStream.resolve_enum(
-                self._root.ControlResultTypes, self._io.read_u1()
+                TelemetryProtocol.ControlResultTypes, self._io.read_u1()
             )
 
     class RemoteControlRequest(KaitaiStruct):
@@ -142,14 +153,14 @@ class TelemetryProtocol(KaitaiStruct):
             self.source_ip = radio_ip.RadioIp(self._io)
             self.target_ip = radio_ip.RadioIp(self._io)
             self.pc_flag = KaitaiStream.resolve_enum(
-                self._root.PcFlagTypes, self._io.read_u1()
+                TelemetryProtocol.PcFlagTypes, self._io.read_u1()
             )
             self.call_type = KaitaiStream.resolve_enum(
-                self._root.CallTypes, self._io.read_u1()
+                TelemetryProtocol.CallTypes, self._io.read_u1()
             )
             self.vio_select = self._io.read_bytes(1)
             self.operation = KaitaiStream.resolve_enum(
-                self._root.OperationTypes, self._io.read_u1()
+                TelemetryProtocol.OperationTypes, self._io.read_u1()
             )
 
     class ExtendedStatusReport(KaitaiStruct):
@@ -163,13 +174,13 @@ class TelemetryProtocol(KaitaiStruct):
             self.source_ip = radio_ip.RadioIp(self._io)
             self.target_ip = radio_ip.RadioIp(self._io)
             self.pc_flag = KaitaiStream.resolve_enum(
-                self._root.PcFlagTypes, self._io.read_u1()
+                TelemetryProtocol.PcFlagTypes, self._io.read_u1()
             )
             self.call_type = KaitaiStream.resolve_enum(
-                self._root.CallTypes, self._io.read_u1()
+                TelemetryProtocol.CallTypes, self._io.read_u1()
             )
             self.vio_select = self._io.read_bytes(1)
-            self.result_messages = self._root.VioExtendedStatus(
+            self.result_messages = TelemetryProtocol.VioExtendedStatus(
                 self._io, self, self._root
             )
 
@@ -184,10 +195,10 @@ class TelemetryProtocol(KaitaiStruct):
             self.source_ip = radio_ip.RadioIp(self._io)
             self.target_ip = radio_ip.RadioIp(self._io)
             self.pc_flag = KaitaiStream.resolve_enum(
-                self._root.PcFlagTypes, self._io.read_u1()
+                TelemetryProtocol.PcFlagTypes, self._io.read_u1()
             )
             self.call_type = KaitaiStream.resolve_enum(
-                self._root.CallTypes, self._io.read_u1()
+                TelemetryProtocol.CallTypes, self._io.read_u1()
             )
             self.vio_select = self._io.read_bytes(1)
 
@@ -203,7 +214,7 @@ class TelemetryProtocol(KaitaiStruct):
         _pos = self._io.pos()
         self._io.seek(0)
         self._m_specific_service = KaitaiStream.resolve_enum(
-            self._root.ServiceSpecificTypes, self._io.read_u2be()
+            TelemetryProtocol.ServiceSpecificTypes, self._io.read_u2be()
         )
         self._io.seek(_pos)
         return (

@@ -1,6 +1,6 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.3
+-- This file is compatible with Lua 5.1
 
 local class = require("class")
 require("kaitaistruct")
@@ -48,19 +48,19 @@ function RealTimeTransportProtocol.FixedHeader:_init(io, parent, root)
 end
 
 function RealTimeTransportProtocol.FixedHeader:_read()
-  self.version = self._io:read_bits_int(2)
-  self.padding = self._io:read_bits_int(1)
-  self.extension = self._io:read_bits_int(1)
-  self.csrc_count = self._io:read_bits_int(4)
-  self.marker = self._io:read_bits_int(1)
-  self.payload_type = self._io:read_bits_int(7)
+  self.version = self._io:read_bits_int_be(2)
+  self.padding = self._io:read_bits_int_be(1)
+  self.extension = self._io:read_bits_int_be(1)
+  self.csrc_count = self._io:read_bits_int_be(4)
+  self.marker = self._io:read_bits_int_be(1)
+  self.payload_type = self._io:read_bits_int_be(7)
   self._io:align_to_byte()
   self.sequence_number = self._io:read_u2be()
   self.timestamp = self._io:read_u4be()
   self.ssrc = self._io:read_u4be()
   self.csrc = {}
-  for i = 1, self.csrc_count do
-    self.csrc[i] = self._io:read_u4be()
+  for i = 0, self.csrc_count - 1 do
+    self.csrc[i + 1] = self._io:read_u4be()
   end
 end
 
@@ -93,8 +93,8 @@ end
 function RealTimeTransportProtocol.HeaderExtension:_read()
   self.header_identifier = self._io:read_u2be()
   self.length = self._io:read_u2be()
-  self.slot = self._io:read_bits_int(7)
-  self.last_flag = self._io:read_bits_int(1)
+  self.slot = self._io:read_bits_int_be(7)
+  self.last_flag = self._io:read_bits_int_be(1)
   self._io:align_to_byte()
   self.source_id = RadioId(self._io)
   self.destination_id = RadioId(self._io)
