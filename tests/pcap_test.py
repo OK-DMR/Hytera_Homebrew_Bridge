@@ -12,7 +12,10 @@ from kamene.layers.l2 import Ether
 
 
 def parse_hytera_data(bytedata):
-    if bytedata[0:2] == bytes([0x32, 0x42]):
+    if len(bytedata) < 2:
+        # probably just heartbeat response
+        pass
+    elif bytedata[0:2] == bytes([0x32, 0x42]):
         # HSTRP
         return HyteraSimpleTransportReliabilityProtocol.from_bytes(bytedata)
     elif bytedata[0:1] == bytes([0x7E]):
@@ -20,6 +23,15 @@ def parse_hytera_data(bytedata):
         return HyteraRadioNetworkProtocol.from_bytes(bytedata)
     elif int.from_bytes(bytedata[0:1], byteorder="big") & 0x80 == 0x80:
         return RealTimeTransportProtocol.from_bytes(bytedata)
+    elif (
+        int.from_bytes(bytedata[0:8], byteorder="little") == 0
+        or bytedata[0:4] == b"ZZZZ"
+    ):
+        if bytedata[5:9] == bytes([0x00, 0x00, 0x00, 0x14]):
+            # heartbeat
+            pass
+        else:
+            return IpSiteConnectProtocol.from_bytes(bytedata)
     else:
         # HDAP
         return HyteraDmrApplicationProtocol.from_bytes(bytedata)
@@ -200,6 +212,7 @@ if __name__ == "__main__":
     from kaitai.hytera_simple_transport_reliability_protocol import (
         HyteraSimpleTransportReliabilityProtocol,
     )
+    from kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
     from kaitai.real_time_transport_protocol import RealTimeTransportProtocol
     from tests.prettyprint import _prettyprint
     import kamene.packet
