@@ -20,6 +20,7 @@ types:
     seq:
       - id: version
         type: b2
+        valid: 2
       - id: padding
         type: b1
         doc: if set, this packet contains padding bytes at the end

@@ -78,6 +78,9 @@ end
 
 function RealTimeTransportProtocol.FixedHeader:_read()
   self.version = self._io:read_bits_int_be(2)
+  if not(self.version == 2) then
+    error("not equal, expected " ..  2 .. ", but got " .. self.version)
+  end
   self.padding = self._io:read_bits_int_be(1)
   self.extension = self._io:read_bits_int_be(1)
   self.csrc_count = self._io:read_bits_int_be(4)

@@ -50,7 +50,8 @@ function IpSiteConnectProtocol:_init(io, parent, root)
 end
 
 function IpSiteConnectProtocol:_read()
-  self.fixed_header = self._io:read_bytes(4)
+  self.source_port = self._io:read_bytes(2)
+  self.fixed_header = self._io:read_bytes(2)
   self.sequence_number = self._io:read_u1()
   self.reserved_3 = self._io:read_bytes(3)
   self.packet_type = IpSiteConnectProtocol.PacketTypes(self._io:read_u1())
@@ -94,6 +95,8 @@ function IpSiteConnectProtocol.property.destination_radio_id:get()
   return self._m_destination_radio_id
 end
 
+-- 
+-- UDP source port of IPSC packet
 -- 
 -- should be 0x1111.
 

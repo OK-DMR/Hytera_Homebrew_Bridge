@@ -34,8 +34,12 @@ instances:
   destination_radio_id:
     value: destination_radio_id_raw >> 8
 seq:
+  - id: source_port
+    size: 2
+    doc: |
+      UDP source port of IPSC packet
   - id: fixed_header
-    size: 4
+    size: 2
   - id: sequence_number
     type: u1
   - id: reserved_3

@@ -21,11 +21,24 @@ def parse_hytera_data(bytedata):
     elif bytedata[0:1] == bytes([0x7E]):
         # HRNP
         return HyteraRadioNetworkProtocol.from_bytes(bytedata)
-    elif int.from_bytes(bytedata[0:1], byteorder="big") & 0x80 == 0x80:
-        return RealTimeTransportProtocol.from_bytes(bytedata)
+    elif (int.from_bytes(bytedata[0:1], byteorder="big") & 0x80) == 0x80 and (
+        int.from_bytes(bytedata[0:1], byteorder="big") & 0xC0
+    ) == 2:
+        rtsp = RealTimeTransportProtocol.from_bytes(bytedata)
+        if rtsp.fixed_header.padding:
+            print(
+                "{0}={1}".format(
+                    col256(rtsp.__class__.__name__, bg="001", fg="345"),
+                    col256(str(_prettyprint(rtsp)), "352"),
+                )
+            )
+            print("RTSP %s has padding bytes")
+            exit(1)
+        return rtsp
     elif (
         int.from_bytes(bytedata[0:8], byteorder="little") == 0
         or bytedata[0:4] == b"ZZZZ"
+        or bytedata[20:22] == bytes([0x11, 0x11])
     ):
         if bytedata[5:9] == bytes([0x00, 0x00, 0x00, 0x14]):
             # heartbeat
@@ -154,6 +167,18 @@ def format_kamene_packet(packet):
                     try:
                         hpd = parse_hytera_data(packet.fields[f.name])
                         if hpd:
+                            if hasattr(hpd, "extra_data") and hpd.extra_data:
+                                print(
+                                    "{0}={1}".format(
+                                        col256(
+                                            hpd.__class__.__name__, bg="001", fg="345"
+                                        ),
+                                        col256(str(_prettyprint(hpd)), "352"),
+                                    )
+                                )
+                                print("hpd %s has extra data")
+                                exit(1)
+
                             fields.append(
                                 "{0}={1}".format(
                                     col256(hpd.__class__.__name__, bg="001", fg="345"),
@@ -226,7 +251,7 @@ if __name__ == "__main__":
             if isinstance(block, EnhancedPacket):
                 counter += 1
                 pprint_enhanced_packet(block)
-                # if counter >= limit:
-                #    print("100 packets printed")
-                #    break
+                if counter >= limit:
+                    print("100 packets printed")
+                    break
         print("{0} packets worked through".format(counter))

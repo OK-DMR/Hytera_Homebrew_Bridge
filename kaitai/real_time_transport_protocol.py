@@ -57,6 +57,10 @@ class RealTimeTransportProtocol(KaitaiStruct):
 
         def _read(self):
             self.version = self._io.read_bits_int_be(2)
+            if not self.version == 2:
+                raise kaitaistruct.ValidationNotEqualError(
+                    2, self.version, self._io, u"/types/fixed_header/seq/0"
+                )
             self.padding = self._io.read_bits_int_be(1) != 0
             self.extension = self._io.read_bits_int_be(1) != 0
             self.csrc_count = self._io.read_bits_int_be(4)

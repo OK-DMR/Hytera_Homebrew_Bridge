@@ -51,7 +51,8 @@ class IpSiteConnectProtocol(KaitaiStruct):
         self._read()
 
     def _read(self):
-        self.fixed_header = self._io.read_bytes(4)
+        self.source_port = self._io.read_bytes(2)
+        self.fixed_header = self._io.read_bytes(2)
         self.sequence_number = self._io.read_u1()
         self.reserved_3 = self._io.read_bytes(3)
         self.packet_type = KaitaiStream.resolve_enum(
@@ -67,7 +68,7 @@ class IpSiteConnectProtocol(KaitaiStruct):
         self.delimiter = self._io.read_bytes(2)
         if not self.delimiter == b"\x11\x11":
             raise kaitaistruct.ValidationNotEqualError(
-                b"\x11\x11", self.delimiter, self._io, u"/seq/7"
+                b"\x11\x11", self.delimiter, self._io, u"/seq/8"
             )
         self.frame_type = self._io.read_u2be()
         self.reserved_2a = self._io.read_bytes(2)
