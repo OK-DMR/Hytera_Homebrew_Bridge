@@ -5,6 +5,7 @@
 local class = require("class")
 require("kaitaistruct")
 local enum = require("enum")
+local utils = require("utils")
 
 require("radio_id")
 -- 
@@ -31,10 +32,38 @@ end
 
 function RealTimeTransportProtocol:_read()
   self.fixed_header = RealTimeTransportProtocol.FixedHeader(self._io, self, self._root)
-  if (self.fixed_header.extension and 1 or 0) == 1 then
+  if self.fixed_header.extension then
     self.header_extension = RealTimeTransportProtocol.HeaderExtension(self._io, self, self._root)
   end
-  self.audio_data = self._io:read_bytes_full()
+  self.audio_data = self._io:read_bytes(((self._io:size() - self._io:pos()) - self.len_padding))
+  if self.fixed_header.padding then
+    self.padding = self._io:read_bytes(self.len_padding)
+  end
+end
+
+RealTimeTransportProtocol.property.len_padding_if_exists = {}
+function RealTimeTransportProtocol.property.len_padding_if_exists:get()
+  if self._m_len_padding_if_exists ~= nil then
+    return self._m_len_padding_if_exists
+  end
+
+  if self.fixed_header.padding then
+    local _pos = self._io:pos()
+    self._io:seek((self._io:size() - 1))
+    self._m_len_padding_if_exists = self._io:read_u1()
+    self._io:seek(_pos)
+  end
+  return self._m_len_padding_if_exists
+end
+
+RealTimeTransportProtocol.property.len_padding = {}
+function RealTimeTransportProtocol.property.len_padding:get()
+  if self._m_len_padding ~= nil then
+    return self._m_len_padding
+  end
+
+  self._m_len_padding = utils.box_unwrap((self.fixed_header.padding) and utils.box_wrap(self.len_padding_if_exists) or (0))
+  return self._m_len_padding
 end
 
 

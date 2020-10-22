@@ -69,6 +69,9 @@ function IpSiteConnectProtocol:_read()
   self.destination_radio_id_raw = self._io:read_u4le()
   self.source_radio_id_raw = self._io:read_u4le()
   self.reserved_1b = self._io:read_u1()
+  if not(self._io:is_eof()) then
+    self.extra_data = self._io:read_bytes_full()
+  end
 end
 
 IpSiteConnectProtocol.property.source_radio_id = {}

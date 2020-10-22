@@ -35,6 +35,9 @@ seq:
     type: hytera_dmr_application_protocol
     if: not _io.eof and has_option == true and not is_reject and not is_close and not is_connect
     repeat: eos
+  - id: extra_data
+    size-eos: true
+    if: not _io.eof
 enums:
   option_commands:
     1: realtime

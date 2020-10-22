@@ -72,6 +72,9 @@ class HyteraSimpleTransportReliabilityProtocol(KaitaiStruct):
                 )
                 i += 1
 
+        if not (self._io.is_eof()):
+            self.extra_data = self._io.read_bytes_full()
+
     class Option(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io

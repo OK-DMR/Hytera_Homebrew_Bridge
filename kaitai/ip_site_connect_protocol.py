@@ -79,6 +79,8 @@ class IpSiteConnectProtocol(KaitaiStruct):
         self.destination_radio_id_raw = self._io.read_u4le()
         self.source_radio_id_raw = self._io.read_u4le()
         self.reserved_1b = self._io.read_u1()
+        if not (self._io.is_eof()):
+            self.extra_data = self._io.read_bytes_full()
 
     @property
     def source_radio_id(self):

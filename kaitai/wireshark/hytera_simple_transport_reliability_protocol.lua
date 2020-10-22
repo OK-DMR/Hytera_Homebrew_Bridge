@@ -57,6 +57,9 @@ if  ((not(self._io:is_eof())) and (self.has_option == 1) and (not(self.is_reject
     i = i + 1
   end
 end
+if not(self._io:is_eof()) then
+  self.extra_data = self._io:read_bytes_full()
+end
 end
 
 -- 

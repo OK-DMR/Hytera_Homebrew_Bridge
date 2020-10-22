@@ -37,12 +37,16 @@ class RealTimeTransportProtocol(KaitaiStruct):
         self.fixed_header = RealTimeTransportProtocol.FixedHeader(
             self._io, self, self._root
         )
-        if int(self.fixed_header.extension) == 1:
+        if self.fixed_header.extension:
             self.header_extension = RealTimeTransportProtocol.HeaderExtension(
                 self._io, self, self._root
             )
 
-        self.audio_data = self._io.read_bytes_full()
+        self.audio_data = self._io.read_bytes(
+            ((self._io.size() - self._io.pos()) - self.len_padding)
+        )
+        if self.fixed_header.padding:
+            self.padding = self._io.read_bytes(self.len_padding)
 
     class FixedHeader(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -85,3 +89,34 @@ class RealTimeTransportProtocol(KaitaiStruct):
                 RealTimeTransportProtocol.CallTypes, self._io.read_u1()
             )
             self.reserved = self._io.read_bytes(4)
+
+    @property
+    def len_padding_if_exists(self):
+        if hasattr(self, "_m_len_padding_if_exists"):
+            return (
+                self._m_len_padding_if_exists
+                if hasattr(self, "_m_len_padding_if_exists")
+                else None
+            )
+
+        if self.fixed_header.padding:
+            _pos = self._io.pos()
+            self._io.seek((self._io.size() - 1))
+            self._m_len_padding_if_exists = self._io.read_u1()
+            self._io.seek(_pos)
+
+        return (
+            self._m_len_padding_if_exists
+            if hasattr(self, "_m_len_padding_if_exists")
+            else None
+        )
+
+    @property
+    def len_padding(self):
+        if hasattr(self, "_m_len_padding"):
+            return self._m_len_padding if hasattr(self, "_m_len_padding") else None
+
+        self._m_len_padding = (
+            self.len_padding_if_exists if self.fixed_header.padding else 0
+        )
+        return self._m_len_padding if hasattr(self, "_m_len_padding") else None

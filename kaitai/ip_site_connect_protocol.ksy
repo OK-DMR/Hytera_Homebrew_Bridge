@@ -71,3 +71,6 @@ seq:
     type: u4le
   - id: reserved_1b
     type: u1
+  - id: extra_data
+    size-eos: true
+    if: not _io.eof
