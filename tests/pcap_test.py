@@ -14,7 +14,7 @@ from kamene.layers.l2 import Ether
 def parse_hytera_data(bytedata):
     if len(bytedata) < 2:
         # probably just heartbeat response
-        pass
+        return IpSiteConnectHeartbeat.from_bytes(bytedata)
     elif bytedata[0:2] == bytes([0x32, 0x42]):
         # HSTRP
         return HyteraSimpleTransportReliabilityProtocol.from_bytes(bytedata)
@@ -41,8 +41,7 @@ def parse_hytera_data(bytedata):
         or bytedata[20:22] == bytes([0x11, 0x11])
     ):
         if bytedata[5:9] == bytes([0x00, 0x00, 0x00, 0x14]):
-            # heartbeat
-            pass
+            return IpSiteConnectHeartbeat.from_bytes(bytedata)
         else:
             return IpSiteConnectProtocol.from_bytes(bytedata)
     else:
@@ -185,6 +184,8 @@ def format_kamene_packet(packet):
                                     col256(str(_prettyprint(hpd)), "352"),
                                 )
                             )
+                        else:
+                            exit(1)
                         # hrnp = HyteraRadioNetworkProtocol.from_bytes(packet.fields[f.name])
                         # fields.append("{0}={1}".format(col256("HRNP", "542"), col256(str(_prettyprint(hrnp)), "352")))
                     except:
@@ -238,20 +239,16 @@ if __name__ == "__main__":
         HyteraSimpleTransportReliabilityProtocol,
     )
     from kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
+    from kaitai.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
     from kaitai.real_time_transport_protocol import RealTimeTransportProtocol
     from tests.prettyprint import _prettyprint
     import kamene.packet
 
     with open(sys.argv[1], "rb") as testfile:
         scanner = FileScanner(testfile)
-        # print("print first 100 packets")
-        limit = 100
         counter = 0
         for block in scanner:
             if isinstance(block, EnhancedPacket):
                 counter += 1
                 pprint_enhanced_packet(block)
-                if counter >= limit:
-                    print("100 packets printed")
-                    break
         print("{0} packets worked through".format(counter))
