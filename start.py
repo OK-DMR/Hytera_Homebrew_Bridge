@@ -3,6 +3,7 @@
 import configparser
 from threading import Thread
 
+from homebrew.homebrew_service import HomebrewService
 from hytera_common.hytera_service_interface import HyteraServiceInterface
 from hytera_forward_to_pc.hytera_forward_to_pc import HyteraForwardToPC
 from hytera_ip_site_connect.hytera_ipsc import HyteraIPSiteConnect
@@ -10,6 +11,7 @@ from hytera_ip_site_connect.hytera_ipsc import HyteraIPSiteConnect
 
 class HyteraHomebrewBridge(Thread):
     hytera_service: HyteraServiceInterface = None
+    homebrew_service: HomebrewService = None
 
     def start(self):
         # load settings
@@ -17,6 +19,7 @@ class HyteraHomebrewBridge(Thread):
         # run the hytera service
         self.hytera_service.start()
         # run the homebrew service
+        self.homebrew_service.start()
 
     def load_settings(self):
         config = configparser.ConfigParser()

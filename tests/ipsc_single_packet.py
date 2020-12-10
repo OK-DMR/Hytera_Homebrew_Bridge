@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+from binascii import b2a_hex as ahex, hexlify
+
+from dmr_utils3.decode import voice_head_term
 
 if __name__ == "__main__":
     import sys
@@ -21,8 +24,32 @@ if __name__ == "__main__":
             packet.destination_radio_id,
             IpSiteConnectProtocol.CallTypes(packet.call_type),
             packet.Timeslots(packet.timeslot_raw),
-            packet.PacketTypes(packet.packet_type),
+            packet.packet_type,
             packet.slot_type,
         )
     )
+
     prettyprint(packet)
+
+    original = bytearray(packet.ipsc_payload)
+    # swap bytes
+    original[0::2], original[1::2] = original[1::2], original[0::2]
+
+    print(hexlify(original))
+
+    if (
+        packet.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header
+        or packet.slot_type
+        == IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
+    ):
+        lc = voice_head_term(bytes(original))
+        print(lc)
+        print(
+            "LC: OPT-{} SRC-{} DST-{}, SLOT TYPE: CC-{} DTYPE-{}".format(
+                ahex(lc["LC"][0:3]),
+                ahex(lc["LC"][3:6]),
+                ahex(lc["LC"][6:9]),
+                ahex(lc["CC"]),
+                ahex(lc["DTYPE"]),
+            )
+        )

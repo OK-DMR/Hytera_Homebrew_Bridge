@@ -19,21 +19,21 @@ class HyteraIPSiteConnect(HyteraServiceInterface):
         config = configparser.ConfigParser()
         config.sections()
         config.read("settings.ini")
-        if "constants" in config:
-            constants = config["constants"]
-            if "default_service_port" in constants:
+        if "ip-site-connect" in config:
+            constants = config["ip-site-connect"]
+            if "DEFAULT_SERVICE_PORT" in constants:
                 self.storage.set_service_port(
                     P2PHyteraService.__name__, int(constants["default_service_port"])
                 )
-            if "default_dmr_port" in constants:
+            if "DEFAULT_DMR_PORT" in constants:
                 self.storage.set_service_port(
                     DMRHyteraService.__name__, int(constants["default_dmr_port"])
                 )
-            if "default_rdac_port" in constants:
+            if "DEFAULT_RDAC_PORT" in constants:
                 self.storage.set_service_port(
                     RDACHyteraService.__name__, int(constants["default_rdac_port"])
                 )
-            if "default_service_ip" in constants:
+            if "DEFAULT_SERVICE_IP" in constants:
                 self.storage.set_service_ip(str(constants["default_service_ip"]))
 
     def start(self) -> None:

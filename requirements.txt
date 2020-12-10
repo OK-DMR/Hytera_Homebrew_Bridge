@@ -8,3 +8,6 @@ yamllint
 python-pcapng
 pcapng
 kamene
+bitstring
+bitarray
+asyncio
