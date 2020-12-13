@@ -1,6 +1,6 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.1
+-- This file is compatible with Lua 5.3
 
 local class = require("class")
 require("kaitaistruct")
@@ -26,7 +26,7 @@ function RadioId.property.radio_id:get()
     return self._m_radio_id
   end
 
-  self._m_radio_id = bit.rshift(self.radio_id_raw, 8)
+  self._m_radio_id = (self.radio_id_raw >> 8)
   return self._m_radio_id
 end
 

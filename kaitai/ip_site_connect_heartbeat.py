@@ -74,7 +74,14 @@ class IpSiteConnectHeartbeat(KaitaiStruct):
                     b"\x00\x00\x00", self.nullbytes, self._io, u"/types/ping_pong/seq/2"
                 )
             self.heartbeat_seq = self._io.read_u1()
-            self.tail = self._io.read_bytes_full()
+            self.tail = self._io.read_bytes(7)
+            if not self.tail == b"\x5A\x59\x5A\x00\x00\x00\x00":
+                raise kaitaistruct.ValidationNotEqualError(
+                    b"\x5A\x59\x5A\x00\x00\x00\x00",
+                    self.tail,
+                    self._io,
+                    u"/types/ping_pong/seq/4",
+                )
 
     class Unknown(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):

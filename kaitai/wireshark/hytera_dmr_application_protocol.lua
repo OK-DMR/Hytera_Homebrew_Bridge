@@ -1,6 +1,6 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.1
+-- This file is compatible with Lua 5.3
 
 local class = require("class")
 require("kaitaistruct")
@@ -76,7 +76,7 @@ function HyteraDmrApplicationProtocol.property.message_type:get()
     return self._m_message_type
   end
 
-  self._m_message_type = HyteraDmrApplicationProtocol.MessageHeaderTypes(bit.band(self.message_header, 143))
+  self._m_message_type = HyteraDmrApplicationProtocol.MessageHeaderTypes((self.message_header & 143))
   return self._m_message_type
 end
 

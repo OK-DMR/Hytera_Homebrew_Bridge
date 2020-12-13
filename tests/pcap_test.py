@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import io
+import traceback
 from datetime import datetime
 
 from kamene.config import conf
@@ -163,6 +164,8 @@ def format_kamene_packet(packet):
             if isinstance(packet.fields[f.name], (bytes, bytearray)):
                 val = packet.fields[f.name].hex()
                 if packet.__class__.__name__ == "Raw":
+                    is_hpd = True
+                    is_hbp = True
                     try:
                         hpd = parse_hytera_data(packet.fields[f.name])
                         if hpd:
@@ -184,18 +187,24 @@ def format_kamene_packet(packet):
                                     col256(str(_prettyprint(hpd)), "352"),
                                 )
                             )
-                        else:
-                            exit(1)
-                        # hrnp = HyteraRadioNetworkProtocol.from_bytes(packet.fields[f.name])
-                        # fields.append("{0}={1}".format(col256("HRNP", "542"), col256(str(_prettyprint(hrnp)), "352")))
                     except:
-                        # traceback.print_exc()
-                        print(
-                            "Could not parse message {0}".format(
-                                packet.fields[f.name].hex()
+                        is_hpd = False
+                    if not is_hpd:
+                        try:
+                            hbp = Homebrew.from_bytes(packet.fields[f.name])
+                            fields.append(
+                                "{0}={1}".format(
+                                    col256(hbp.command_prefix, bg="001", fg="345"),
+                                    col256(str(_prettyprint(hbp)), "352"),
+                                )
                             )
-                        )
-                        raise
+                        except:
+                            is_hbp = False
+
+                    if not is_hpd and not is_hbp:
+                        # not a Hytera or Homebrew packet
+                        pass
+
             else:
                 val = f.i2repr(packet, packet.fields[f.name])
 
@@ -241,6 +250,7 @@ if __name__ == "__main__":
     from kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
     from kaitai.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
     from kaitai.real_time_transport_protocol import RealTimeTransportProtocol
+    from kaitai.homebrew import Homebrew
     from tests.prettyprint import _prettyprint
     import kamene.packet
 

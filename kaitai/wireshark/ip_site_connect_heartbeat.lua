@@ -1,6 +1,6 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.1
+-- This file is compatible with Lua 5.3
 
 local class = require("class")
 require("kaitaistruct")
@@ -68,7 +68,10 @@ function IpSiteConnectHeartbeat.PingPong:_read()
     error("not equal, expected " ..  "\000\000\000" .. ", but got " .. self.nullbytes)
   end
   self.heartbeat_seq = self._io:read_u1()
-  self.tail = self._io:read_bytes_full()
+  self.tail = self._io:read_bytes(7)
+  if not(self.tail == "\090\089\090\000\000\000\000") then
+    error("not equal, expected " ..  "\090\089\090\000\000\000\000" .. ", but got " .. self.tail)
+  end
 end
 
 -- 

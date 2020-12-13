@@ -1,6 +1,6 @@
 -- This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 --
--- This file is compatible with Lua 5.1
+-- This file is compatible with Lua 5.3
 
 local class = require("class")
 require("kaitaistruct")
@@ -81,7 +81,7 @@ function IpSiteConnectProtocol.property.source_radio_id:get()
     return self._m_source_radio_id
   end
 
-  self._m_source_radio_id = bit.rshift(self.source_radio_id_raw, 8)
+  self._m_source_radio_id = (self.source_radio_id_raw >> 8)
   return self._m_source_radio_id
 end
 
@@ -91,7 +91,7 @@ function IpSiteConnectProtocol.property.destination_radio_id:get()
     return self._m_destination_radio_id
   end
 
-  self._m_destination_radio_id = bit.rshift(self.destination_radio_id_raw, 8)
+  self._m_destination_radio_id = (self.destination_radio_id_raw >> 8)
   return self._m_destination_radio_id
 end
 
