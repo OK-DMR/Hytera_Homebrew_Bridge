@@ -13,6 +13,10 @@ if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
 
 
 class Homebrew(KaitaiStruct):
+    """Homebrew / MMDVM protocol structure, based on both PDF (DL5DI, G4KLX, DG1HT 2015) and MMDVMHost/HBlink3/DMRGateway
+    reversing effort
+    """
+
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
@@ -35,7 +39,7 @@ class Homebrew(KaitaiStruct):
                 self._io, self, self._root
             )
         elif _on == u"RPTC":
-            self.command_data = Homebrew.TypeRepeaterConfiguration(
+            self.command_data = Homebrew.TypeRepeaterConfigurationOrClosing(
                 self._io, self, self._root
             )
         elif _on == u"DMRD":
@@ -44,6 +48,8 @@ class Homebrew(KaitaiStruct):
             self.command_data = Homebrew.TypeMasterClosing(self._io, self, self._root)
         elif _on == u"RPTP":
             self.command_data = Homebrew.TypeRepeaterPing(self._io, self, self._root)
+        elif _on == u"RPTO":
+            self.command_data = Homebrew.TypeRepeaterOptions(self._io, self, self._root)
         elif _on == u"MSTP":
             self.command_data = Homebrew.TypeMasterPong(self._io, self, self._root)
         elif _on == u"MSTN":
@@ -84,6 +90,22 @@ class Homebrew(KaitaiStruct):
             self._io.align_to_byte()
             self.talker_alias = (self._io.read_bytes(8)).decode(u"ASCII")
 
+    class TypeRepeaterConfigurationOrClosing(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            _on = self._io.size()
+            if _on == 9:
+                self.data = Homebrew.TypeRepeaterClosing(self._io, self, self._root)
+            else:
+                self.data = Homebrew.TypeRepeaterConfiguration(
+                    self._io, self, self._root
+                )
+
     class TypeRepeaterLoginResponse(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
@@ -104,7 +126,6 @@ class Homebrew(KaitaiStruct):
 
         def _read(self):
             self.repeater_id = self._io.read_u4be()
-            self.unknown_data = self._io.read_bytes_full()
 
     class TypeMasterNotAccept(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -151,7 +172,8 @@ class Homebrew(KaitaiStruct):
                     u"/types/type_master_repeater_ack/seq/0",
                 )
             self.repeater_id = self._io.read_u4be()
-            self.random_number = self._io.read_u4be()
+            if not (self._io.is_eof()):
+                self.random_number = self._io.read_u4be()
 
     class TypeMasterClosing(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -193,6 +215,32 @@ class Homebrew(KaitaiStruct):
 
             if not (self._io.is_eof()):
                 self.rssi = self._io.read_u1()
+
+    class TypeRepeaterOptions(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.repeater_id = self._io.read_u4be()
+            self.options = (self._io.read_bytes_full()).decode(u"ASCII")
+
+    class TypeRepeaterClosing(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.magic = self._io.read_bytes(1)
+            if not self.magic == b"\x4C":
+                raise kaitaistruct.ValidationNotEqualError(
+                    b"\x4C", self.magic, self._io, u"/types/type_repeater_closing/seq/0"
+                )
+            self.repeater_id = self._io.read_u4be()
 
     class TypeRepeaterConfiguration(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):

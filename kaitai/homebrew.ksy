@@ -1,6 +1,9 @@
 meta:
   id: homebrew
   endian: be
+doc: |
+  Homebrew / MMDVM protocol structure, based on both PDF (DL5DI, G4KLX, DG1HT 2015) and MMDVMHost/HBlink3/DMRGateway
+  reversing effort
 types:
   type_unknown:
     seq:
@@ -48,8 +51,6 @@ types:
     seq:
       - id: repeater_id
         type: u4
-      - id: unknown_data
-        size-eos: true
   type_repeater_ping:
     seq:
       - id: magic
@@ -82,12 +83,27 @@ types:
         type: u4
       - id: random_number
         type: u4
+        if: not _io.eof
   type_repeater_login_response:
     seq:
       - id: repeater_id
         type: u4
       - id: sha256
         size: 32
+  type_repeater_configuration_or_closing:
+    seq:
+      - id: data
+        type:
+          switch-on: _io.size
+          cases:
+            _: type_repeater_configuration
+            9: type_repeater_closing
+  type_repeater_closing:
+    seq:
+      - id: magic
+        contents: L
+      - id: repeater_id
+        type: u4
   type_repeater_configuration:
     seq:
       - id: repeater_id
@@ -177,4 +193,4 @@ seq:
         '"RPTL"': type_repeater_login_request
         '"RPTA"': type_master_repeater_ack
         '"RPTK"': type_repeater_login_response
-        '"RPTC"': type_repeater_configuration
+        '"RPTC"': type_repeater_configuration_or_closing

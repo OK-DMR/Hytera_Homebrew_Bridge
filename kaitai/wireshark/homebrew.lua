@@ -6,6 +6,9 @@ local class = require("class")
 require("kaitaistruct")
 local str_decode = require("string_decode")
 
+-- 
+-- Homebrew / MMDVM protocol structure, based on both PDF (DL5DI, G4KLX, DG1HT 2015) and MMDVMHost/HBlink3/DMRGateway
+-- reversing effort
 Homebrew = class.class(KaitaiStruct)
 
 function Homebrew:_init(io, parent, root)
@@ -25,13 +28,15 @@ function Homebrew:_read()
   elseif _on == "RPTK" then
     self.command_data = Homebrew.TypeRepeaterLoginResponse(self._io, self, self._root)
   elseif _on == "RPTC" then
-    self.command_data = Homebrew.TypeRepeaterConfiguration(self._io, self, self._root)
+    self.command_data = Homebrew.TypeRepeaterConfigurationOrClosing(self._io, self, self._root)
   elseif _on == "DMRD" then
     self.command_data = Homebrew.TypeDmrData(self._io, self, self._root)
   elseif _on == "MSTC" then
     self.command_data = Homebrew.TypeMasterClosing(self._io, self, self._root)
   elseif _on == "RPTP" then
     self.command_data = Homebrew.TypeRepeaterPing(self._io, self, self._root)
+  elseif _on == "RPTO" then
+    self.command_data = Homebrew.TypeRepeaterOptions(self._io, self, self._root)
   elseif _on == "MSTP" then
     self.command_data = Homebrew.TypeMasterPong(self._io, self, self._root)
   elseif _on == "MSTN" then
@@ -79,6 +84,25 @@ function Homebrew.TypeTalkerAlias:_read()
 end
 
 
+Homebrew.TypeRepeaterConfigurationOrClosing = class.class(KaitaiStruct)
+
+function Homebrew.TypeRepeaterConfigurationOrClosing:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function Homebrew.TypeRepeaterConfigurationOrClosing:_read()
+  local _on = self._io:size()
+  if _on == 9 then
+    self.data = Homebrew.TypeRepeaterClosing(self._io, self, self._root)
+  else
+    self.data = Homebrew.TypeRepeaterConfiguration(self._io, self, self._root)
+  end
+end
+
+
 Homebrew.TypeRepeaterLoginResponse = class.class(KaitaiStruct)
 
 function Homebrew.TypeRepeaterLoginResponse:_init(io, parent, root)
@@ -105,7 +129,6 @@ end
 
 function Homebrew.TypeRepeaterLoginRequest:_read()
   self.repeater_id = self._io:read_u4be()
-  self.unknown_data = self._io:read_bytes_full()
 end
 
 
@@ -156,7 +179,9 @@ function Homebrew.TypeMasterRepeaterAck:_read()
     error("not equal, expected " ..  "\067\075" .. ", but got " .. self.magic)
   end
   self.repeater_id = self._io:read_u4be()
-  self.random_number = self._io:read_u4be()
+  if not(self._io:is_eof()) then
+    self.random_number = self._io:read_u4be()
+  end
 end
 
 
@@ -206,6 +231,41 @@ function Homebrew.TypeDmrData:_read()
   if not(self._io:is_eof()) then
     self.rssi = self._io:read_u1()
   end
+end
+
+
+Homebrew.TypeRepeaterOptions = class.class(KaitaiStruct)
+
+function Homebrew.TypeRepeaterOptions:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function Homebrew.TypeRepeaterOptions:_read()
+  self.repeater_id = self._io:read_u4be()
+  self.options = str_decode.decode(self._io:read_bytes_full(), "ASCII")
+end
+
+-- 
+-- structure probably key=value;key=value;...
+
+Homebrew.TypeRepeaterClosing = class.class(KaitaiStruct)
+
+function Homebrew.TypeRepeaterClosing:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function Homebrew.TypeRepeaterClosing:_read()
+  self.magic = self._io:read_bytes(1)
+  if not(self.magic == "\076") then
+    error("not equal, expected " ..  "\076" .. ", but got " .. self.magic)
+  end
+  self.repeater_id = self._io:read_u4be()
 end
 
 
