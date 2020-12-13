@@ -1,5 +1,5 @@
-dmr-utils3>=0.1.28
-configparser>=4.0.2
+dmr-utils3
+configparser
 kaitaistruct @ git+https://github.com/kaitai-io/kaitai_struct_python_runtime.git
 black
 easysnmp
@@ -10,4 +10,6 @@ pcapng
 kamene
 bitstring
 bitarray
+uvloop
+aiohttp
 asyncio

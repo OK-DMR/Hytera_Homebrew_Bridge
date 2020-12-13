@@ -11,7 +11,7 @@ from hytera_ip_site_connect.hytera_ipsc import HyteraIPSiteConnect
 
 class HyteraHomebrewBridge(Thread):
     hytera_service: HyteraServiceInterface = None
-    homebrew_service: HomebrewService = None
+    homebrew_service: HomebrewService = HomebrewService()
 
     def start(self):
         # load settings

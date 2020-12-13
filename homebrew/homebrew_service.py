@@ -3,6 +3,8 @@ import logging
 import socket
 from threading import Thread
 
+from vendor.hblink3.hblink import HBSYSTEM
+
 
 class HomebrewService(Thread):
     """Main thread of Homebrew client
@@ -19,7 +21,7 @@ class HomebrewService(Thread):
         self.load_settings()
 
         self.clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.clientSocket.connect((self.UPSTREAM_IP, self.UPSTREAM_IP))
+        self.clientSocket.connect((self.UPSTREAM_IP, self.UPSTREAM_PORT))
 
     def load_settings(self) -> None:
         config = configparser.ConfigParser()
