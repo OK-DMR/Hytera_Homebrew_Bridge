@@ -94,10 +94,10 @@ types:
     seq:
       - id: data
         type:
-          switch-on: _io.size
+          switch-on: _root.fifth_letter
           cases:
             _: type_repeater_configuration
-            9: type_repeater_closing
+            '"L"': type_repeater_closing
   type_repeater_closing:
     seq:
       - id: magic
@@ -173,6 +173,12 @@ types:
         encoding: ASCII
         size-eos: true
         doc: structure probably key=value;key=value;...
+instances:
+  fifth_letter:
+    pos: 4
+    type: str
+    encoding: ASCII
+    size: 1
 seq:
   - id: command_prefix
     type: str

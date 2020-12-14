@@ -98,8 +98,8 @@ class Homebrew(KaitaiStruct):
             self._read()
 
         def _read(self):
-            _on = self._io.size()
-            if _on == 9:
+            _on = self._root.fifth_letter
+            if _on == u"L":
                 self.data = Homebrew.TypeRepeaterClosing(self._io, self, self._root)
             else:
                 self.data = Homebrew.TypeRepeaterConfiguration(
@@ -283,3 +283,14 @@ class Homebrew(KaitaiStruct):
                     u"/types/type_repeater_ping/seq/0",
                 )
             self.repeater_id = self._io.read_u4be()
+
+    @property
+    def fifth_letter(self):
+        if hasattr(self, "_m_fifth_letter"):
+            return self._m_fifth_letter if hasattr(self, "_m_fifth_letter") else None
+
+        _pos = self._io.pos()
+        self._io.seek(4)
+        self._m_fifth_letter = (self._io.read_bytes(1)).decode(u"ASCII")
+        self._io.seek(_pos)
+        return self._m_fifth_letter if hasattr(self, "_m_fifth_letter") else None

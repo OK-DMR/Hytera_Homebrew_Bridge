@@ -48,6 +48,19 @@ function Homebrew:_read()
   end
 end
 
+Homebrew.property.fifth_letter = {}
+function Homebrew.property.fifth_letter:get()
+  if self._m_fifth_letter ~= nil then
+    return self._m_fifth_letter
+  end
+
+  local _pos = self._io:pos()
+  self._io:seek(4)
+  self._m_fifth_letter = str_decode.decode(self._io:read_bytes(1), "ASCII")
+  self._io:seek(_pos)
+  return self._m_fifth_letter
+end
+
 
 Homebrew.TypeMasterPong = class.class(KaitaiStruct)
 
@@ -94,8 +107,8 @@ function Homebrew.TypeRepeaterConfigurationOrClosing:_init(io, parent, root)
 end
 
 function Homebrew.TypeRepeaterConfigurationOrClosing:_read()
-  local _on = self._io:size()
-  if _on == 9 then
+  local _on = self._root.fifth_letter
+  if _on == "L" then
     self.data = Homebrew.TypeRepeaterClosing(self._io, self, self._root)
   else
     self.data = Homebrew.TypeRepeaterConfiguration(self._io, self, self._root)
