@@ -1,42 +1,68 @@
 #!/usr/bin/env python3
+import asyncio
+import socket
+from asyncio import AbstractEventLoop, BaseTransport
+from signal import SIGINT, SIGTERM
+from typing import Optional
 
-import configparser
-from threading import Thread
-
-from homebrew.homebrew_service import HomebrewService
-from hytera_common.hytera_service_interface import HyteraServiceInterface
-from hytera_forward_to_pc.hytera_forward_to_pc import HyteraForwardToPC
-from hytera_ip_site_connect.hytera_ipsc import HyteraIPSiteConnect
+from lib.mmdvm_protocol import MMDVMProtocol
+from lib.settings import BridgeSettings
 
 
-class HyteraHomebrewBridge(Thread):
-    hytera_service: HyteraServiceInterface = None
-    homebrew_service: HomebrewService = HomebrewService()
+class HyteraHomebrewBridge:
+    def __init__(self):
+        self.settings: BridgeSettings = BridgeSettings(filepath="settings.ini")
+        self.homebrew_protocol: MMDVMProtocol = MMDVMProtocol(
+            settings=self.settings,
+            connection_lost_callback=self.homebrew_connection_lost,
+        )
+        self.loop: Optional[AbstractEventLoop] = None
+        self.hb_transport: Optional[BaseTransport] = None
+        self.hb_protocol: Optional[MMDVMProtocol] = None
 
-    def start(self):
-        # load settings
-        self.load_settings()
-        # run the hytera service
-        self.hytera_service.start()
-        # run the homebrew service
-        self.homebrew_service.start()
+    async def go(self):
+        self.loop = asyncio.get_running_loop()
+        self.print_welcome()
 
-    def load_settings(self):
-        config = configparser.ConfigParser()
-        config.sections()
-        config.read("settings.ini")
-        if "general" in config:
-            if "mode" in config["general"]:
-                if config["general"]["mode"] == "ip-site-connect":
-                    print("ip-site-connect mode")
-                    self.hytera_service = HyteraIPSiteConnect()
+        await self.homebrew_connect()
 
-        # fallback
-        if self.hytera_service is None:
-            print("forward-to-pc mode")
-            self.hytera_service = HyteraForwardToPC()
+    async def homebrew_connect(self):
+        # target address
+        hb_target_address = (self.settings.hb_master_host, self.settings.hb_master_port)
+        # Create Homebrew protocol handler
+        self.hb_transport, self.hb_protocol = await self.loop.create_datagram_endpoint(
+            lambda: self.homebrew_protocol,
+            local_addr=(self.settings.hb_local_ip, self.settings.hb_local_port),
+            remote_addr=hb_target_address,
+            reuse_address=True,
+        )
+        hb_local_socket = self.hb_transport.get_extra_info("socket")
+        if isinstance(hb_local_socket, socket.socket):
+            # Extract bound socket port
+            self.settings.hb_local_port = hb_local_socket.getsockname()[1]
+        self.loop.create_task(self.homebrew_protocol.periodic_maintenance())
+
+    def print_welcome(self):
+        print("Hytera Homebrew Bridge")
+        print("This project is experimental, use at your own risk\n")
+        self.settings.print_settings()
+
+    def homebrew_connection_lost(self):
+        self.homebrew_connect()
+
+    def stop_running(self):
+        self.loop.stop()
 
 
 if __name__ == "__main__":
-    t = HyteraHomebrewBridge()
-    t.start()
+    bridge: HyteraHomebrewBridge = HyteraHomebrewBridge()
+
+    loop = asyncio.get_event_loop()
+    for signal in [SIGINT, SIGTERM]:
+        loop.add_signal_handler(signal, bridge.stop_running)
+
+    try:
+        loop.run_until_complete(bridge.go())
+        loop.run_forever()
+    finally:
+        loop.close()

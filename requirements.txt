@@ -1,6 +1,6 @@
 dmr-utils3
 configparser
-kaitaistruct @ git+https://github.com/kaitai-io/kaitai_struct_python_runtime.git
+kaitaistruct
 black
 easysnmp
 pre-commit
@@ -13,3 +13,4 @@ bitarray
 uvloop
 aiohttp
 asyncio
+hblink3 @ git+https://github.com/HBLink-org/hblink3.git

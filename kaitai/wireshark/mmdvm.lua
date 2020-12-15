@@ -7,42 +7,48 @@ require("kaitaistruct")
 local str_decode = require("string_decode")
 
 -- 
--- Homebrew DMR protocol, based on PDF (DL5DI, G4KLX, DG1HT 2015) specification
-Homebrew = class.class(KaitaiStruct)
+-- MMDVM protocol structure (MMDVMHost/HBlink3/DMRGateway) based on reversing effort
+Mmdvm = class.class(KaitaiStruct)
 
-function Homebrew:_init(io, parent, root)
+function Mmdvm:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew:_read()
+function Mmdvm:_read()
   self.command_prefix = str_decode.decode(self._io:read_bytes(4), "UTF-8")
   local _on = self.command_prefix
   if _on == "RPTL" then
-    self.command_data = Homebrew.TypeRepeaterLoginRequest(self._io, self, self._root)
-  elseif _on == "MSTA" then
-    self.command_data = Homebrew.TypeMasterRepeaterAck(self._io, self, self._root)
+    self.command_data = Mmdvm.TypeRepeaterLoginRequest(self._io, self, self._root)
+  elseif _on == "RPTA" then
+    self.command_data = Mmdvm.TypeMasterRepeaterAck(self._io, self, self._root)
   elseif _on == "RPTK" then
-    self.command_data = Homebrew.TypeRepeaterLoginResponse(self._io, self, self._root)
+    self.command_data = Mmdvm.TypeRepeaterLoginResponse(self._io, self, self._root)
   elseif _on == "RPTC" then
-    self.command_data = Homebrew.TypeRepeaterConfigurationOrClosing(self._io, self, self._root)
+    self.command_data = Mmdvm.TypeRepeaterConfigurationOrClosing(self._io, self, self._root)
   elseif _on == "DMRD" then
-    self.command_data = Homebrew.TypeDmrData(self._io, self, self._root)
+    self.command_data = Mmdvm.TypeDmrData(self._io, self, self._root)
   elseif _on == "MSTC" then
-    self.command_data = Homebrew.TypeMasterClosing(self._io, self, self._root)
+    self.command_data = Mmdvm.TypeMasterClosing(self._io, self, self._root)
   elseif _on == "RPTP" then
-    self.command_data = Homebrew.TypeRepeaterPong(self._io, self, self._root)
+    self.command_data = Mmdvm.TypeRepeaterPing(self._io, self, self._root)
+  elseif _on == "RPTO" then
+    self.command_data = Mmdvm.TypeRepeaterOptions(self._io, self, self._root)
   elseif _on == "MSTP" then
-    self.command_data = Homebrew.TypeMasterPing(self._io, self, self._root)
+    self.command_data = Mmdvm.TypeMasterPong(self._io, self, self._root)
   elseif _on == "MSTN" then
-    self.command_data = Homebrew.TypeMasterNotAccept(self._io, self, self._root)
+    self.command_data = Mmdvm.TypeMasterNotAccept(self._io, self, self._root)
+  elseif _on == "DMRA" then
+    self.command_data = Mmdvm.TypeTalkerAlias(self._io, self, self._root)
+  else
+    self.command_data = Mmdvm.TypeUnknown(self._io, self, self._root)
   end
 end
 
-Homebrew.property.fifth_letter = {}
-function Homebrew.property.fifth_letter:get()
+Mmdvm.property.fifth_letter = {}
+function Mmdvm.property.fifth_letter:get()
   if self._m_fifth_letter ~= nil then
     return self._m_fifth_letter
   end
@@ -55,34 +61,16 @@ function Homebrew.property.fifth_letter:get()
 end
 
 
-Homebrew.TypeMasterPing = class.class(KaitaiStruct)
+Mmdvm.TypeMasterPong = class.class(KaitaiStruct)
 
-function Homebrew.TypeMasterPing:_init(io, parent, root)
+function Mmdvm.TypeMasterPong:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew.TypeMasterPing:_read()
-  self.magic = self._io:read_bytes(3)
-  if not(self.magic == "\073\078\071") then
-    error("not equal, expected " ..  "\073\078\071" .. ", but got " .. self.magic)
-  end
-  self.repeater_id = self._io:read_u4be()
-end
-
-
-Homebrew.TypeRepeaterPong = class.class(KaitaiStruct)
-
-function Homebrew.TypeRepeaterPong:_init(io, parent, root)
-  KaitaiStruct._init(self, io)
-  self._parent = parent
-  self._root = root or self
-  self:_read()
-end
-
-function Homebrew.TypeRepeaterPong:_read()
+function Mmdvm.TypeMasterPong:_read()
   self.magic = self._io:read_bytes(3)
   if not(self.magic == "\079\078\071") then
     error("not equal, expected " ..  "\079\078\071" .. ", but got " .. self.magic)
@@ -91,64 +79,81 @@ function Homebrew.TypeRepeaterPong:_read()
 end
 
 
-Homebrew.TypeRepeaterConfigurationOrClosing = class.class(KaitaiStruct)
+Mmdvm.TypeTalkerAlias = class.class(KaitaiStruct)
 
-function Homebrew.TypeRepeaterConfigurationOrClosing:_init(io, parent, root)
+function Mmdvm.TypeTalkerAlias:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew.TypeRepeaterConfigurationOrClosing:_read()
+function Mmdvm.TypeTalkerAlias:_read()
+  self.repeater_id = self._io:read_u4be()
+  self.radio_id = self._io:read_bits_int_be(24)
+  self._io:align_to_byte()
+  self.talker_alias = str_decode.decode(self._io:read_bytes(8), "ASCII")
+end
+
+
+Mmdvm.TypeRepeaterConfigurationOrClosing = class.class(KaitaiStruct)
+
+function Mmdvm.TypeRepeaterConfigurationOrClosing:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function Mmdvm.TypeRepeaterConfigurationOrClosing:_read()
   local _on = self._root.fifth_letter
   if _on == "L" then
-    self.data = Homebrew.TypeRepeaterClosing(self._io, self, self._root)
+    self.data = Mmdvm.TypeRepeaterClosing(self._io, self, self._root)
   else
-    self.data = Homebrew.TypeRepeaterConfiguration(self._io, self, self._root)
+    self.data = Mmdvm.TypeRepeaterConfiguration(self._io, self, self._root)
   end
 end
 
 
-Homebrew.TypeRepeaterLoginResponse = class.class(KaitaiStruct)
+Mmdvm.TypeRepeaterLoginResponse = class.class(KaitaiStruct)
 
-function Homebrew.TypeRepeaterLoginResponse:_init(io, parent, root)
+function Mmdvm.TypeRepeaterLoginResponse:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew.TypeRepeaterLoginResponse:_read()
+function Mmdvm.TypeRepeaterLoginResponse:_read()
   self.repeater_id = self._io:read_u4be()
   self.sha256 = self._io:read_bytes(32)
 end
 
 
-Homebrew.TypeRepeaterLoginRequest = class.class(KaitaiStruct)
+Mmdvm.TypeRepeaterLoginRequest = class.class(KaitaiStruct)
 
-function Homebrew.TypeRepeaterLoginRequest:_init(io, parent, root)
+function Mmdvm.TypeRepeaterLoginRequest:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew.TypeRepeaterLoginRequest:_read()
+function Mmdvm.TypeRepeaterLoginRequest:_read()
   self.repeater_id = self._io:read_u4be()
 end
 
 
-Homebrew.TypeMasterNotAccept = class.class(KaitaiStruct)
+Mmdvm.TypeMasterNotAccept = class.class(KaitaiStruct)
 
-function Homebrew.TypeMasterNotAccept:_init(io, parent, root)
+function Mmdvm.TypeMasterNotAccept:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew.TypeMasterNotAccept:_read()
+function Mmdvm.TypeMasterNotAccept:_read()
   self.magic = self._io:read_bytes(2)
   if not(self.magic == "\065\075") then
     error("not equal, expected " ..  "\065\075" .. ", but got " .. self.magic)
@@ -157,37 +162,48 @@ function Homebrew.TypeMasterNotAccept:_read()
 end
 
 
-Homebrew.TypeMasterRepeaterAck = class.class(KaitaiStruct)
+Mmdvm.TypeUnknown = class.class(KaitaiStruct)
 
-function Homebrew.TypeMasterRepeaterAck:_init(io, parent, root)
+function Mmdvm.TypeUnknown:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew.TypeMasterRepeaterAck:_read()
-  self.magictype_master_repeater_ack = self._io:read_bytes(2)
-  if not(self.magictype_master_repeater_ack == "\067\075") then
-    error("not equal, expected " ..  "\067\075" .. ", but got " .. self.magictype_master_repeater_ack)
-  end
-  self.repeater_id = self._io:read_u4be()
-  if not(self._io:is_eof()) then
-    self.random_number = self._io:read_u4be()
-  end
+function Mmdvm.TypeUnknown:_read()
+  self.unknown_data = self._io:read_bytes_full()
 end
 
 
-Homebrew.TypeMasterClosing = class.class(KaitaiStruct)
+Mmdvm.TypeMasterRepeaterAck = class.class(KaitaiStruct)
 
-function Homebrew.TypeMasterClosing:_init(io, parent, root)
+function Mmdvm.TypeMasterRepeaterAck:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew.TypeMasterClosing:_read()
+function Mmdvm.TypeMasterRepeaterAck:_read()
+  self.magic = self._io:read_bytes(2)
+  if not(self.magic == "\067\075") then
+    error("not equal, expected " ..  "\067\075" .. ", but got " .. self.magic)
+  end
+  self.repeater_id_or_challenge = self._io:read_u4be()
+end
+
+
+Mmdvm.TypeMasterClosing = class.class(KaitaiStruct)
+
+function Mmdvm.TypeMasterClosing:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function Mmdvm.TypeMasterClosing:_read()
   self.magic = self._io:read_bytes(1)
   if not(self.magic == "\076") then
     error("not equal, expected " ..  "\076" .. ", but got " .. self.magic)
@@ -196,16 +212,16 @@ function Homebrew.TypeMasterClosing:_read()
 end
 
 
-Homebrew.TypeDmrData = class.class(KaitaiStruct)
+Mmdvm.TypeDmrData = class.class(KaitaiStruct)
 
-function Homebrew.TypeDmrData:_init(io, parent, root)
+function Mmdvm.TypeDmrData:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew.TypeDmrData:_read()
+function Mmdvm.TypeDmrData:_read()
   self.sequence_no = self._io:read_u1()
   self.source_id = self._io:read_bits_int_be(24)
   self.target_id = self._io:read_bits_int_be(24)
@@ -227,16 +243,16 @@ function Homebrew.TypeDmrData:_read()
 end
 
 
-Homebrew.TypeRepeaterOptions = class.class(KaitaiStruct)
+Mmdvm.TypeRepeaterOptions = class.class(KaitaiStruct)
 
-function Homebrew.TypeRepeaterOptions:_init(io, parent, root)
+function Mmdvm.TypeRepeaterOptions:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew.TypeRepeaterOptions:_read()
+function Mmdvm.TypeRepeaterOptions:_read()
   self.repeater_id = self._io:read_u4be()
   self.options = str_decode.decode(self._io:read_bytes_full(), "ASCII")
 end
@@ -244,16 +260,16 @@ end
 -- 
 -- structure probably key=value;key=value;...
 
-Homebrew.TypeRepeaterClosing = class.class(KaitaiStruct)
+Mmdvm.TypeRepeaterClosing = class.class(KaitaiStruct)
 
-function Homebrew.TypeRepeaterClosing:_init(io, parent, root)
+function Mmdvm.TypeRepeaterClosing:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew.TypeRepeaterClosing:_read()
+function Mmdvm.TypeRepeaterClosing:_read()
   self.magic = self._io:read_bytes(1)
   if not(self.magic == "\076") then
     error("not equal, expected " ..  "\076" .. ", but got " .. self.magic)
@@ -262,16 +278,16 @@ function Homebrew.TypeRepeaterClosing:_read()
 end
 
 
-Homebrew.TypeRepeaterConfiguration = class.class(KaitaiStruct)
+Mmdvm.TypeRepeaterConfiguration = class.class(KaitaiStruct)
 
-function Homebrew.TypeRepeaterConfiguration:_init(io, parent, root)
+function Mmdvm.TypeRepeaterConfiguration:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function Homebrew.TypeRepeaterConfiguration:_read()
+function Mmdvm.TypeRepeaterConfiguration:_read()
   self.repeater_id = self._io:read_u4be()
   self.call_sign = str_decode.decode(self._io:read_bytes(8), "ASCII")
   self.rx_freq = str_decode.decode(self._io:read_bytes(9), "ASCII")
@@ -282,11 +298,32 @@ function Homebrew.TypeRepeaterConfiguration:_read()
   self.longitude = str_decode.decode(self._io:read_bytes(9), "ASCII")
   self.antenna_height_above_ground = str_decode.decode(self._io:read_bytes(3), "ASCII")
   self.location = str_decode.decode(self._io:read_bytes(20), "ASCII")
-  self.description = str_decode.decode(self._io:read_bytes(20), "ASCII")
+  self.description = str_decode.decode(self._io:read_bytes(19), "ASCII")
+  self.slots = str_decode.decode(self._io:read_bytes(1), "ASCII")
   self.url = str_decode.decode(self._io:read_bytes(124), "ASCII")
   self.software_id = str_decode.decode(self._io:read_bytes(40), "ASCII")
   self.package_id = str_decode.decode(self._io:read_bytes(40), "ASCII")
   self.unparsed_data = str_decode.decode(self._io:read_bytes_full(), "ASCII")
+end
+
+-- 
+-- 1 = only slot 1, 2 = only slot 2, 3 = both slots.
+
+Mmdvm.TypeRepeaterPing = class.class(KaitaiStruct)
+
+function Mmdvm.TypeRepeaterPing:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function Mmdvm.TypeRepeaterPing:_read()
+  self.magic = self._io:read_bytes(3)
+  if not(self.magic == "\073\078\071") then
+    error("not equal, expected " ..  "\073\078\071" .. ", but got " .. self.magic)
+  end
+  self.repeater_id = self._io:read_u4be()
 end
 
 

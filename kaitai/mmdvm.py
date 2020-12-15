@@ -12,8 +12,8 @@ if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
     )
 
 
-class Homebrew(KaitaiStruct):
-    """Homebrew DMR protocol, based on PDF (DL5DI, G4KLX, DG1HT 2015) specification"""
+class Mmdvm(KaitaiStruct):
+    """MMDVM protocol structure (MMDVMHost/HBlink3/DMRGateway) based on reversing effort"""
 
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
@@ -25,51 +25,37 @@ class Homebrew(KaitaiStruct):
         self.command_prefix = (self._io.read_bytes(4)).decode(u"UTF-8")
         _on = self.command_prefix
         if _on == u"RPTL":
-            self.command_data = Homebrew.TypeRepeaterLoginRequest(
+            self.command_data = Mmdvm.TypeRepeaterLoginRequest(
                 self._io, self, self._root
             )
-        elif _on == u"MSTA":
-            self.command_data = Homebrew.TypeMasterRepeaterAck(
-                self._io, self, self._root
-            )
+        elif _on == u"RPTA":
+            self.command_data = Mmdvm.TypeMasterRepeaterAck(self._io, self, self._root)
         elif _on == u"RPTK":
-            self.command_data = Homebrew.TypeRepeaterLoginResponse(
+            self.command_data = Mmdvm.TypeRepeaterLoginResponse(
                 self._io, self, self._root
             )
         elif _on == u"RPTC":
-            self.command_data = Homebrew.TypeRepeaterConfigurationOrClosing(
+            self.command_data = Mmdvm.TypeRepeaterConfigurationOrClosing(
                 self._io, self, self._root
             )
         elif _on == u"DMRD":
-            self.command_data = Homebrew.TypeDmrData(self._io, self, self._root)
+            self.command_data = Mmdvm.TypeDmrData(self._io, self, self._root)
         elif _on == u"MSTC":
-            self.command_data = Homebrew.TypeMasterClosing(self._io, self, self._root)
+            self.command_data = Mmdvm.TypeMasterClosing(self._io, self, self._root)
         elif _on == u"RPTP":
-            self.command_data = Homebrew.TypeRepeaterPong(self._io, self, self._root)
+            self.command_data = Mmdvm.TypeRepeaterPing(self._io, self, self._root)
+        elif _on == u"RPTO":
+            self.command_data = Mmdvm.TypeRepeaterOptions(self._io, self, self._root)
         elif _on == u"MSTP":
-            self.command_data = Homebrew.TypeMasterPing(self._io, self, self._root)
+            self.command_data = Mmdvm.TypeMasterPong(self._io, self, self._root)
         elif _on == u"MSTN":
-            self.command_data = Homebrew.TypeMasterNotAccept(self._io, self, self._root)
+            self.command_data = Mmdvm.TypeMasterNotAccept(self._io, self, self._root)
+        elif _on == u"DMRA":
+            self.command_data = Mmdvm.TypeTalkerAlias(self._io, self, self._root)
+        else:
+            self.command_data = Mmdvm.TypeUnknown(self._io, self, self._root)
 
-    class TypeMasterPing(KaitaiStruct):
-        def __init__(self, _io, _parent=None, _root=None):
-            self._io = _io
-            self._parent = _parent
-            self._root = _root if _root else self
-            self._read()
-
-        def _read(self):
-            self.magic = self._io.read_bytes(3)
-            if not self.magic == b"\x49\x4E\x47":
-                raise kaitaistruct.ValidationNotEqualError(
-                    b"\x49\x4E\x47",
-                    self.magic,
-                    self._io,
-                    u"/types/type_master_ping/seq/0",
-                )
-            self.repeater_id = self._io.read_u4be()
-
-    class TypeRepeaterPong(KaitaiStruct):
+    class TypeMasterPong(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
             self._parent = _parent
@@ -83,9 +69,22 @@ class Homebrew(KaitaiStruct):
                     b"\x4F\x4E\x47",
                     self.magic,
                     self._io,
-                    u"/types/type_repeater_pong/seq/0",
+                    u"/types/type_master_pong/seq/0",
                 )
             self.repeater_id = self._io.read_u4be()
+
+    class TypeTalkerAlias(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.repeater_id = self._io.read_u4be()
+            self.radio_id = self._io.read_bits_int_be(24)
+            self._io.align_to_byte()
+            self.talker_alias = (self._io.read_bytes(8)).decode(u"ASCII")
 
     class TypeRepeaterConfigurationOrClosing(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -97,11 +96,9 @@ class Homebrew(KaitaiStruct):
         def _read(self):
             _on = self._root.fifth_letter
             if _on == u"L":
-                self.data = Homebrew.TypeRepeaterClosing(self._io, self, self._root)
+                self.data = Mmdvm.TypeRepeaterClosing(self._io, self, self._root)
             else:
-                self.data = Homebrew.TypeRepeaterConfiguration(
-                    self._io, self, self._root
-                )
+                self.data = Mmdvm.TypeRepeaterConfiguration(self._io, self, self._root)
 
     class TypeRepeaterLoginResponse(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -142,6 +139,16 @@ class Homebrew(KaitaiStruct):
                 )
             self.repeater_id = self._io.read_u4be()
 
+    class TypeUnknown(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.unknown_data = self._io.read_bytes_full()
+
     class TypeMasterRepeaterAck(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
             self._io = _io
@@ -150,17 +157,15 @@ class Homebrew(KaitaiStruct):
             self._read()
 
         def _read(self):
-            self.magictype_master_repeater_ack = self._io.read_bytes(2)
-            if not self.magictype_master_repeater_ack == b"\x43\x4B":
+            self.magic = self._io.read_bytes(2)
+            if not self.magic == b"\x43\x4B":
                 raise kaitaistruct.ValidationNotEqualError(
                     b"\x43\x4B",
-                    self.magictype_master_repeater_ack,
+                    self.magic,
                     self._io,
                     u"/types/type_master_repeater_ack/seq/0",
                 )
-            self.repeater_id = self._io.read_u4be()
-            if not (self._io.is_eof()):
-                self.random_number = self._io.read_u4be()
+            self.repeater_id_or_challenge = self._io.read_u4be()
 
     class TypeMasterClosing(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):
@@ -247,11 +252,30 @@ class Homebrew(KaitaiStruct):
             self.longitude = (self._io.read_bytes(9)).decode(u"ASCII")
             self.antenna_height_above_ground = (self._io.read_bytes(3)).decode(u"ASCII")
             self.location = (self._io.read_bytes(20)).decode(u"ASCII")
-            self.description = (self._io.read_bytes(20)).decode(u"ASCII")
+            self.description = (self._io.read_bytes(19)).decode(u"ASCII")
+            self.slots = (self._io.read_bytes(1)).decode(u"ASCII")
             self.url = (self._io.read_bytes(124)).decode(u"ASCII")
             self.software_id = (self._io.read_bytes(40)).decode(u"ASCII")
             self.package_id = (self._io.read_bytes(40)).decode(u"ASCII")
             self.unparsed_data = (self._io.read_bytes_full()).decode(u"ASCII")
+
+    class TypeRepeaterPing(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.magic = self._io.read_bytes(3)
+            if not self.magic == b"\x49\x4E\x47":
+                raise kaitaistruct.ValidationNotEqualError(
+                    b"\x49\x4E\x47",
+                    self.magic,
+                    self._io,
+                    u"/types/type_repeater_ping/seq/0",
+                )
+            self.repeater_id = self._io.read_u4be()
 
     @property
     def fifth_letter(self):

@@ -11,9 +11,9 @@ if __name__ == "__main__":
     sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
     from tests.prettyprint import prettyprint
-    from kaitai.mmdvm import Mmdvm
+    from kaitai.homebrew import Homebrew
 
-    print("MMDVM (2020) packet")
+    print("HOMEBREW (2015) packet")
 
-    packet = Mmdvm.from_bytes(bytes.fromhex(sys.argv[1]))
+    packet = Homebrew.from_bytes(bytes.fromhex(sys.argv[1]))
     prettyprint(packet)
