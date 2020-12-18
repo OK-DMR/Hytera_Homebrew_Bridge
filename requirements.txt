@@ -13,4 +13,3 @@ bitarray
 uvloop
 aiohttp
 asyncio
-hblink3 @ git+https://github.com/HBLink-org/hblink3.git
