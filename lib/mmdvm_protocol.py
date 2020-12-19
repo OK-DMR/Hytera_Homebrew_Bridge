@@ -7,10 +7,11 @@ from hashlib import sha256
 from typing import Optional, Callable, Tuple
 
 from kaitai.mmdvm import Mmdvm
+from lib.logging_protocol import LoggingProtocol
 from lib.settings import BridgeSettings
 
 
-class MMDVMProtocol(asyncio.DatagramProtocol):
+class MMDVMProtocol(LoggingProtocol):
     CON_NEW: int = 1
     CON_LOGIN_REQUEST_SENT: int = 2
     CON_LOGIN_RESPONSE_SENT: int = 3
@@ -18,13 +19,14 @@ class MMDVMProtocol(asyncio.DatagramProtocol):
     CON_AUTHENTICATION_FAILED: int = 5
 
     def __init__(self, settings: BridgeSettings, connection_lost_callback: Callable):
+        super().__init__(settings)
         self.settings = settings
         self.transport: Optional[transports.DatagramTransport] = None
         self.connection_lost_callback = connection_lost_callback
         self.connection_status = self.CON_NEW
 
     async def periodic_maintenance(self):
-        while asyncio.get_event_loop().is_running():
+        while not asyncio.get_event_loop().is_closed():
             await asyncio.sleep(5)
             if self.connection_status == self.CON_NEW:
                 self.send_login_request()
@@ -37,12 +39,14 @@ class MMDVMProtocol(asyncio.DatagramProtocol):
                 self.send_login_request()
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
-        print("MMDVM socket connected")
+        self.log("MMDVM socket connected")
         self.transport = transport
         self.send_login_request()
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
-        print("MMDVM socket closed")
+        self.log("MMDVM socket closed")
+        if exc:
+            self.logger.exception(exc)
         self.connection_lost_callback()
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
@@ -50,40 +54,40 @@ class MMDVMProtocol(asyncio.DatagramProtocol):
         if isinstance(packet.command_data, Mmdvm.TypeMasterNotAccept):
             if self.connection_status == self.CON_LOGIN_REQUEST_SENT:
                 self.connection_status = self.CON_NEW
-                print("Master did not accept our login request")
+                self.log("Master did not accept our login request")
             elif self.connection_status == self.CON_LOGIN_RESPONSE_SENT:
                 self.connection_status = self.CON_NEW
-                print("Master did not accept our password challenge response")
+                self.log("Master did not accept our password challenge response")
         elif isinstance(packet.command_data, Mmdvm.TypeMasterRepeaterAck):
             if self.connection_status == self.CON_LOGIN_REQUEST_SENT:
-                print("Sending Login Response")
+                self.log("Sending Login Response")
                 self.send_login_response(packet.command_data.repeater_id_or_challenge)
             elif self.connection_status == self.CON_LOGIN_RESPONSE_SENT:
-                print("Master Login Accept")
+                self.log("Master Login Accept")
                 self.connection_status = self.CON_LOGIN_SUCCESSFULL
                 self.send_configuration()
         elif isinstance(packet.command_data, Mmdvm.TypeMasterPong):
-            # print("Master PONG received")
+            # self.log("Master PONG received")
             pass
         elif isinstance(packet.command_data, Mmdvm.TypeMasterClosing):
-            print("Master Closing connection")
+            self.log("Master Closing connection")
             self.connection_status = self.CON_NEW
         elif isinstance(packet.command_data, Mmdvm.TypeDmrData):
             self.dmrd_received(data)
         else:
-            print(f"UNHANDLED {packet.__class__.__name__} {hexlify(data)}")
+            self.log(f"UNHANDLED {packet.__class__.__name__} {hexlify(data)}")
 
     def dmrd_received(self, data: bytes):
         pass
 
     def send_login_request(self) -> None:
-        print("Sending Login Request")
+        self.log("Sending Login Request")
         self.connection_status = self.CON_LOGIN_REQUEST_SENT
         request = struct.pack(">4sI", b"RPTL", self.settings.hb_repeater_dmr_id)
         self.transport.sendto(request)
 
     def send_login_response(self, challenge: int):
-        print("Sending Login Response (Challenge response)")
+        self.log("Sending Login Response (Challenge response)")
         self.connection_status = self.CON_LOGIN_RESPONSE_SENT
         challenge_response = struct.pack(
             ">4sI32s",
@@ -103,7 +107,7 @@ class MMDVMProtocol(asyncio.DatagramProtocol):
         self.transport.sendto(challenge_response)
 
     def send_configuration(self):
-        print("Sending self configuration to master")
+        self.log("Sending self configuration to master")
         packet = struct.pack(
             ">4sI8s9s9s2s2s8s9s3s20s19s1s124s40s40s",
             b"RPTC",
@@ -128,6 +132,14 @@ class MMDVMProtocol(asyncio.DatagramProtocol):
         self.transport.sendto(packet)
 
     def send_ping(self):
-        # print("Sending PING")
-        packet = struct.pack(">7sI", b"RPTPING", self.settings.hb_repeater_dmr_id,)
+        packet = struct.pack(">7sI", b"RPTPING", self.settings.hb_repeater_dmr_id)
         self.transport.sendto(packet)
+
+    def send_closing(self):
+        self.log("Closing MMDVM connection")
+        packet = struct.pack(">5sI", b"RPTCL", self.settings.hb_repeater_dmr_id)
+        self.transport.sendto(packet)
+
+    def disconnect(self):
+        if self.transport and not self.transport.is_closing():
+            self.send_closing()

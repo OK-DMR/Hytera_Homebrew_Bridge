@@ -6,7 +6,7 @@ import configparser
 class BridgeSettings:
     SECTION_HB = "homebrew"
     SECTION_IPSC = "ip-site-connect"
-    SECTION_GENERAL = "general"
+    SECTION_SNMP = "snmp"
 
     HYTERA_MODE_IPSC = "ip-site-connect"
     HYTERA_MODE_FTPC = "forward-to-pc"
@@ -15,6 +15,11 @@ class BridgeSettings:
         parser = configparser.ConfigParser()
         parser.sections()
         parser.read(filepath)
+
+        self.snmp_enabled = parser.getboolean(
+            self.SECTION_SNMP, "enabled", fallback=True
+        )
+        self.snmp_family = parser.get(self.SECTION_SNMP, "family", fallback="public")
 
         self.hb_master_host = parser.get(self.SECTION_HB, "master_ip")
         self.hb_master_port = parser.getint(self.SECTION_HB, "master_port")
@@ -39,19 +44,31 @@ class BridgeSettings:
         self.hb_tx_power = parser.getint(self.SECTION_HB, "tx_power")
 
         self.hytera_mode = parser.get(
-            self.SECTION_GENERAL, "hytera_mode", fallback=self.HYTERA_MODE_IPSC
+            self.SECTION_SNMP, "hytera_mode", fallback=self.HYTERA_MODE_IPSC
         )
 
         if self.hytera_mode == self.HYTERA_MODE_IPSC:
             self.ipsc_ip = parser.get(self.SECTION_IPSC, "ip")
-            self.service_port = parser.getint(self.SECTION_IPSC, "service_port")
+            self.p2p_port = parser.getint(self.SECTION_IPSC, "p2p_port")
             self.dmr_port = parser.getint(self.SECTION_IPSC, "dmr_port")
             self.rdac_port = parser.getint(self.SECTION_IPSC, "rdac_port")
+
+        # hytera repeater data
+        self.hytera_snmp_data: list = list()
+        self.hytera_repeater_id: int = 0
+        self.hytera_callsign: str = ""
+        self.hytera_is_registered: bool = False
+        self.hytera_hardware: str = ""
+        self.hytera_firmware: str = ""
+        self.hytera_serial_number: str = ""
+        self.hytera_repeater_mode: int = 0
+        self.hytera_tx_freq: int = 0
+        self.hytera_rx_freq: int = 0
 
     def print_settings(self):
         print("Settings Loaded:")
         print(
-            f"\tHytera Repeater is expected to connect at {self.ipsc_ip}:{self.service_port}"
+            f"\tHytera Repeater is expected to connect at {self.ipsc_ip}:{self.p2p_port}"
         )
         print(
             f"\tUpstream Homebrew/MMDVM server is expected at {self.hb_master_host}:{self.hb_master_port}"
