@@ -1,0 +1,43 @@
+[snmp]
+# SNMP probing Hytera repeater for additional info
+# values yes / no
+enabled = yes
+# some repeaters have "public" others "hytera"
+family = public
+
+# Hytera IPSC configuration
+[ip-site-connect]
+ip = 192.168.1.2
+p2p_port = 50000
+dmr_port = 50001
+rdac_port = 50002
+
+[homebrew]
+# from which IP the connection to MMDVM is made
+local_ip = 0.0.0.0
+# master ip, port and password
+master_ip = 192.168.1.3
+master_port = 62031
+password = B3S3CURE
+# callsign and repeater_dmr_id, if provided will override the one read from repeater
+callsign =
+repeater_dmr_id =
+# params for configuration reporting
+color_code = 1
+latitude = +50.4243
+longitude = -142.1234
+antenna_height = 999
+# 20 ascii letters, will be trimmed if exceeded
+location =
+description =
+# 124 ascii letters, http:// not required, will be trimmed if exceeded
+url = http://github.com/ok-dmr/Hytera_Homebrew_Bridge
+# 40 ascii letters, will be trimmed if exceeded
+software_id = 2020.1
+package_id = Hytera Homebrew Bridge
+# use these to override params read out of repeater
+rx_freq = 434787500
+tx_freq = 434787500
+tx_power = 1
+# 1 = only TS1, 2 = only TS2, 3 = TS1 and TS2
+timeslots = 3

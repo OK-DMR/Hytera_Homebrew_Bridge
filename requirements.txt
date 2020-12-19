@@ -4,3 +4,6 @@ easysnmp~=0.2.5
 pcapng~=0.1.25
 kamene~=0.32
 asyncio~=3.4.3
+setuptools~=51.0.0
+python-pcapng
+dmr_utils3
