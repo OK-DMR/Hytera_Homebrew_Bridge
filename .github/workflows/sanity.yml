@@ -17,6 +17,7 @@ jobs:
         run: |
           sudo apt-get install libsnmp-dev snmp-mibs-downloader gcc python-dev
           python -m pip install --upgrade pip
+          pip install flake8 pytest
           pip install -r requirements.txt
       - name: run tests with embedded data
         run: |
