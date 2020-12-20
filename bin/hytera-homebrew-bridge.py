@@ -9,22 +9,24 @@ from asyncio import AbstractEventLoop, Queue
 from signal import SIGINT, SIGTERM
 from typing import Optional
 
+from hytera_homebrew_bridge.lib.hytera_mmdvm_translator import HyteraMmdvmTranslator
+
 
 class HyteraHomebrewBridge:
     def __init__(self, settings_ini_path: str):
         self.loop: Optional[AbstractEventLoop] = None
         self.settings: BridgeSettings = BridgeSettings(filepath=settings_ini_path)
         # message queues for translator
-        self.queue_hytera_to_mmdvm: Queue = Queue()
+        self.queue_mmdvm_outgoing: Queue = Queue()
         self.queue_hytera_incoming: Queue = Queue()
-        self.queue_mmdvm_to_hytera: Queue = Queue()
+        self.queue_hytera_outgoing: Queue = Queue()
         self.queue_mmdvm_incoming: Queue = Queue()
         # homebrew / mmdvm
         self.homebrew_protocol: MMDVMProtocol = MMDVMProtocol(
             settings=self.settings,
             connection_lost_callback=self.homebrew_connection_lost,
-            queue_hytera_to_mmdvm=self.queue_hytera_to_mmdvm,
-            queue_mmdvm_to_hytera=self.queue_mmdvm_incoming,
+            queue_outgoing=self.queue_mmdvm_outgoing,
+            queue_incoming=self.queue_mmdvm_incoming,
         )
         # hytera ipsc: p2p dmr and rdac
         self.hytera_p2p_protocol: HyteraP2PProtocol = HyteraP2PProtocol(
@@ -32,11 +34,19 @@ class HyteraHomebrewBridge:
         )
         self.hytera_dmr_protocol: HyteraDMRProtocol = HyteraDMRProtocol(
             settings=self.settings,
-            queue_hytera_to_mmdvm=self.queue_hytera_incoming,
-            queue_mmdvm_to_hytera=self.queue_mmdvm_to_hytera,
+            queue_incoming=self.queue_hytera_incoming,
+            queue_outgoing=self.queue_hytera_outgoing,
         )
         self.hytera_rdac_protocol: HyteraRDACProtocol = HyteraRDACProtocol(
             settings=self.settings, rdac_completed_callback=self.homebrew_connect()
+        )
+        # prepare translator
+        self.hytera_mmdvm_translator: HyteraMmdvmTranslator = HyteraMmdvmTranslator(
+            settings=self.settings,
+            mmdvm_incoming=self.queue_mmdvm_incoming,
+            hytera_incoming=self.queue_hytera_incoming,
+            mmdvm_outgoing=self.queue_mmdvm_outgoing,
+            hytera_outgoing=self.queue_hytera_outgoing,
         )
 
     async def go(self) -> None:
@@ -110,12 +120,8 @@ class HyteraHomebrewBridge:
         self.hytera_p2p_protocol.disconnect()
         self.loop.stop()
         for task in asyncio.Task.all_tasks():
-            try:
-                task.cancel()
-                task.done()
-            except:
-                # ignoring all errors cancelling tasks could have produced
-                pass
+            task.cancel()
+            task.done()
 
 
 if __name__ == "__main__":

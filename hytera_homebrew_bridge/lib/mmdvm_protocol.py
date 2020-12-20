@@ -23,16 +23,16 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         self,
         settings: BridgeSettings,
         connection_lost_callback: Callable,
-        queue_hytera_to_mmdvm: Queue,
-        queue_mmdvm_to_hytera: Queue,
+        queue_outgoing: Queue,
+        queue_incoming: Queue,
     ) -> None:
         super().__init__(settings)
         self.settings = settings
         self.transport: Optional[transports.DatagramTransport] = None
         self.connection_lost_callback = connection_lost_callback
         self.connection_status = self.CON_NEW
-        self.queue_hytera_to_mmdvm = queue_hytera_to_mmdvm
-        self.queue_mmdvm_to_hytera = queue_mmdvm_to_hytera
+        self.queue_outgoing = queue_outgoing
+        self.queue_incoming = queue_incoming
 
     async def periodic_maintenance(self) -> None:
         while not asyncio.get_running_loop().is_closed():
@@ -49,7 +49,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
 
     async def send_mmdvm_from_queue(self) -> None:
         while not asyncio.get_running_loop().is_closed():
-            packet: bytes = await self.queue_hytera_to_mmdvm.get()
+            packet: bytes = await self.queue_outgoing.get()
             if self.transport and not self.transport.is_closing():
                 self.transport.sendto(packet)
 
@@ -99,7 +99,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
     def send_login_request(self) -> None:
         self.log("Sending Login Request")
         self.connection_status = self.CON_LOGIN_REQUEST_SENT
-        self.queue_hytera_to_mmdvm.put_nowait(
+        self.queue_outgoing.put_nowait(
             struct.pack(">4sI", b"RPTL", self.settings.get_repeater_dmrid())
         )
 
@@ -121,7 +121,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                 ).hexdigest()
             ),
         )
-        self.queue_hytera_to_mmdvm.put_nowait(challenge_response)
+        self.queue_outgoing.put_nowait(challenge_response)
 
     def send_configuration(self) -> None:
         self.log(f"Sending self configuration to master")
@@ -146,16 +146,16 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
             self.settings.hb_software_id[0:40].ljust(40).encode(),
             self.settings.hb_package_id[0:40].ljust(40).encode(),
         )
-        self.queue_hytera_to_mmdvm.put_nowait(packet)
+        self.queue_outgoing.put_nowait(packet)
 
     def send_ping(self) -> None:
         packet = struct.pack(">7sI", b"RPTPING", self.settings.get_repeater_dmrid())
-        self.queue_hytera_to_mmdvm.put_nowait(packet)
+        self.queue_outgoing.put_nowait(packet)
 
     def send_closing(self) -> None:
         self.log("Closing MMDVM connection")
         packet = struct.pack(">5sI", b"RPTCL", self.settings.get_repeater_dmrid())
-        self.queue_hytera_to_mmdvm.put_nowait(packet)
+        self.queue_outgoing.put_nowait(packet)
 
     def disconnect(self) -> None:
         if self.transport and not self.transport.is_closing():

@@ -491,19 +491,16 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
 
 class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
     def __init__(
-        self,
-        settings: BridgeSettings,
-        queue_hytera_to_mmdvm: Queue,
-        queue_mmdvm_to_hytera: Queue,
+        self, settings: BridgeSettings, queue_incoming: Queue, queue_outgoing: Queue,
     ) -> None:
         super().__init__(settings)
         self.transport: Optional[transports.DatagramTransport] = None
-        self.queue_hytera_to_mmdvm = queue_hytera_to_mmdvm
-        self.queue_mmdvm_to_hytera = queue_mmdvm_to_hytera
+        self.queue_incoming = queue_incoming
+        self.queue_outgoing = queue_outgoing
 
     async def send_hytera_from_queue(self) -> None:
         while not asyncio.get_running_loop().is_closed():
-            packet: bytes = await self.queue_mmdvm_to_hytera.get()
+            packet: bytes = await self.queue_outgoing.get()
             if self.transport and not self.transport.is_closing():
                 self.transport.sendto(packet)
 
