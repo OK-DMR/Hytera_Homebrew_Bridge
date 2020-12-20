@@ -16,13 +16,15 @@ class HyteraHomebrewBridge:
         self.settings: BridgeSettings = BridgeSettings(filepath=settings_ini_path)
         # message queues for translator
         self.queue_hytera_to_mmdvm: Queue = Queue()
+        self.queue_hytera_incoming: Queue = Queue()
         self.queue_mmdvm_to_hytera: Queue = Queue()
+        self.queue_mmdvm_incoming: Queue = Queue()
         # homebrew / mmdvm
         self.homebrew_protocol: MMDVMProtocol = MMDVMProtocol(
             settings=self.settings,
             connection_lost_callback=self.homebrew_connection_lost,
             queue_hytera_to_mmdvm=self.queue_hytera_to_mmdvm,
-            queue_mmdvm_to_hytera=self.queue_mmdvm_to_hytera,
+            queue_mmdvm_to_hytera=self.queue_mmdvm_incoming,
         )
         # hytera ipsc: p2p dmr and rdac
         self.hytera_p2p_protocol: HyteraP2PProtocol = HyteraP2PProtocol(
@@ -30,7 +32,7 @@ class HyteraHomebrewBridge:
         )
         self.hytera_dmr_protocol: HyteraDMRProtocol = HyteraDMRProtocol(
             settings=self.settings,
-            queue_hytera_to_mmdvm=self.queue_hytera_to_mmdvm,
+            queue_hytera_to_mmdvm=self.queue_hytera_incoming,
             queue_mmdvm_to_hytera=self.queue_mmdvm_to_hytera,
         )
         self.hytera_rdac_protocol: HyteraRDACProtocol = HyteraRDACProtocol(
@@ -41,9 +43,16 @@ class HyteraHomebrewBridge:
         self.loop = asyncio.get_running_loop()
         self.settings.print_settings()
 
+        # run tasks
+        self.loop.create_task(self.homebrew_protocol.periodic_maintenance())
+        self.loop.create_task(self.hytera_dmr_protocol.send_hytera_from_queue())
+        self.loop.create_task(self.homebrew_protocol.send_mmdvm_from_queue())
+
+        # connect Hytera repeater
         await self.hytera_p2p_connect()
         await self.hytera_dmr_connect()
         await self.hytera_rdac_connect()
+        # MMDVM will get connected once the Hytera is set-up and running correctly
 
     async def hytera_p2p_connect(self) -> None:
         # P2P/IPSC Service address
@@ -92,8 +101,6 @@ class HyteraHomebrewBridge:
         if isinstance(hb_local_socket, socket.socket):
             # Extract bound socket port
             self.settings.hb_local_port = hb_local_socket.getsockname()[1]
-        self.loop.create_task(self.homebrew_protocol.send_mmdvm_from_queue())
-        self.loop.create_task(self.homebrew_protocol.periodic_maintenance())
 
     def homebrew_connection_lost(self) -> None:
         self.homebrew_connect()
@@ -103,8 +110,12 @@ class HyteraHomebrewBridge:
         self.hytera_p2p_protocol.disconnect()
         self.loop.stop()
         for task in asyncio.Task.all_tasks():
-            task.cancel()
-            task.done()
+            try:
+                task.cancel()
+                task.done()
+            except:
+                # ignoring all errors cancelling tasks could have produced
+                pass
 
 
 if __name__ == "__main__":
@@ -120,8 +131,8 @@ if __name__ == "__main__":
         exit(1)
 
     self_name: str = "hytera_homebrew_bridge"
-    spec = importlib.util.find_spec(self_name)
-    if spec is None:
+    self_spec = importlib.util.find_spec(self_name)
+    if self_spec is None:
         print("Package hytera-homebrew-bridge is not installed, trying locally\n")
         parent_folder: str = os.path.dirname(
             os.path.dirname(os.path.realpath(__file__))
@@ -138,9 +149,16 @@ if __name__ == "__main__":
     from hytera_homebrew_bridge.lib.mmdvm_protocol import MMDVMProtocol
     from hytera_homebrew_bridge.lib.settings import BridgeSettings
 
-    bridge: HyteraHomebrewBridge = HyteraHomebrewBridge(sys.argv[1])
+    uvloop_spec = importlib.util.find_spec("uvloop")
+    if uvloop_spec:
+        import uvloop
+
+        uvloop.install()
 
     loop = asyncio.get_event_loop()
+    # order is necessary, various asyncio object are create at bridge init
+    # and those must be created after the main loop is created
+    bridge: HyteraHomebrewBridge = HyteraHomebrewBridge(sys.argv[1])
     for signal in [SIGINT, SIGTERM]:
         loop.add_signal_handler(signal, bridge.stop_running)
 

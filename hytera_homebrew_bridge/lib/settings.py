@@ -136,7 +136,7 @@ class BridgeSettings:
     def get_repeater_dmrid(self) -> int:
         from hytera_homebrew_bridge.lib import snmp
 
-        return (
+        return int(
             self.hb_repeater_dmr_id
             or self.hytera_repeater_id
             or self.hytera_snmp_data[snmp.SNMP.OID_RADIO_ID]
@@ -145,7 +145,10 @@ class BridgeSettings:
     def get_incorrect_configurations(self) -> list:
         rtn: list = list()
 
-        generic_error_message: str = "Value might have not been configured and was not obtained in Hytera repeater " "configuration process (either P2P, RDAC or SNMP) "
+        generic_error_message: str = (
+            "Value might have not been configured and was not obtained in Hytera repeater "
+            "configuration process (either P2P, RDAC or SNMP) "
+        )
 
         repeater_id = self.get_repeater_dmrid()
         if repeater_id < 1:

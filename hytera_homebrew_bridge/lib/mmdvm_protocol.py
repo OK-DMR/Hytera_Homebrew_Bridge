@@ -35,7 +35,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         self.queue_mmdvm_to_hytera = queue_mmdvm_to_hytera
 
     async def periodic_maintenance(self) -> None:
-        while not asyncio.get_event_loop().is_closed():
+        while not asyncio.get_running_loop().is_closed():
             await asyncio.sleep(5)
             if self.connection_status == self.CON_NEW:
                 self.send_login_request()
@@ -48,7 +48,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                 self.send_login_request()
 
     async def send_mmdvm_from_queue(self) -> None:
-        while not asyncio.get_event_loop().is_closed():
+        while not asyncio.get_running_loop().is_closed():
             packet: bytes = await self.queue_hytera_to_mmdvm.get()
             if self.transport and not self.transport.is_closing():
                 self.transport.sendto(packet)
