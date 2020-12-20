@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import asyncio
 import logging
-from asyncio import transports
+from asyncio import transports, Queue
 from binascii import hexlify
 from typing import Optional, Tuple, Coroutine
+
+from kaitaistruct import KaitaiStruct
 
 from hytera_homebrew_bridge.kaitai.hytera_dmr_application_protocol import (
     HyteraDmrApplicationProtocol,
@@ -21,13 +23,12 @@ from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnect
 from hytera_homebrew_bridge.kaitai.real_time_transport_protocol import (
     RealTimeTransportProtocol,
 )
-from hytera_homebrew_bridge.lib.logging_protocol import LoggingProtocol
+from hytera_homebrew_bridge.lib.logging_protocol import CustomBridgeDatagramProtocol
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
-from hytera_homebrew_bridge.lib.snmp import SNMP
 from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 
-class HyteraP2PProtocol(LoggingProtocol):
+class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     COMMAND_PREFIX: bytes = bytes([0x50, 0x32, 0x50])
     PING_PREFIX: bytes = bytes([0x0A, 0x00, 0x00, 0x00, 0x14])
 
@@ -65,17 +66,13 @@ class HyteraP2PProtocol(LoggingProtocol):
 
         self.transport.sendto(data, address)
 
-        if self.settings.snmp_enabled:
-            SNMP().walk_ip(address, self.settings)
-            if not self.settings.hytera_snmp_data:
-                self.log("SNMP failed to walk the repeater", logging.WARN)
-        else:
-            self.log("SNMP is disabled", logging.WARN)
+        self.hytera_repeater_obtain_snmp(address)
         self.settings.hytera_is_registered = True
+        asyncio.get_running_loop().create_task(self.repeater_accepted_callback)
 
     def handle_rdac_request(self, data: bytes, address: tuple) -> None:
         if not self.settings.hytera_is_registered:
-            self.log("Ignoring RDAC request for not-registered repeater")
+            self.log("Rejecting RDAC request for not-registered repeater")
             self.transport.sendto(bytes(0x00), address)
             return
 
@@ -109,7 +106,7 @@ class HyteraP2PProtocol(LoggingProtocol):
 
     def handle_dmr_request(self, data: bytes, address: tuple) -> None:
         if not self.settings.hytera_is_registered:
-            self.log("Ignoring DMR request for not-registered repeater")
+            self.log("Rejecting DMR request for not-registered repeater")
             self.transport.sendto(bytes(0x00), address)
             return
 
@@ -136,10 +133,11 @@ class HyteraP2PProtocol(LoggingProtocol):
         data[14] = 0x01
         self.transport.sendto(data, address)
 
-    def __init__(self, settings: BridgeSettings):
+    def __init__(self, settings: BridgeSettings, repeater_accepted_callback: Coroutine):
         super().__init__(settings)
         self.transport: Optional[transports.DatagramTransport] = None
         self.settings.hytera_is_registered = False
+        self.repeater_accepted_callback = repeater_accepted_callback
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.log("connection lost")
@@ -187,7 +185,7 @@ class HyteraP2PProtocol(LoggingProtocol):
             self.send_connection_reset()
 
 
-class HyteraRDACProtocol(LoggingProtocol):
+class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
     STEP0_REQUEST = bytes(
         [0x7E, 0x04, 0x00, 0xFE, 0x20, 0x10, 0x00, 0x00, 0x00, 0x0C, 0x60, 0xE1]
     )
@@ -459,10 +457,11 @@ class HyteraRDACProtocol(LoggingProtocol):
             self.transport.sendto(self.STEP12_REQUEST_1, address)
             self.transport.sendto(self.STEP12_REQUEST_2, address)
 
-    def step13(self, data: bytes, _: tuple) -> None:
+    def step13(self, data: bytes, address: tuple) -> None:
         if data[: len(self.STEP12_RESPONSE)] == self.STEP12_RESPONSE:
             self.step = 14
             self.log("rdac completed identification")
+            self.hytera_repeater_obtain_snmp(address)
             asyncio.get_running_loop().create_task(self.rdac_completed_callback)
 
     def step14(self, data: bytes, address: tuple) -> None:
@@ -507,7 +506,7 @@ class HyteraRDACProtocol(LoggingProtocol):
             getattr(self, "step%d" % self.step)(data, addr)
 
 
-def parse_hytera_data(bytedata: bytes):
+def parse_hytera_data(bytedata: bytes) -> KaitaiStruct:
     if len(bytedata) < 2:
         # probably just heartbeat response
         return IpSiteConnectHeartbeat.from_bytes(bytedata)
@@ -536,10 +535,17 @@ def parse_hytera_data(bytedata: bytes):
         return HyteraDmrApplicationProtocol.from_bytes(bytedata)
 
 
-class HyteraDMRProtocol(LoggingProtocol):
-    def __init__(self, settings: BridgeSettings):
+class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
+    def __init__(
+        self,
+        settings: BridgeSettings,
+        queue_hytera_to_mmdvm: Queue,
+        queue_mmdvm_to_hytera: Queue,
+    ) -> None:
         super().__init__(settings)
         self.transport: Optional[transports.DatagramTransport] = None
+        self.queue_hytera_to_mmdvm = queue_hytera_to_mmdvm
+        self.queue_mmdvm_to_hytera = queue_mmdvm_to_hytera
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.log("connection lost")

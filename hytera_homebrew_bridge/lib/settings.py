@@ -2,6 +2,8 @@
 
 import configparser
 
+_UNSET = object()
+
 
 class BridgeSettings:
     SECTION_HB = "homebrew"
@@ -11,7 +13,7 @@ class BridgeSettings:
     HYTERA_MODE_IPSC = "ip-site-connect"
     HYTERA_MODE_FTPC = "forward-to-pc"
 
-    def __init__(self, filepath: str):
+    def __init__(self, filepath: str) -> None:
         parser = configparser.ConfigParser()
         parser.sections()
         parser.read(filepath)
@@ -27,21 +29,37 @@ class BridgeSettings:
         self.hb_local_port = parser.getint(self.SECTION_HB, "local_port", fallback=0)
         self.hb_password = parser.get(self.SECTION_HB, "password")
 
-        self.hb_repeater_dmr_id = parser.getint(self.SECTION_HB, "repeater_dmr_id")
-        self.hb_callsign = parser.get(self.SECTION_HB, "callsign")
-        self.hb_color_code = parser.getint(self.SECTION_HB, "color_code")
-        self.hb_latitude = parser.get(self.SECTION_HB, "latitude")
-        self.hb_longitude = parser.get(self.SECTION_HB, "longitude")
-        self.hb_antenna_height = parser.getint(self.SECTION_HB, "antenna_height")
-        self.hb_location = parser.get(self.SECTION_HB, "location")
-        self.hb_description = parser.get(self.SECTION_HB, "description")
+        self.hb_repeater_dmr_id: int = self.getint_safe(
+            parser, self.SECTION_HB, "repeater_dmr_id", fallback=None
+        )
+        self.hb_callsign: str = parser.get(self.SECTION_HB, "callsign", fallback=None)
+        self.hb_color_code = self.getint_safe(
+            parser, self.SECTION_HB, "color_code", fallback=1
+        )
+        self.hb_latitude = parser.get(self.SECTION_HB, "latitude", fallback=None)
+        self.hb_longitude = parser.get(self.SECTION_HB, "longitude", fallback=None)
+        self.hb_antenna_height = self.getint_safe(
+            parser, self.SECTION_HB, "antenna_height", fallback=0
+        )
+        self.hb_location = parser.get(self.SECTION_HB, "location", fallback=None)
+        self.hb_description = parser.get(self.SECTION_HB, "description", fallback=None)
         self.hb_timeslots = parser.get(self.SECTION_HB, "timeslots", fallback="3")
-        self.hb_url = parser.get(self.SECTION_HB, "url")
-        self.hb_software_id = parser.get(self.SECTION_HB, "software_id")
-        self.hb_package_id = parser.get(self.SECTION_HB, "package_id")
-        self.hb_rx_freq = parser.get(self.SECTION_HB, "rx_freq")
-        self.hb_tx_freq = parser.get(self.SECTION_HB, "tx_freq")
-        self.hb_tx_power = parser.getint(self.SECTION_HB, "tx_power")
+        self.hb_url = parser.get(
+            self.SECTION_HB,
+            "url",
+            fallback="http://github.com/ok-dmr/Hytera_Homebrew_Bridge",
+        )
+        self.hb_software_id = parser.get(
+            self.SECTION_HB, "software_id", fallback="2020.1"
+        )
+        self.hb_package_id = parser.get(
+            self.SECTION_HB, "package_id", fallback="Hytera Homebrew Bridge"
+        )
+        self.hb_rx_freq: str = parser.get(self.SECTION_HB, "rx_freq", fallback=None)
+        self.hb_tx_freq: str = parser.get(self.SECTION_HB, "tx_freq", fallback=None)
+        self.hb_tx_power = self.getint_safe(
+            parser, self.SECTION_HB, "tx_power", fallback=0
+        )
 
         self.hytera_mode = parser.get(
             self.SECTION_SNMP, "hytera_mode", fallback=self.HYTERA_MODE_IPSC
@@ -53,11 +71,13 @@ class BridgeSettings:
             self.dmr_port = parser.getint(self.SECTION_IPSC, "dmr_port")
             self.rdac_port = parser.getint(self.SECTION_IPSC, "rdac_port")
 
+        # hytera_protocols variables
+        self.hytera_is_registered: bool = False
+        self.hytera_snmp_data: dict = dict()
+
         # hytera repeater data
-        self.hytera_snmp_data: list = list()
         self.hytera_repeater_id: int = 0
         self.hytera_callsign: str = ""
-        self.hytera_is_registered: bool = False
         self.hytera_hardware: str = ""
         self.hytera_firmware: str = ""
         self.hytera_serial_number: str = ""
@@ -65,7 +85,79 @@ class BridgeSettings:
         self.hytera_tx_freq: int = 0
         self.hytera_rx_freq: int = 0
 
-    def print_settings(self):
+    @staticmethod
+    def getint_safe(
+        parser: configparser.ConfigParser, section: str, key: str, fallback=_UNSET
+    ):
+        """
+        Handles empty values where int is expected
+        Errors such as "ValueError: invalid literal for int() with base 10: ''" won't be propagated, if fallback is set
+
+        @param parser:
+        @param section:
+        @param key:
+        @param fallback:
+        @return:
+        """
+        try:
+            return parser.getint(section, key, fallback=fallback)
+        except ValueError:
+            if fallback is _UNSET:
+                raise
+            return fallback
+
+    def get_repeater_rx_freq(self) -> str:
+        from hytera_homebrew_bridge.lib import snmp
+
+        return (
+            self.hb_rx_freq
+            or str(self.hytera_rx_freq)
+            or str(self.hytera_snmp_data[snmp.SNMP.OID_RX_FREQUENCE])
+        )
+
+    def get_repeater_tx_freq(self) -> str:
+        from hytera_homebrew_bridge.lib import snmp
+
+        return (
+            self.hb_tx_freq
+            or str(self.hytera_tx_freq)
+            or str(self.hytera_snmp_data[snmp.SNMP.OID_TX_FREQUENCE])
+        )
+
+    def get_repeater_callsign(self) -> str:
+        from hytera_homebrew_bridge.lib import snmp
+
+        return (
+            self.hb_callsign
+            or self.hytera_callsign
+            or self.hytera_snmp_data[snmp.SNMP.OID_RADIO_ALIAS]
+        )
+
+    def get_repeater_dmrid(self) -> int:
+        from hytera_homebrew_bridge.lib import snmp
+
+        return (
+            self.hb_repeater_dmr_id
+            or self.hytera_repeater_id
+            or self.hytera_snmp_data[snmp.SNMP.OID_RADIO_ID]
+        )
+
+    def get_incorrect_configurations(self) -> list:
+        rtn: list = list()
+
+        generic_error_message: str = "Value might have not been configured and was not obtained in Hytera repeater " "configuration process (either P2P, RDAC or SNMP) "
+
+        repeater_id = self.get_repeater_dmrid()
+        if repeater_id < 1:
+            rtn.append(("homebrew.repeater_dmr_id", repeater_id, generic_error_message))
+
+        repeater_callsign = self.get_repeater_callsign()
+        if not repeater_callsign:
+            rtn.append(("homebrew.callsign", repeater_callsign, generic_error_message))
+
+        return rtn
+
+    def print_settings(self) -> None:
         print("Settings Loaded:")
         print(
             f"\tHytera Repeater is expected to connect at {self.ipsc_ip}:{self.p2p_port}"

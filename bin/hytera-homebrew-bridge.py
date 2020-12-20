@@ -1,41 +1,43 @@
 #!/usr/bin/env python3
 import asyncio
+import importlib.util
+import logging
+import os
 import socket
 import sys
-from asyncio import AbstractEventLoop
+from asyncio import AbstractEventLoop, Queue
 from signal import SIGINT, SIGTERM
 from typing import Optional
-
-from hytera_homebrew_bridge.lib.hytera_protocols import (
-    HyteraP2PProtocol,
-    HyteraDMRProtocol,
-    HyteraRDACProtocol,
-)
-from hytera_homebrew_bridge.lib.mmdvm_protocol import MMDVMProtocol
-from hytera_homebrew_bridge.lib.settings import BridgeSettings
 
 
 class HyteraHomebrewBridge:
     def __init__(self, settings_ini_path: str):
         self.loop: Optional[AbstractEventLoop] = None
         self.settings: BridgeSettings = BridgeSettings(filepath=settings_ini_path)
+        # message queues for translator
+        self.queue_hytera_to_mmdvm: Queue = Queue()
+        self.queue_mmdvm_to_hytera: Queue = Queue()
         # homebrew / mmdvm
         self.homebrew_protocol: MMDVMProtocol = MMDVMProtocol(
             settings=self.settings,
             connection_lost_callback=self.homebrew_connection_lost,
+            queue_hytera_to_mmdvm=self.queue_hytera_to_mmdvm,
+            queue_mmdvm_to_hytera=self.queue_mmdvm_to_hytera,
         )
         # hytera ipsc: p2p dmr and rdac
         self.hytera_p2p_protocol: HyteraP2PProtocol = HyteraP2PProtocol(
-            settings=self.settings,
+            settings=self.settings, repeater_accepted_callback=self.homebrew_connect()
         )
         self.hytera_dmr_protocol: HyteraDMRProtocol = HyteraDMRProtocol(
-            settings=self.settings
+            settings=self.settings,
+            queue_hytera_to_mmdvm=self.queue_hytera_to_mmdvm,
+            queue_mmdvm_to_hytera=self.queue_mmdvm_to_hytera,
         )
         self.hytera_rdac_protocol: HyteraRDACProtocol = HyteraRDACProtocol(
             settings=self.settings, rdac_completed_callback=self.homebrew_connect()
         )
 
-    async def go(self):
+    async def go(self) -> None:
         self.loop = asyncio.get_running_loop()
         self.settings.print_settings()
 
@@ -43,7 +45,7 @@ class HyteraHomebrewBridge:
         await self.hytera_dmr_connect()
         await self.hytera_rdac_connect()
 
-    async def hytera_p2p_connect(self):
+    async def hytera_p2p_connect(self) -> None:
         # P2P/IPSC Service address
         await self.loop.create_datagram_endpoint(
             lambda: self.hytera_p2p_protocol,
@@ -51,21 +53,32 @@ class HyteraHomebrewBridge:
             local_addr=(self.settings.ipsc_ip, self.settings.p2p_port),
         )
 
-    async def hytera_dmr_connect(self):
+    async def hytera_dmr_connect(self) -> None:
         await self.loop.create_datagram_endpoint(
             lambda: self.hytera_dmr_protocol,
             reuse_address=True,
             local_addr=(self.settings.ipsc_ip, self.settings.dmr_port),
         )
 
-    async def hytera_rdac_connect(self):
+    async def hytera_rdac_connect(self) -> None:
         await self.loop.create_datagram_endpoint(
             lambda: self.hytera_rdac_protocol,
             reuse_address=True,
             local_addr=(self.settings.ipsc_ip, self.settings.rdac_port),
         )
 
-    async def homebrew_connect(self):
+    async def homebrew_connect(self) -> None:
+        incorrect_config_params = self.settings.get_incorrect_configurations()
+        if len(incorrect_config_params) > 0:
+            self.homebrew_protocol.log(
+                "Current configuration is not valid for connection", logging.ERROR
+            )
+            for triplet in incorrect_config_params:
+                self.homebrew_protocol.log(
+                    f"PARAM: {triplet[0]} CURRENT_VALUE: {triplet[1]} MESSAGE: {triplet[2]}"
+                )
+            return
+
         # target address
         hb_target_address = (self.settings.hb_master_host, self.settings.hb_master_port)
         # Create Homebrew protocol handler
@@ -79,12 +92,13 @@ class HyteraHomebrewBridge:
         if isinstance(hb_local_socket, socket.socket):
             # Extract bound socket port
             self.settings.hb_local_port = hb_local_socket.getsockname()[1]
+        self.loop.create_task(self.homebrew_protocol.send_mmdvm_from_queue())
         self.loop.create_task(self.homebrew_protocol.periodic_maintenance())
 
-    def homebrew_connection_lost(self):
+    def homebrew_connection_lost(self) -> None:
         self.homebrew_connect()
 
-    def stop_running(self):
+    def stop_running(self) -> None:
         self.homebrew_protocol.disconnect()
         self.hytera_p2p_protocol.disconnect()
         self.loop.stop()
@@ -104,6 +118,25 @@ if __name__ == "__main__":
             "https://github.com/OK-DMR/Hytera_Homebrew_Bridge/blob/master/settings.ini.default"
         )
         exit(1)
+
+    self_name: str = "hytera_homebrew_bridge"
+    spec = importlib.util.find_spec(self_name)
+    if spec is None:
+        print("Package hytera-homebrew-bridge is not installed, trying locally\n")
+        parent_folder: str = os.path.dirname(
+            os.path.dirname(os.path.realpath(__file__))
+        )
+        expected_folder: str = f"{parent_folder}{os.path.sep}{self_name}{os.path.sep}"
+        if os.path.isdir(expected_folder):
+            sys.path.insert(0, parent_folder)
+
+    from hytera_homebrew_bridge.lib.hytera_protocols import (
+        HyteraP2PProtocol,
+        HyteraDMRProtocol,
+        HyteraRDACProtocol,
+    )
+    from hytera_homebrew_bridge.lib.mmdvm_protocol import MMDVMProtocol
+    from hytera_homebrew_bridge.lib.settings import BridgeSettings
 
     bridge: HyteraHomebrewBridge = HyteraHomebrewBridge(sys.argv[1])
 

@@ -5,5 +5,6 @@ pcapng~=0.1.25
 kamene~=0.32
 asyncio~=3.4.3
 setuptools~=51.0.0
-python-pcapng
-dmr_utils3
+dmr_utils3~=0.1.29
+uvloop~=0.14.0
+python-pcapng~=1.0

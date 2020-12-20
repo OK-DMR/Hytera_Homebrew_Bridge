@@ -4,10 +4,11 @@ from asyncio import protocols
 from typing import Optional
 
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
+from hytera_homebrew_bridge.lib.snmp import SNMP
 
 
-class LoggingProtocol(protocols.DatagramProtocol):
-    def __init__(self, settings: BridgeSettings):
+class CustomBridgeDatagramProtocol(protocols.DatagramProtocol):
+    def __init__(self, settings: BridgeSettings) -> None:
         super().__init__()
         self.settings = settings
         self.logger: Optional[logging.Logger] = None
@@ -25,5 +26,14 @@ class LoggingProtocol(protocols.DatagramProtocol):
             console_log_output.setFormatter(formatter)
             self.logger.addHandler(console_log_output)
 
-    def log(self, msg: str, level=logging.INFO):
+    def log(self, msg: str, level=logging.INFO) -> None:
         self.logger.log(level, msg)
+
+    def hytera_repeater_obtain_snmp(self, address: tuple, force: bool = False) -> None:
+        if self.settings.snmp_enabled:
+            if force or not self.settings.hytera_snmp_data:
+                SNMP().walk_ip(address, self.settings)
+            if not self.settings.hytera_snmp_data:
+                self.log("SNMP failed to walk the repeater", logging.WARN)
+        else:
+            self.log("SNMP is disabled", logging.WARN)

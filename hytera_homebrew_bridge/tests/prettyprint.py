@@ -3,8 +3,8 @@ from pprint import pprint
 from kaitaistruct import KaitaiStruct
 
 
-def prettyprint(data: KaitaiStruct) -> None:
-    pprint(_prettyprint(data))
+def prettyprint(data: KaitaiStruct, stream=None) -> None:
+    pprint(_prettyprint(data), stream=stream)
 
 
 def _array_prettyprint(data: list) -> list:
