@@ -51,6 +51,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         while not asyncio.get_running_loop().is_closed():
             packet: bytes = await self.queue_outgoing.get()
             if self.transport and not self.transport.is_closing():
+                self.log(str(hexlify(packet)))
                 self.transport.sendto(packet)
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
@@ -88,13 +89,9 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
             self.log("Master Closing connection")
             self.connection_status = self.CON_NEW
         elif isinstance(packet.command_data, Mmdvm.TypeDmrData):
-            self.dmrd_received(data)
+            self.queue_incoming.put_nowait(packet)
         else:
             self.log(f"UNHANDLED {packet.__class__.__name__} {hexlify(data)}")
-
-    def dmrd_received(self, data: bytes):
-        self.log("DMRD received")
-        prettyprint(Mmdvm.from_bytes(data))
 
     def send_login_request(self) -> None:
         self.log("Sending Login Request")

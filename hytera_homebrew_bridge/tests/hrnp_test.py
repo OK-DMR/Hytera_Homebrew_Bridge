@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
+import os
+import sys
+
+try:
+    import hytera_homebrew_bridge
+except ImportError:
+    sys.path.append(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    )
 
 if __name__ == "__main__":
-    import sys
-    import os
-
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-
     from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
         HyteraRadioNetworkProtocol,
     )

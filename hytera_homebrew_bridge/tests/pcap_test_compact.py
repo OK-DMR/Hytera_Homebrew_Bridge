@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+import os
+import sys
+
+try:
+    import hytera_homebrew_bridge
+except ImportError:
+    sys.path.append(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    )
 
 import io
 import zlib
@@ -8,6 +17,28 @@ import kamene.all
 from kamene.layers.l2 import Ether
 
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes
+
+from pcapng.scanner import FileScanner
+from pcapng.blocks import EnhancedPacket
+from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
+from hytera_homebrew_bridge.kaitai.hytera_dmr_application_protocol import (
+    HyteraDmrApplicationProtocol,
+)
+from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
+    HyteraRadioNetworkProtocol,
+)
+from hytera_homebrew_bridge.kaitai.hytera_simple_transport_reliability_protocol import (
+    HyteraSimpleTransportReliabilityProtocol,
+)
+from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
+from hytera_homebrew_bridge.kaitai.ip_site_connect_heartbeat import (
+    IpSiteConnectHeartbeat,
+)
+from hytera_homebrew_bridge.kaitai.real_time_transport_protocol import (
+    RealTimeTransportProtocol,
+)
+from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
+import kamene.packet
 
 
 def parse_hytera_data(bytedata):
@@ -134,12 +165,11 @@ def format_kamene_packet(packet, extra_data=None):
         try:
             hpd = parse_hytera_data(packet_data)
             if isinstance(hpd, IpSiteConnectProtocol):
+                swap = byteswap_bytes(hpd.ipsc_payload)
                 packet_hash = hexlify(
-                    (
-                        zlib.crc32(byteswap_bytes(hpd.ipsc_payload)) & 0xFFFFFFFF
-                    ).to_bytes(length=4, byteorder="big")
+                    (zlib.crc32(swap) & 0xFFFFFFFF).to_bytes(length=4, byteorder="big")
                 ).decode("UTF-8")
-                packet_data_formatted = b"HYTD "
+                packet_data_formatted = b"HYTD " + hexlify(packet_data)
         except:
             is_hpd = False
 
@@ -152,7 +182,9 @@ def format_kamene_packet(packet, extra_data=None):
                             length=4, byteorder="big"
                         )
                     ).decode("UTF-8")
-                    packet_data_formatted = b"DMRD "
+                    packet_data_formatted = b"DMRD " + hexlify(
+                        hbp.command_data.dmr_data
+                    )
             except:
                 is_hbp = False
 
@@ -183,40 +215,11 @@ def format_kamene_packet(packet, extra_data=None):
 
 
 if __name__ == "__main__":
-    import sys
-    import os
-
     if len(sys.argv) < 2:
         print("use as %s <path-to-pcap-file>" % sys.argv[0])
         exit(0)
 
     print("Supports only IPv4 UDP packets of MMDVM/Homebrew and Hytera IPSC protocols")
-
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-
-    from pcapng.scanner import FileScanner
-    from pcapng.blocks import EnhancedPacket
-    from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
-    from hytera_homebrew_bridge.kaitai.hytera_dmr_application_protocol import (
-        HyteraDmrApplicationProtocol,
-    )
-    from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
-        HyteraRadioNetworkProtocol,
-    )
-    from hytera_homebrew_bridge.kaitai.hytera_simple_transport_reliability_protocol import (
-        HyteraSimpleTransportReliabilityProtocol,
-    )
-    from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import (
-        IpSiteConnectProtocol,
-    )
-    from hytera_homebrew_bridge.kaitai.ip_site_connect_heartbeat import (
-        IpSiteConnectHeartbeat,
-    )
-    from hytera_homebrew_bridge.kaitai.real_time_transport_protocol import (
-        RealTimeTransportProtocol,
-    )
-    from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
-    import kamene.packet
 
     with open(sys.argv[1], "rb") as testfile:
         scanner = FileScanner(testfile)

@@ -8,7 +8,6 @@ from typing import Optional, Tuple, Coroutine
 from hytera_homebrew_bridge.lib.logging_protocol import CustomBridgeDatagramProtocol
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 from hytera_homebrew_bridge.lib.utils import parse_hytera_data
-from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 
 class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
@@ -514,7 +513,8 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
         self.log("connection made")
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
-        self.log("received datagram from %s %s" % (addr, hexlify(data)))
-        hytera_packet = parse_hytera_data(data)
-        self.log("data %s" % type(hytera_packet).__name__)
-        prettyprint(hytera_packet)
+        self.log(str(hexlify(data)))
+        try:
+            self.queue_incoming.put_nowait(parse_hytera_data(data))
+        except EOFError:
+            self.log(f"Cannot parse IPSC DMR packet {hexlify(data)} from {addr}")

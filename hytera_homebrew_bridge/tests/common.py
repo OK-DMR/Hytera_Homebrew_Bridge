@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from typing import Type, Optional
 
 from kaitaistruct import KaitaiStruct

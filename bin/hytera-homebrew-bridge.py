@@ -9,8 +9,6 @@ from asyncio import AbstractEventLoop, Queue
 from signal import SIGINT, SIGTERM
 from typing import Optional
 
-from hytera_homebrew_bridge.lib.hytera_mmdvm_translator import HyteraMmdvmTranslator
-
 
 class HyteraHomebrewBridge:
     def __init__(self, settings_ini_path: str):
@@ -53,8 +51,14 @@ class HyteraHomebrewBridge:
         self.loop = asyncio.get_running_loop()
         self.settings.print_settings()
 
-        # run tasks
+        # start translator tasks
+        self.loop.create_task(self.hytera_mmdvm_translator.translate_from_mmdvm())
+        self.loop.create_task(self.hytera_mmdvm_translator.translate_from_hytera())
+
+        # mmdvm maintenance (auto login, auth, ping/pong)
         self.loop.create_task(self.homebrew_protocol.periodic_maintenance())
+
+        # send translated or protocol generated packets to respective upstreams
         self.loop.create_task(self.hytera_dmr_protocol.send_hytera_from_queue())
         self.loop.create_task(self.homebrew_protocol.send_mmdvm_from_queue())
 
@@ -62,7 +66,9 @@ class HyteraHomebrewBridge:
         await self.hytera_p2p_connect()
         await self.hytera_dmr_connect()
         await self.hytera_rdac_connect()
+
         # MMDVM will get connected once the Hytera is set-up and running correctly
+        # it is not meant to be started here
 
     async def hytera_p2p_connect(self) -> None:
         # P2P/IPSC Service address
@@ -145,7 +151,7 @@ if __name__ == "__main__":
         )
         expected_folder: str = f"{parent_folder}{os.path.sep}{self_name}{os.path.sep}"
         if os.path.isdir(expected_folder):
-            sys.path.insert(0, parent_folder)
+            sys.path.append(expected_folder)
 
     from hytera_homebrew_bridge.lib.hytera_protocols import (
         HyteraP2PProtocol,
@@ -154,6 +160,7 @@ if __name__ == "__main__":
     )
     from hytera_homebrew_bridge.lib.mmdvm_protocol import MMDVMProtocol
     from hytera_homebrew_bridge.lib.settings import BridgeSettings
+    from hytera_homebrew_bridge.lib.hytera_mmdvm_translator import HyteraMmdvmTranslator
 
     uvloop_spec = importlib.util.find_spec("uvloop")
     if uvloop_spec:

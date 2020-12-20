@@ -1,10 +1,41 @@
 #!/usr/bin/env python3
+import os
+import sys
+
+try:
+    import hytera_homebrew_bridge
+except ImportError:
+    sys.path.append(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+    )
 
 import io
 from datetime import datetime
 
 import kamene.all
 from kamene.layers.l2 import Ether
+
+from pcapng.scanner import FileScanner
+from pcapng.blocks import EnhancedPacket
+from hytera_homebrew_bridge.kaitai.hytera_dmr_application_protocol import (
+    HyteraDmrApplicationProtocol,
+)
+from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
+    HyteraRadioNetworkProtocol,
+)
+from hytera_homebrew_bridge.kaitai.hytera_simple_transport_reliability_protocol import (
+    HyteraSimpleTransportReliabilityProtocol,
+)
+from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
+from hytera_homebrew_bridge.kaitai.ip_site_connect_heartbeat import (
+    IpSiteConnectHeartbeat,
+)
+from hytera_homebrew_bridge.kaitai.real_time_transport_protocol import (
+    RealTimeTransportProtocol,
+)
+from hytera_homebrew_bridge.kaitai.homebrew import Homebrew
+from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
+import kamene.packet
 
 
 def parse_hytera_data(bytedata):
@@ -226,38 +257,9 @@ def format_kamene_packet(packet):
 
 
 if __name__ == "__main__":
-    import sys
-    import os
-
     if len(sys.argv) < 2:
         print("use as %s <path-to-pcap-file>" % sys.argv[0])
         exit(0)
-
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-
-    from pcapng.scanner import FileScanner
-    from pcapng.blocks import EnhancedPacket
-    from hytera_homebrew_bridge.kaitai.hytera_dmr_application_protocol import (
-        HyteraDmrApplicationProtocol,
-    )
-    from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
-        HyteraRadioNetworkProtocol,
-    )
-    from hytera_homebrew_bridge.kaitai.hytera_simple_transport_reliability_protocol import (
-        HyteraSimpleTransportReliabilityProtocol,
-    )
-    from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import (
-        IpSiteConnectProtocol,
-    )
-    from hytera_homebrew_bridge.kaitai.ip_site_connect_heartbeat import (
-        IpSiteConnectHeartbeat,
-    )
-    from hytera_homebrew_bridge.kaitai.real_time_transport_protocol import (
-        RealTimeTransportProtocol,
-    )
-    from hytera_homebrew_bridge.kaitai.homebrew import Homebrew
-    from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
-    import kamene.packet
 
     with open(sys.argv[1], "rb") as testfile:
         scanner = FileScanner(testfile)

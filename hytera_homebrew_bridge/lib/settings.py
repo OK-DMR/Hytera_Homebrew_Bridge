@@ -13,10 +13,23 @@ class BridgeSettings:
     HYTERA_MODE_IPSC = "ip-site-connect"
     HYTERA_MODE_FTPC = "forward-to-pc"
 
-    def __init__(self, filepath: str) -> None:
+    def __init__(self, filepath: str = None, filedata: str = None) -> None:
+        if not filepath and not filedata:
+            raise SystemError(
+                "Cannot init BridgeSettings without filepath and filedata, at least one must be provided"
+            )
+
+        if filepath and filedata:
+            raise SystemError(
+                "Both filename and filedata provided, this is unsupported, choose one"
+            )
+
         parser = configparser.ConfigParser()
         parser.sections()
-        parser.read(filepath)
+        if filepath:
+            parser.read(filenames=filepath)
+        else:
+            parser.read_string(string=filedata)
 
         self.snmp_enabled = parser.getboolean(
             self.SECTION_SNMP, "enabled", fallback=True
@@ -112,7 +125,7 @@ class BridgeSettings:
         return (
             self.hb_rx_freq
             or str(self.hytera_rx_freq)
-            or str(self.hytera_snmp_data[snmp.SNMP.OID_RX_FREQUENCE])
+            or str(self.hytera_snmp_data.get(snmp.SNMP.OID_RX_FREQUENCE))
         )
 
     def get_repeater_tx_freq(self) -> str:
@@ -121,7 +134,7 @@ class BridgeSettings:
         return (
             self.hb_tx_freq
             or str(self.hytera_tx_freq)
-            or str(self.hytera_snmp_data[snmp.SNMP.OID_TX_FREQUENCE])
+            or str(self.hytera_snmp_data.get(snmp.SNMP.OID_TX_FREQUENCE))
         )
 
     def get_repeater_callsign(self) -> str:
@@ -130,7 +143,7 @@ class BridgeSettings:
         return (
             self.hb_callsign
             or self.hytera_callsign
-            or self.hytera_snmp_data[snmp.SNMP.OID_RADIO_ALIAS]
+            or self.hytera_snmp_data.get(snmp.SNMP.OID_RADIO_ALIAS)
         )
 
     def get_repeater_dmrid(self) -> int:
@@ -139,7 +152,8 @@ class BridgeSettings:
         return int(
             self.hb_repeater_dmr_id
             or self.hytera_repeater_id
-            or self.hytera_snmp_data[snmp.SNMP.OID_RADIO_ID]
+            or self.hytera_snmp_data.get(snmp.SNMP.OID_RADIO_ID)
+            or 0
         )
 
     def get_incorrect_configurations(self) -> list:
