@@ -9,7 +9,6 @@ from typing import Optional, Callable, Tuple
 from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
 from hytera_homebrew_bridge.lib.logging_protocol import CustomBridgeDatagramProtocol
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
-from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 
 class MMDVMProtocol(CustomBridgeDatagramProtocol):
@@ -61,6 +60,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.log("MMDVM socket closed")
+        self.connection_status = self.CON_NEW
         if exc:
             self.logger.exception(exc)
         self.connection_lost_callback()

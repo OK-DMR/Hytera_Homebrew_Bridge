@@ -149,7 +149,7 @@ if __name__ == "__main__":
         parent_folder: str = os.path.dirname(
             os.path.dirname(os.path.realpath(__file__))
         )
-        expected_folder: str = f"{parent_folder}{os.path.sep}{self_name}{os.path.sep}"
+        expected_folder: str = f"{parent_folder}{os.path.sep}"
         if os.path.isdir(expected_folder):
             sys.path.append(expected_folder)
 

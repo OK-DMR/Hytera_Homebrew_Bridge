@@ -169,7 +169,12 @@ def format_kamene_packet(packet, extra_data=None):
                 packet_hash = hexlify(
                     (zlib.crc32(swap) & 0xFFFFFFFF).to_bytes(length=4, byteorder="big")
                 ).decode("UTF-8")
-                packet_data_formatted = b"HYTD " + hexlify(packet_data)
+                packet_data_formatted = (
+                    f"HYTD slot-type {hpd.slot_type} frame-type {hpd.frame_type} "
+                    f"call-type {hpd.call_type} seq {hpd.sequence_number} "
+                    f"FROM: {hpd.source_radio_id} TO: {hpd.destination_radio_id}"
+                    f"\n{hexlify(packet_data)}"
+                )
         except:
             is_hpd = False
 
@@ -182,8 +187,13 @@ def format_kamene_packet(packet, extra_data=None):
                             length=4, byteorder="big"
                         )
                     ).decode("UTF-8")
-                    packet_data_formatted = b"DMRD " + hexlify(
-                        hbp.command_data.dmr_data
+                    packet_data_formatted = (
+                        f"DMRD call-type {hbp.command_data.call_type} "
+                        f"frame-type {hbp.command_data.frame_type} "
+                        f"data-type {hbp.command_data.data_type} "
+                        f"seq {hbp.command_data.sequence_no} "
+                        f"FROM: {hbp.command_data.source_id} TO: {hbp.command_data.target_id}"
+                        f"\n{hexlify(packet_data)}"
                     )
             except:
                 is_hbp = False

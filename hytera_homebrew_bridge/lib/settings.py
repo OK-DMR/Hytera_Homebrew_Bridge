@@ -177,7 +177,8 @@ class BridgeSettings:
     def print_settings(self) -> None:
         print("Settings Loaded:")
         print(
-            f"\tHytera Repeater is expected to connect at {self.ipsc_ip}:{self.p2p_port}"
+            f"\tHytera Repeater is expected to connect at {self.ipsc_ip}"
+            f" [MASTER PORT: {self.p2p_port}] [DMR PORT: {self.dmr_port}] [RDAC PORT: {self.rdac_port}]"
         )
         print(
             f"\tUpstream Homebrew/MMDVM server is expected at {self.hb_master_host}:{self.hb_master_port}"
