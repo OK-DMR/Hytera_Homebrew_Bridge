@@ -33,6 +33,7 @@ class HyteraMmdvmTranslator:
         self.mmdvm_last_sequence: int = 0
         self.hytera_last_sequence_out: int = 0
         self.hytera_last_sequence_in: int = -1
+        self.hytera_last_started_stream_id_out: int = -1
         self.hytera_stream_id: int = 0
         self.hytera_to_mmdvm_datatype: dict = {
             IpSiteConnectProtocol.SlotTypes.slot_type_data_a: "0100",
@@ -64,8 +65,20 @@ class HyteraMmdvmTranslator:
                     continue
 
                 if self.hytera_last_sequence_in == packet.sequence_number:
+                    # do not send duplicate packets
                     continue
-                self.hytera_last_sequence_in = packet.sequence_number
+                else:
+                    self.hytera_last_sequence_in = packet.sequence_number
+
+                if (
+                    packet.slot_type
+                    == IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header
+                ):
+                    if self.hytera_last_started_stream_id_out == self.hytera_stream_id:
+                        # do not send duplicate start call headers
+                        continue
+                    else:
+                        self.hytera_last_started_stream_id_out = self.hytera_stream_id
 
                 bitflags = bitarray(
                     [
@@ -90,18 +103,13 @@ class HyteraMmdvmTranslator:
                 if packet.slot_type in (
                     IpSiteConnectProtocol.SlotTypes.slot_type_data_c,
                     IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header,
+                    IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc,
                 ):
                     bitflags[2] = 1
 
                 self.hytera_last_sequence_out = (
                     self.hytera_last_sequence_out + 1
                 ) & 0xFF
-
-                if packet.slot_type in (
-                    IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header,
-                    IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc,
-                ):
-                    self.hytera_stream_id += 1
 
                 await self.queue_mmdvm_output.put(
                     b"DMRD"
@@ -113,6 +121,15 @@ class HyteraMmdvmTranslator:
                     + self.hytera_stream_id.to_bytes(4, byteorder="big")
                     + byteswap_bytes(packet.ipsc_payload)
                 )
+
+                # Every time transmission is terminated, increment stream id
+                if (
+                    packet.slot_type
+                    == IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
+                ):
+                    self.hytera_stream_id += 1
+
+                # Notify queue about finished task
                 self.queue_hytera_to_translate.task_done()
 
     async def translate_from_mmdvm(self):

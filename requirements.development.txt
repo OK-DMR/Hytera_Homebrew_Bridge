@@ -2,3 +2,4 @@ pcapng~=0.1.25
 kamene~=0.32
 uvloop~=0.14.0
 python-pcapng~=1.0
+pytest-asyncio
