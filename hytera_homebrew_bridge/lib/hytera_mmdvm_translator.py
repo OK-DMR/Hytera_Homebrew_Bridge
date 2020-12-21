@@ -49,7 +49,11 @@ class HyteraMmdvmTranslator:
     async def translate_from_hytera(self):
         loop = asyncio.get_running_loop()
         while loop.is_running():
-            packet: KaitaiStruct = await self.queue_hytera_to_translate.get()
+            try:
+                packet: KaitaiStruct = await self.queue_hytera_to_translate.get()
+            except RuntimeError:
+                continue
+
             if isinstance(packet, IpSiteConnectHeartbeat):
                 continue
             if isinstance(packet, IpSiteConnectProtocol):
@@ -109,11 +113,16 @@ class HyteraMmdvmTranslator:
                     + self.hytera_stream_id.to_bytes(4, byteorder="big")
                     + byteswap_bytes(packet.ipsc_payload)
                 )
+                self.queue_hytera_to_translate.task_done()
 
     async def translate_from_mmdvm(self):
         loop = asyncio.get_running_loop()
         while loop.is_running():
-            packet: Mmdvm = await self.queue_mmdvm_to_translate.get()
+            try:
+                packet: Mmdvm = await self.queue_mmdvm_to_translate.get()
+            except RuntimeError:
+                continue
+
             if not isinstance(packet.command_data, Mmdvm.TypeDmrData):
                 continue
 
@@ -129,3 +138,4 @@ class HyteraMmdvmTranslator:
 
             out = unhexlify(data_string)
             await self.queue_hytera_output.put(out)
+            self.queue_mmdvm_to_translate.task_done()

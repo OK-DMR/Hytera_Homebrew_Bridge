@@ -3,8 +3,9 @@ import asyncio
 import os
 import sys
 from asyncio import Queue
-from binascii import unhexlify, hexlify
+from binascii import unhexlify
 
+import pytest
 from kaitaistruct import KaitaiStruct
 
 try:
@@ -17,7 +18,6 @@ except ImportError:
 from hytera_homebrew_bridge.lib.hytera_mmdvm_translator import HyteraMmdvmTranslator
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 from hytera_homebrew_bridge.lib.utils import parse_hytera_data
-from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 MINIMAL_CONFIG = """
 [ip-site-connect]\n
@@ -34,6 +34,7 @@ password = S3CR3T
 """
 
 
+@pytest.mark.asyncio
 async def test_mmdv_to_hytera():
     hytera_incoming: Queue = Queue()
     hytera_outgoing: Queue = Queue()
@@ -59,16 +60,16 @@ async def test_mmdv_to_hytera():
     )
     hytera_parsed: KaitaiStruct = parse_hytera_data(hytera_input)
     mmdvm_output: bytes = unhexlify(
-        "444d5244c023380900006f0023381d056969377d96fce055837d40c45895de5a9ae11ee6bd"
+        "444d52440123380900006f00000000050000000096fce055837d40c45895de5a9ae11ee6bd"
         "8a8e2dce93a571f4da0334cf2256aff9"
     )
 
     await hytera_incoming.put(hytera_parsed)
     mmdvm_translated: bytes = await mmdvm_outgoing.get()
 
-    prettyprint(hytera_parsed)
-    print(f"got {hexlify(mmdvm_translated)}")
-    print(f"exp {hexlify(mmdvm_output)}")
+    # prettyprint(hytera_parsed)
+    # print(f"got {hexlify(mmdvm_translated)}")
+    # print(f"exp {hexlify(mmdvm_output)}")
 
     assert mmdvm_output == mmdvm_translated
 
