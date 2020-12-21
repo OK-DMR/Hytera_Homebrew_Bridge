@@ -30,6 +30,7 @@ class CustomBridgeDatagramProtocol(protocols.DatagramProtocol):
         self.logger.log(level, msg)
 
     def hytera_repeater_obtain_snmp(self, address: tuple, force: bool = False) -> None:
+        self.settings.hytera_repeater_ip = address[0]
         if self.settings.snmp_enabled:
             if force or not self.settings.hytera_snmp_data:
                 SNMP().walk_ip(address, self.settings)

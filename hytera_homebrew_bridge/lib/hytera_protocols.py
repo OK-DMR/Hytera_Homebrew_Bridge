@@ -61,7 +61,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     def handle_rdac_request(self, data: bytes, address: tuple) -> None:
         if not self.settings.hytera_is_registered:
             self.log("Rejecting RDAC request for not-registered repeater")
-            self.transport.sendto(bytes(0x00), address)
+            self.transport.sendto(bytes(0x01), address)
             return
 
         response_address = (address[0], self.settings.p2p_port)
@@ -72,6 +72,8 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         # set operation result status code
         data[13] = 0x01
         data.append(0x01)
+
+        self.settings.hytera_repeater_ip = address[0]
 
         self.transport.sendto(data, response_address)
         self.log("RDAC Accept for %s.%s" % address)
@@ -95,7 +97,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     def handle_dmr_request(self, data: bytes, address: tuple) -> None:
         if not self.settings.hytera_is_registered:
             self.log("Rejecting DMR request for not-registered repeater")
-            self.transport.sendto(bytes(0x00), address)
+            self.transport.sendto(bytes(0x01), address)
             return
 
         response_address = (address[0], self.settings.p2p_port)
@@ -498,10 +500,12 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
         self.queue_outgoing = queue_outgoing
 
     async def send_hytera_from_queue(self) -> None:
-        while not asyncio.get_running_loop().is_closed():
+        while asyncio.get_running_loop().is_running():
             packet: bytes = await self.queue_outgoing.get()
             if self.transport and not self.transport.is_closing():
-                self.transport.sendto(packet)
+                self.transport.sendto(
+                    packet, (self.settings.hytera_repeater_ip, self.settings.dmr_port)
+                )
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.log("connection lost")

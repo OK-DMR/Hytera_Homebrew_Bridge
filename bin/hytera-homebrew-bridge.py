@@ -82,6 +82,7 @@ class HyteraHomebrewBridge:
         await self.loop.create_datagram_endpoint(
             lambda: self.hytera_dmr_protocol,
             reuse_address=True,
+            reuse_port=True,
             local_addr=(self.settings.ipsc_ip, self.settings.dmr_port),
         )
 
@@ -89,6 +90,7 @@ class HyteraHomebrewBridge:
         await self.loop.create_datagram_endpoint(
             lambda: self.hytera_rdac_protocol,
             reuse_address=True,
+            reuse_port=True,
             local_addr=(self.settings.ipsc_ip, self.settings.rdac_port),
         )
 
@@ -112,6 +114,7 @@ class HyteraHomebrewBridge:
             local_addr=(self.settings.hb_local_ip, self.settings.hb_local_port),
             remote_addr=hb_target_address,
             reuse_address=True,
+            reuse_port=True,
         )
         hb_local_socket = hb_transport.get_extra_info("socket")
         if isinstance(hb_local_socket, socket.socket):

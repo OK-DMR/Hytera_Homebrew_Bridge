@@ -70,19 +70,19 @@ class BridgeSettings:
         )
         self.hb_rx_freq: str = parser.get(self.SECTION_HB, "rx_freq", fallback=None)
         self.hb_tx_freq: str = parser.get(self.SECTION_HB, "tx_freq", fallback=None)
-        self.hb_tx_power = self.getint_safe(
+        self.hb_tx_power: int = self.getint_safe(
             parser, self.SECTION_HB, "tx_power", fallback=0
         )
 
-        self.hytera_mode = parser.get(
+        self.hytera_mode: str = parser.get(
             self.SECTION_SNMP, "hytera_mode", fallback=self.HYTERA_MODE_IPSC
         )
 
         if self.hytera_mode == self.HYTERA_MODE_IPSC:
-            self.ipsc_ip = parser.get(self.SECTION_IPSC, "ip")
-            self.p2p_port = parser.getint(self.SECTION_IPSC, "p2p_port")
-            self.dmr_port = parser.getint(self.SECTION_IPSC, "dmr_port")
-            self.rdac_port = parser.getint(self.SECTION_IPSC, "rdac_port")
+            self.ipsc_ip: str = parser.get(self.SECTION_IPSC, "ip")
+            self.p2p_port: int = parser.getint(self.SECTION_IPSC, "p2p_port")
+            self.dmr_port: int = parser.getint(self.SECTION_IPSC, "dmr_port")
+            self.rdac_port: int = parser.getint(self.SECTION_IPSC, "rdac_port")
 
         # hytera_protocols variables
         self.hytera_is_registered: bool = False
@@ -97,6 +97,7 @@ class BridgeSettings:
         self.hytera_repeater_mode: int = 0
         self.hytera_tx_freq: int = 0
         self.hytera_rx_freq: int = 0
+        self.hytera_repeater_ip: str = ""
 
     @staticmethod
     def getint_safe(

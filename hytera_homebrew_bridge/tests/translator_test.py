@@ -67,11 +67,10 @@ async def test_mmdv_to_hytera():
     await hytera_incoming.put(hytera_parsed)
     mmdvm_translated: bytes = await mmdvm_outgoing.get()
 
-    # prettyprint(hytera_parsed)
-    # print(f"got {hexlify(mmdvm_translated)}")
-    # print(f"exp {hexlify(mmdvm_output)}")
-
     assert mmdvm_output == mmdvm_translated
+
+    # testcase 2
+    mmdvm_input: bytes = unhexlify("")
 
 
 if __name__ == "__main__":
