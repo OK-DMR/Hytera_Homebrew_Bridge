@@ -101,11 +101,14 @@ class HyteraMmdvmTranslator:
 
                 # frame type
                 if packet.slot_type in (
-                    IpSiteConnectProtocol.SlotTypes.slot_type_data_c,
                     IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header,
                     IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc,
                 ):
                     bitflags[2] = 1
+                elif (
+                    packet.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_data_c
+                ):
+                    bitflags[3] = 1
 
                 self.hytera_last_sequence_out = (
                     self.hytera_last_sequence_out + 1
@@ -128,6 +131,7 @@ class HyteraMmdvmTranslator:
                     == IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
                 ):
                     self.hytera_stream_id += 1
+                    self.hytera_last_sequence_out = 0
 
                 # Notify queue about finished task
                 self.queue_hytera_to_translate.task_done()
