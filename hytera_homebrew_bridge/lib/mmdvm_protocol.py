@@ -50,7 +50,6 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         while not asyncio.get_running_loop().is_closed():
             packet: bytes = await self.queue_outgoing.get()
             if self.transport and not self.transport.is_closing():
-                self.log(str(hexlify(packet)))
                 self.transport.sendto(packet)
 
     def connection_made(self, transport: transports.BaseTransport) -> None:

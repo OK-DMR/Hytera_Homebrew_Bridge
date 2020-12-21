@@ -513,7 +513,6 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
         self.log("connection made")
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
-        self.log(str(hexlify(data)))
         try:
             self.queue_incoming.put_nowait(parse_hytera_data(data))
         except EOFError:

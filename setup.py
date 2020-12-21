@@ -17,4 +17,12 @@ setup(
     zip_safe=False,
     scripts=["bin/hytera-homebrew-bridge.py"],
     keywords="mmdvm dmr hytera repeater",
+    install_requires=[
+        "configparser>=5.0.0",
+        "kaitaistruct>=0.9",
+        "easysnmp>=0.2.5",
+        "asyncio>=3.4.3",
+        "dmr_utils3>=0.1.29",
+        "bitarray>=1.6.1",
+    ],
 )

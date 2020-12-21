@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 from asyncio import Queue
-from binascii import unhexlify, hexlify
+from binascii import unhexlify
 
 from bitarray import bitarray
 from kaitaistruct import KaitaiStruct
@@ -30,9 +30,21 @@ class HyteraMmdvmTranslator:
         self.queue_mmdvm_to_translate = mmdvm_incoming
         self.queue_mmdvm_output = mmdvm_outgoing
         # translation / state-machine related variables
-        self.hytera_last_sequence: int = 0
         self.mmdvm_last_sequence: int = 0
+        self.hytera_last_sequence_out: int = 0
+        self.hytera_last_sequence_in: int = -1
         self.hytera_stream_id: int = 0
+        self.hytera_to_mmdvm_datatype: dict = {
+            IpSiteConnectProtocol.SlotTypes.slot_type_data_a: "0100",
+            IpSiteConnectProtocol.SlotTypes.slot_type_data_b: "0101",
+            IpSiteConnectProtocol.SlotTypes.slot_type_data_c: "0000",
+            IpSiteConnectProtocol.SlotTypes.slot_type_data_d: "0001",
+            IpSiteConnectProtocol.SlotTypes.slot_type_data_e: "0010",
+            IpSiteConnectProtocol.SlotTypes.slot_type_data_f: "0011",
+            IpSiteConnectProtocol.SlotTypes.slot_type_ipsc_sync: "0011",
+            IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header: "0001",
+            IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc: "0010",
+        }
 
     async def translate_from_hytera(self):
         loop = asyncio.get_running_loop()
@@ -41,12 +53,15 @@ class HyteraMmdvmTranslator:
             if isinstance(packet, IpSiteConnectHeartbeat):
                 continue
             if isinstance(packet, IpSiteConnectProtocol):
-                print(
-                    f"HYT incoming seq:{packet.sequence_number} "
-                    f"slot-type: {packet.slot_type} "
-                    f"frame-type: {packet.frame_type} "
-                    f"call-type: {packet.call_type} "
-                )
+                if (
+                    packet.slot_type
+                    == IpSiteConnectProtocol.SlotTypes.slot_type_ipsc_sync
+                ):
+                    continue
+
+                if self.hytera_last_sequence_in == packet.sequence_number:
+                    continue
+                self.hytera_last_sequence_in = packet.sequence_number
 
                 bitflags = bitarray(
                     [
@@ -59,46 +74,34 @@ class HyteraMmdvmTranslator:
                         # 2b = frame type
                         0,
                         0,
-                        # 4b = data type / voice seq
+                        # 4b = data type / voice seq => extended below
                     ]
                 )
+                # data type
+                bitflags.extend(
+                    self.hytera_to_mmdvm_datatype.get(packet.slot_type) or "0000"
+                )
+
                 # frame type
                 if packet.slot_type in (
                     IpSiteConnectProtocol.SlotTypes.slot_type_data_c,
                     IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header,
                 ):
                     bitflags[2] = 1
-                # data type
-                map = {
-                    IpSiteConnectProtocol.SlotTypes.slot_type_data_a: "0100",
-                    IpSiteConnectProtocol.SlotTypes.slot_type_data_b: "0101",
-                    IpSiteConnectProtocol.SlotTypes.slot_type_data_c: "0000",
-                    IpSiteConnectProtocol.SlotTypes.slot_type_data_d: "0001",
-                    IpSiteConnectProtocol.SlotTypes.slot_type_data_e: "0010",
-                    IpSiteConnectProtocol.SlotTypes.slot_type_data_f: "0011",
-                    IpSiteConnectProtocol.SlotTypes.slot_type_ipsc_sync: "0100",
-                    IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header: "0001",
-                    IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc: "0010",
-                }
-                bitflags.extend(map.get(packet.slot_type) or "0000")
-                print(
-                    f"bitflags {bitflags} slot-type {repr(packet.slot_type)} sequence {self.hytera_last_sequence}"
-                )
-                self.hytera_last_sequence = (self.hytera_last_sequence + 1) & 0xFF
 
-                if (
-                    packet.slot_type
-                    == IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header
-                    or packet.slot_type
-                    == IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
+                self.hytera_last_sequence_out = (
+                    self.hytera_last_sequence_out + 1
+                ) & 0xFF
+
+                if packet.slot_type in (
+                    IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header,
+                    IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc,
                 ):
                     self.hytera_stream_id += 1
 
-                print(f"settings repeater id: {self.settings.get_repeater_dmrid()}")
-
-                out = (
+                await self.queue_mmdvm_output.put(
                     b"DMRD"
-                    + int(self.hytera_last_sequence).to_bytes(1, byteorder="big")
+                    + int(self.hytera_last_sequence_out).to_bytes(1, byteorder="big")
                     + packet.source_radio_id.to_bytes(3, byteorder="big")
                     + packet.destination_radio_id.to_bytes(3, byteorder="big")
                     + self.settings.get_repeater_dmrid().to_bytes(4, byteorder="big")
@@ -106,7 +109,6 @@ class HyteraMmdvmTranslator:
                     + self.hytera_stream_id.to_bytes(4, byteorder="big")
                     + byteswap_bytes(packet.ipsc_payload)
                 )
-                await self.queue_mmdvm_output.put(out)
 
     async def translate_from_mmdvm(self):
         loop = asyncio.get_running_loop()
@@ -123,34 +125,7 @@ class HyteraMmdvmTranslator:
                 f"stream-no:{packet.command_data.stream_id}"
             )
 
-            data_string = (
-                "0501"
-                + ("01" if packet.command_data.slot_no else "00")
-                + ("2222" if packet.command_data.slot_no else "1111")
-                + str(
-                    hexlify(
-                        packet.command_data.data_type.to_bytes(1, byteorder="little")
-                    ),
-                    "utf8",
-                )
-                + "1111"
-                + "406302"
-                + "01"
-                + str(
-                    hexlify(
-                        packet.command_data.target_id.to_bytes(3, byteorder="little")
-                    ),
-                    "utf8",
-                )
-                + str(
-                    hexlify(
-                        packet.command_data.source_id.to_bytes(3, byteorder="little")
-                    ),
-                    "utf8",
-                )
-                + str(hexlify(byteswap_bytes(packet.command_data.dmr_data)), "utf8")
-            )
+            data_string = b""
 
             out = unhexlify(data_string)
-
-            # await self.queue_hytera_output.put(out)
+            await self.queue_hytera_output.put(out)
