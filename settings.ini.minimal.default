@@ -1,0 +1,15 @@
+# Hytera IPSC configuration
+[ip-site-connect]
+# Local IP on which you listen for Hytera repeater connection
+ip = 192.168.1.2
+p2p_port = 50000
+dmr_port = 50001
+rdac_port = 50002
+
+[homebrew]
+# from which IP the connection to MMDVM is made
+local_ip = 0.0.0.0
+# master ip, port and password
+master_ip = 192.168.1.3
+master_port = 62031
+password = B3S3CURE
