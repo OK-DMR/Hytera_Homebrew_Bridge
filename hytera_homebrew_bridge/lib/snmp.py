@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
+import logging
 import sys
 
 from puresnmp import get
 from puresnmp.const import Version
 
+from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 from hytera_homebrew_bridge.lib.utils import octet_string_to_utf8
 
 
-class SNMP:
+class SNMP(LoggingTrait):
     # in milli-volts (V * 1000)
     OID_PSU_VOLTAGE: str = "iso.3.6.1.4.1.40297.1.2.1.2.1.0"
     # in milli-celsius (C * 1000)
@@ -115,8 +117,7 @@ class SNMP:
     OID_WALK_BASE_1: str = "1.3.6.1.4.1.40297.1.2.4"
     OID_WALK_BASE_2: str = "1.3.6.1.4.1.40297.1.2.1.2"
 
-    @staticmethod
-    def walk_ip(address: tuple, settings_storage: BridgeSettings) -> dict:
+    def walk_ip(self, address: tuple, settings_storage: BridgeSettings) -> dict:
         ip, port = address
         try:
             for oid in SNMP.ALL_KNOWN:
@@ -134,14 +135,17 @@ class SNMP:
                 settings_storage.hytera_snmp_data[oid] = snmp_result
 
         except SystemError:
+            self.log("SNMP failed to obtain repeater info", logging.ERROR)
             pass
 
-        SNMP.print_snmp_data(settings_storage=settings_storage)
+        self.print_snmp_data(settings_storage=settings_storage)
 
         return settings_storage.hytera_snmp_data
 
-    @staticmethod
-    def print_snmp_data(settings_storage: BridgeSettings):
+    def print_snmp_data(self, settings_storage: BridgeSettings):
+        self.log(
+            "-------------- REPEATER SNMP CONFIGURATION ----------------------------"
+        )
         longest_label = 0
         for key in SNMP.READABLE_LABELS:
             label_len = len(SNMP.READABLE_LABELS.get(key)[0])
@@ -152,13 +156,16 @@ class SNMP:
             print_settings = SNMP.READABLE_LABELS.get(key)
             if print_settings:
                 value = settings_storage.hytera_snmp_data.get(key)
-                print(
+                self.log(
                     "%s| %s"
                     % (
                         str(print_settings[0]).ljust(longest_label + 5),
                         print_settings[1] % value,
                     )
                 )
+        self.log(
+            "-------------- REPEATER SNMP CONFIGURATION ----------------------------"
+        )
 
 
 if __name__ == "__main__":
@@ -166,18 +173,5 @@ if __name__ == "__main__":
         print("use as snmp.py <ip of hytera repeater>")
         exit(1)
 
-    minimal_settings: str = """
-    [ip-site-connect]
-    ip = 192.168.1.2
-    p2p_port = 50000
-    dmr_port = 50001
-    rdac_port = 50002
-
-    [homebrew]
-    local_ip = 0.0.0.0
-    master_ip = 192.168.1.3
-    master_port = 62031
-    password = B3S3CURE
-    """
-    settings: BridgeSettings = BridgeSettings(filedata=minimal_settings)
+    settings: BridgeSettings = BridgeSettings(filedata=BridgeSettings.MINIMAL_SETTINGS)
     SNMP().walk_ip((sys.argv[1], 0), settings_storage=settings)

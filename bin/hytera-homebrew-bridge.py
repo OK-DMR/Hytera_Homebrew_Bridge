@@ -2,6 +2,7 @@
 import asyncio
 import importlib.util
 import logging
+import logging.config
 import os
 import socket
 import sys
@@ -134,12 +135,28 @@ class HyteraHomebrewBridge:
 
 
 if __name__ == "__main__":
-    print("Hytera Homebrew Bridge")
-    print("This project is experimental, use at your own risk\n")
+    loggerConfigured: bool = False
+    if len(sys.argv) > 2:
+        if os.path.isfile(sys.argv[2]):
+            logging.config.fileConfig(sys.argv[2])
+            loggerConfigured = True
+    if not loggerConfigured:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(levelname)s - %(asctime)s - %(name)s - %(message)s",
+        )
+        logging.getLogger("puresnmp.transport").setLevel(logging.WARN)
+
+    mainlog = logging.getLogger("hytera-homebrew-bridge.py")
+
+    mainlog.info("Hytera Homebrew Bridge")
+    mainlog.info("This project is experimental, use at your own risk\n")
 
     if len(sys.argv) < 2:
-        print("use as hytera-homebrew-bridge <path to settings.ini>")
-        print(
+        mainlog.error(
+            "use as hytera-homebrew-bridge <path to settings.ini> <optionally path to logger.ini>"
+        )
+        mainlog.error(
             "If you do not have the settings.ini file, you can obtain one here: "
             "https://github.com/OK-DMR/Hytera_Homebrew_Bridge/blob/master/settings.ini.default"
         )
@@ -148,7 +165,9 @@ if __name__ == "__main__":
     self_name: str = "hytera_homebrew_bridge"
     self_spec = importlib.util.find_spec(self_name)
     if self_spec is None:
-        print("Package hytera-homebrew-bridge is not installed, trying locally\n")
+        mainlog.debug(
+            "Package hytera-homebrew-bridge is not installed, trying locally\n"
+        )
         parent_folder: str = os.path.dirname(
             os.path.dirname(os.path.realpath(__file__))
         )
@@ -182,4 +201,4 @@ if __name__ == "__main__":
         loop.run_until_complete(bridge.go())
         loop.run_forever()
     finally:
-        print("Hytera Homebrew Bridge Ended")
+        mainlog.info("Hytera Homebrew Bridge Ended")

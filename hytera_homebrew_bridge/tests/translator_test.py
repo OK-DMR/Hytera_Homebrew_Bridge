@@ -19,20 +19,6 @@ from hytera_homebrew_bridge.lib.hytera_mmdvm_translator import HyteraMmdvmTransl
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 from hytera_homebrew_bridge.lib.utils import parse_hytera_data
 
-MINIMAL_CONFIG = """
-[ip-site-connect]\n
-ip = 192.168.1.2
-p2p_port = 50000
-dmr_port = 50001
-rdac_port = 50002
-
-[homebrew]\n
-local_ip = 0.0.0.0
-master_ip = 127.0.0.1
-master_port = 62031
-password = S3CR3T
-"""
-
 
 @pytest.mark.asyncio
 async def test_mmdv_to_hytera():
@@ -40,7 +26,7 @@ async def test_mmdv_to_hytera():
     hytera_outgoing: Queue = Queue()
     mmdvm_incoming: Queue = Queue()
     mmdvm_outgoing: Queue = Queue()
-    settings: BridgeSettings = BridgeSettings(filedata=MINIMAL_CONFIG)
+    settings: BridgeSettings = BridgeSettings(filedata=BridgeSettings.MINIMAL_SETTINGS)
 
     translator: HyteraMmdvmTranslator = HyteraMmdvmTranslator(
         settings=settings,

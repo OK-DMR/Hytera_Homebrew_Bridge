@@ -1,19 +1,40 @@
 #!/usr/bin/env python3
 
 import configparser
+import logging
+import logging.config
+from typing import Optional
+
+from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 
 _UNSET = object()
 
 
-class BridgeSettings:
+class BridgeSettings(LoggingTrait):
     SECTION_HB = "homebrew"
     SECTION_IPSC = "ip-site-connect"
     SECTION_SNMP = "snmp"
+    SECTION_LOGGING = "logging"
 
     HYTERA_MODE_IPSC = "ip-site-connect"
     HYTERA_MODE_FTPC = "forward-to-pc"
 
+    MINIMAL_SETTINGS = """
+    [ip-site-connect]
+    ip = 192.168.1.2
+    p2p_port = 50000
+    dmr_port = 50001
+    rdac_port = 50002
+
+    [homebrew]
+    local_ip = 0.0.0.0
+    master_ip = 192.168.1.3
+    master_port = 62031
+    password = B3S3CURE
+    """
+
     def __init__(self, filepath: str = None, filedata: str = None) -> None:
+
         if not filepath and not filedata:
             raise SystemError(
                 "Cannot init BridgeSettings without filepath and filedata, at least one must be provided"
@@ -176,12 +197,15 @@ class BridgeSettings:
         return rtn
 
     def print_settings(self) -> None:
-        print("Settings Loaded:")
-        print(
-            f"\tHytera Repeater is expected to connect at {self.ipsc_ip}"
-            f" [MASTER PORT: {self.p2p_port}] [DMR PORT: {self.dmr_port}] [RDAC PORT: {self.rdac_port}]"
+        self.log("Settings Loaded", logging.INFO)
+        self.log(
+            f"Hytera Repeater is expected to connect at {self.ipsc_ip} and ports"
+            f" [MASTER PORT: {self.p2p_port}] [DMR PORT: {self.dmr_port}] [RDAC PORT: {self.rdac_port}]",
+            logging.INFO,
         )
-        print(
-            f"\tUpstream Homebrew/MMDVM server is expected at {self.hb_master_host}:{self.hb_master_port}"
+        self.log(
+            f"Upstream Homebrew/MMDVM server is expected at {self.hb_master_host}:{self.hb_master_port}\n"
         )
-        print("\n")
+
+    def print_repeater_configuration(self):
+        pass

@@ -7,7 +7,9 @@ from hashlib import sha256
 from typing import Optional, Callable, Tuple
 
 from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
-from hytera_homebrew_bridge.lib.logging_protocol import CustomBridgeDatagramProtocol
+from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
+    CustomBridgeDatagramProtocol,
+)
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 
 
@@ -61,7 +63,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         self.log("MMDVM socket closed")
         self.connection_status = self.CON_NEW
         if exc:
-            self.logger.exception(exc)
+            self.log_exception(exc)
         self.connection_lost_callback()
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:

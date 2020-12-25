@@ -5,7 +5,9 @@ from asyncio import transports, Queue
 from binascii import hexlify
 from typing import Optional, Tuple, Coroutine
 
-from hytera_homebrew_bridge.lib.logging_protocol import CustomBridgeDatagramProtocol
+from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
+    CustomBridgeDatagramProtocol,
+)
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 from hytera_homebrew_bridge.lib.utils import parse_hytera_data
 
@@ -126,7 +128,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.log("connection lost")
         if exc:
-            self.logger.exception(exc)
+            self.log_exception(exc)
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.transport = transport
@@ -451,6 +453,7 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
         if data[: len(self.STEP12_RESPONSE)] == self.STEP12_RESPONSE:
             self.step = 14
             self.log("rdac completed identification")
+            self.settings.print_repeater_configuration()
             self.hytera_repeater_obtain_snmp(address)
             asyncio.get_running_loop().create_task(self.rdac_completed_callback)
 
@@ -458,13 +461,13 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
         pass
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
-        self.log("connection lost")
+        self.log("connection lost", logging.INFO)
         if exc:
-            self.logger.exception(exc)
+            self.log_exception(exc)
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.transport = transport
-        self.log("connection made")
+        self.log("connection made", logging.DEBUG)
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         if len(data) == 1 and self.step != 14:
@@ -508,13 +511,13 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
                 )
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
-        self.log("connection lost")
+        self.log("connection lost", logging.INFO)
         if exc:
-            self.logger.exception(exc)
+            self.log_exception(exc)
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.transport = transport
-        self.log("connection made")
+        self.log("connection made", logging.DEBUG)
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         try:
