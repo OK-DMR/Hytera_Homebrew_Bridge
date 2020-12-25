@@ -144,9 +144,10 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         is_command = self.packet_is_command(data)
         if is_command:
             if packet_type not in self.KNOWN_PACKET_TYPES:
-                self.log_error("Received %s bytes from %s" % (len(data), address))
-                self.log_error(data.hex())
-                self.log_error("Unknown packet of type:%s received" % packet_type)
+                if not self.packet_is_ack(data):
+                    self.log_error("Received %s bytes from %s" % (len(data), address))
+                    self.log_error(data.hex())
+                    self.log_error("Unknown packet of type:%s received" % packet_type)
             if packet_type == self.PACKET_TYPE_REQUEST_REGISTRATION:
                 self.handle_registration(data, address)
             elif packet_type == self.PACKET_TYPE_REQUEST_RDAC_STARTUP:
@@ -155,9 +156,6 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
                 self.handle_dmr_request(data, address)
         elif self.packet_is_ping(data):
             self.handle_ping(data, address)
-        elif self.packet_is_ack(data):
-            # received expected packet
-            pass
         else:
             self.log(
                 "Unknown packet received, %d bytes from %s" % (len(data), address),

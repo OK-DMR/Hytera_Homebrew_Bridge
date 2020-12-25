@@ -58,7 +58,8 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.log("MMDVM socket connected")
         self.transport = transport
-        self.send_login_request()
+        if self.connection_status is not self.CON_LOGIN_SUCCESSFULL:
+            self.send_login_request()
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.log("MMDVM socket closed")

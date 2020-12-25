@@ -123,19 +123,23 @@ def log_mmdvm_configuration(logger: logging.Logger, packet: Mmdvm) -> None:
         return
 
     c: Mmdvm.TypeRepeaterConfiguration = packet.command_data.data
-    logger.info(
-        f"Repeater ID:\t{c.repeater_id}\n"
-        f"Callsign:\t{c.call_sign}\n"
-        f"Frequence RX:\t{c.rx_freq} Hz\n"
-        f"Frequence TX:\t{c.tx_freq} Hz\n"
-        f"TX Power:\t{c.tx_power}\n"
-        f"Color-Code:\t{c.color_code}\n"
-        f"Latitude:\t{c.latitude}\n"
-        f"Longitude:\t{c.longitude}\n"
-        f"Location:\t{c.location}\n"
-        f"Description:\t{c.description}\n"
-        f"Slots:\t\t{2 if c.slots == 3 else 1}\n"
-        f"URL:\t\t{c.url}\n"
-        f"Software ID:\t{c.software_id}\n"
-        f"Packet ID:\t{c.package_id}\n"
+    log = (
+        "-------- MMDVM CONFIGURATION PACKET --------\n"
+        f"Repeater ID\t| {c.repeater_id}\n"
+        f"Callsign\t| {c.call_sign}\n"
+        f"Frequence RX\t| {c.rx_freq} Hz\n"
+        f"Frequence TX\t| {c.tx_freq} Hz\n"
+        f"TX Power\t| {c.tx_power}\n"
+        f"Color-Code\t| {c.color_code}\n"
+        f"Latitude\t| {c.latitude}\n"
+        f"Longitude\t| {c.longitude}\n"
+        f"Location\t| {c.location}\n"
+        f"Description\t| {c.description}\n"
+        f"Slots\t\t| {2 if c.slots == 3 else 1}\n"
+        f"URL\t\t| {c.url}\n"
+        f"Software ID\t| {c.software_id}\n"
+        f"Package ID\t| {c.package_id}\n"
+        "-------- MMDVM CONFIGURATION PACKET --------"
     )
+    for line in log.splitlines():
+        logger.info(line)
