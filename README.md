@@ -9,7 +9,8 @@
 
 ----
 
-This software will interconnect your Hytera repeater (tested RD625 and RD985) with MMDVM server (HBlink, DMRGateway, ...)  
+This software will interconnect your Hytera repeater (tested RD625 and RD985) with MMDVM server (HBlink, DMRGateway, ...)
+
 It does not require running under root/admin user, if you bind to ports over 1024
 
 ----
@@ -28,21 +29,22 @@ $ hytera-homebrew-bridge.py settings.ini
 ```
 
 ----
-## Install on Windows 
+## Install on Windows
 
 To get software running on Windows, you need to install appropriate Python 3.7+ package (depending on your Windows version),
 and you need to install dependencies (MSVC++ 14) required to build **bitarray** dependency
 
 - Microsoft Visual C++ Build Tools v14.0
   - Use [visualcppbuildtools_full.exe](https://go.microsoft.com/fwlink/?LinkId=691126) and install with default configuration
-  
+
+
 Then you should be able to use **Simple install**
 ```shell
-# From standard Windows Command Line (cmd.exe) 
+# From standard Windows Command Line (cmd.exe)
 $ python -m pip install pip wheel setuptools --upgrade
 $ python -m pip install hytera-homebrew-bridge --upgrade
 # Download settings from the project, settings.ini.minimal.default or settings.ini.default and modify it
-$ 
+$ hytera-homebrew-bridge.py <path to settings.ini> <optinally path to logging.ini>
 ```
 
 
@@ -64,6 +66,18 @@ $ python3 -m pip install -r requirements.txt --user --upgrade
 $ python3 -m pip install -r requirements.development.txt --user --upgrade
 $ python3 bin/hytera-homebrew-bridge.py settings.ini
 ```
+
+----
+## FAQ
+
+- Q: Difference between SNMP family/community 'public' and 'hytera'?
+  - A: Some repeaters have non-changeable SNMP setting, and it appears it is usually either 'public' or 'hytera', if SNMP does not work for you, try changing the value to the other one
+- Q: RDAC identification restarts unexpectedly or does not work at all, what can I try to fix it?
+  - A: Check the programming in CPS, there might be multiple incorrect settings
+    1. Open `Conventional > Channel > Digital Channel (or analog) > Digital IP Multi-Site Connect (4th from top in channel detail) must be set to "Slot 1 & Slot 2"`
+    2. Open `Conventional > General Settings > Access Manager` and in the section "Multisite Access Management" either disable the management or set correct list
+- Q: SNMP does not work correctly, what can I try to fix it?
+  - A: Check if SNMP port is set to 161 in `Conventional > General Settings > Network` section `SNMP` at the bottom
 
 ----
 

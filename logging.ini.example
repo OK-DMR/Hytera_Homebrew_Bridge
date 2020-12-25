@@ -1,0 +1,23 @@
+[loggers]
+keys=root
+
+[logger_root]
+level=INFO
+handlers=stdout
+
+[handlers]
+keys=stdout
+
+[handler_stdout]
+class=StreamHandler
+level=INFO
+args=(sys.stdout,)
+formatter=common
+
+[formatters]
+keys=common
+
+[formatter_common]
+format=%(levelname)s - %(asctime)s - %(name)s - %(message)s
+datefmt=
+class=logging.Formatter
