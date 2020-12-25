@@ -9,5 +9,14 @@ class LoggingTrait:
     def log(self, msg: str, level=logging.DEBUG):
         self.get_logger().log(level=level, msg=msg)
 
+    def log_info(self, msg: str):
+        self.get_logger().info(msg)
+
+    def log_warning(self, msg: str):
+        self.get_logger().warning(msg)
+
+    def log_error(self, msg: str):
+        self.get_logger().error(msg)
+
     def log_exception(self, exc):
         self.get_logger().exception(exc)

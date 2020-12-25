@@ -18,4 +18,4 @@ class CustomBridgeDatagramProtocol(protocols.DatagramProtocol, LoggingTrait):
             if force or not self.settings.hytera_snmp_data:
                 SNMP().walk_ip(address, self.settings)
         else:
-            self.log("SNMP is disabled", logging.WARN)
+            self.log_warning("SNMP is disabled")

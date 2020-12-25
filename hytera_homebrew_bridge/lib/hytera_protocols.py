@@ -15,6 +15,7 @@ from hytera_homebrew_bridge.lib.utils import parse_hytera_data
 class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     COMMAND_PREFIX: bytes = bytes([0x50, 0x32, 0x50])
     PING_PREFIX: bytes = bytes([0x0A, 0x00, 0x00, 0x00, 0x14])
+    ACK_PREFIX: bytes = bytes([0x0C, 0x00, 0x00, 0x00, 0x14])
 
     PACKET_TYPE_REQUEST_REGISTRATION = 0x10
     PACKET_TYPE_REQUEST_DMR_STARTUP = 0x11
@@ -38,6 +39,10 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     @staticmethod
     def packet_is_ping(data: bytes) -> bool:
         return data[4:9] == HyteraP2PProtocol.PING_PREFIX
+
+    @staticmethod
+    def packet_is_ack(data: bytes) -> bool:
+        return data[4:9] == HyteraP2PProtocol.ACK_PREFIX
 
     @staticmethod
     def command_get_type(data: bytes) -> int:
@@ -139,13 +144,9 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         is_command = self.packet_is_command(data)
         if is_command:
             if packet_type not in self.KNOWN_PACKET_TYPES:
-                self.log(
-                    "Received %s bytes from %s" % (len(data), address), logging.ERROR
-                )
-                self.log(data.hex(), logging.ERROR)
-                self.log(
-                    "Unknown packet of type:%s received" % packet_type, logging.ERROR
-                )
+                self.log_error("Received %s bytes from %s" % (len(data), address))
+                self.log_error(data.hex())
+                self.log_error("Unknown packet of type:%s received" % packet_type)
             if packet_type == self.PACKET_TYPE_REQUEST_REGISTRATION:
                 self.handle_registration(data, address)
             elif packet_type == self.PACKET_TYPE_REQUEST_RDAC_STARTUP:
@@ -154,6 +155,9 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
                 self.handle_dmr_request(data, address)
         elif self.packet_is_ping(data):
             self.handle_ping(data, address)
+        elif self.packet_is_ack(data):
+            # received expected packet
+            pass
         else:
             self.log(
                 "Unknown packet received, %d bytes from %s" % (len(data), address),
@@ -166,7 +170,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         self.transport.sendto(bytes(0x00))
 
     def disconnect(self):
-        self.log("Self Disconnect", logging.WARN)
+        self.log_warning("Self Disconnect")
         if self.transport and not self.transport.is_closing():
             self.send_connection_reset()
 
@@ -472,14 +476,12 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         if len(data) == 1 and self.step != 14:
             if self.step == 4:
-                self.log(
+                self.log_warning(
                     "check repeater zone programming, if Digital IP"
-                    "Multi-Site Connect mode allows data pass from timeslots",
-                    logging.WARN,
+                    "Multi-Site Connect mode allows data pass from timeslots"
                 )
-            self.log(
-                "restart process if response is protocol reset and current step is not 14",
-                logging.WARN,
+            self.log_warning(
+                "restart process if response is protocol reset and current step is not 14"
             )
             self.step = 0
             self.step0(data, addr)
