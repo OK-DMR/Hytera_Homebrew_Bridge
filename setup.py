@@ -29,9 +29,9 @@ setup(
     keywords="mmdvm dmr hytera repeater ham radio repeater",
     python_requires="~=3.7",
     install_requires=[
-        "configparser>=5.0.0",
+        "configparser>=5.0.1",
         "kaitaistruct>=0.9",
-        "easysnmp>=0.2.5",
+        "puresnmp>=1.10.2",
         "asyncio>=3.4.3",
         "dmr_utils3>=0.1.29",
         "bitarray>=1.6.1",

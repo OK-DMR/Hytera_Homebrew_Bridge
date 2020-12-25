@@ -173,5 +173,7 @@ if __name__ == "__main__":
         print("use as snmp.py <ip of hytera repeater>")
         exit(1)
 
+    logging.basicConfig(level=logging.NOTSET)
+
     settings: BridgeSettings = BridgeSettings(filedata=BridgeSettings.MINIMAL_SETTINGS)
     SNMP().walk_ip((sys.argv[1], 0), settings_storage=settings)

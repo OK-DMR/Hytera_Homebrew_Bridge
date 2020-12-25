@@ -75,23 +75,18 @@ class HyteraHomebrewBridge:
         # P2P/IPSC Service address
         await self.loop.create_datagram_endpoint(
             lambda: self.hytera_p2p_protocol,
-            reuse_address=True,
             local_addr=(self.settings.ipsc_ip, self.settings.p2p_port),
         )
 
     async def hytera_dmr_connect(self) -> None:
         await self.loop.create_datagram_endpoint(
             lambda: self.hytera_dmr_protocol,
-            reuse_address=True,
-            reuse_port=True,
             local_addr=(self.settings.ipsc_ip, self.settings.dmr_port),
         )
 
     async def hytera_rdac_connect(self) -> None:
         await self.loop.create_datagram_endpoint(
             lambda: self.hytera_rdac_protocol,
-            reuse_address=True,
-            reuse_port=True,
             local_addr=(self.settings.ipsc_ip, self.settings.rdac_port),
         )
 
@@ -194,8 +189,9 @@ if __name__ == "__main__":
     # order is necessary, various asyncio object are create at bridge init
     # and those must be created after the main loop is created
     bridge: HyteraHomebrewBridge = HyteraHomebrewBridge(sys.argv[1])
-    for signal in [SIGINT, SIGTERM]:
-        loop.add_signal_handler(signal, bridge.stop_running)
+    if os.name != "nt":
+        for signal in [SIGINT, SIGTERM]:
+            loop.add_signal_handler(signal, bridge.stop_running)
 
     try:
         loop.run_until_complete(bridge.go())
