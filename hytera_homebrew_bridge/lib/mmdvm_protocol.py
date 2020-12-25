@@ -11,6 +11,7 @@ from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
     CustomBridgeDatagramProtocol,
 )
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
+from hytera_homebrew_bridge.lib.utils import log_mmdvm_configuration
 
 
 class MMDVMProtocol(CustomBridgeDatagramProtocol):
@@ -144,7 +145,12 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
             self.settings.hb_software_id[0:40].ljust(40).encode(),
             self.settings.hb_package_id[0:40].ljust(40).encode(),
         )
+
         self.queue_outgoing.put_nowait(packet)
+
+        config: Mmdvm = Mmdvm.from_bytes(packet)
+        self.log_info("MMDVM Configuration sent")
+        log_mmdvm_configuration(logger=self.get_logger(), packet=config)
 
     def send_ping(self) -> None:
         packet = struct.pack(">7sI", b"RPTPING", self.settings.get_repeater_dmrid())
