@@ -13,8 +13,10 @@ dmr_port = 50001
 rdac_port = 50002
 
 [homebrew]
-# from which IP the connection to MMDVM is made
+# from which IP:port the connection to MMDVM is made
+# useful for example for DMRGateway configuration (must match DMRGateway.ini configs RptAddress/RptPort)
 local_ip = 0.0.0.0
+local_port = 0
 # master ip, port and password
 master_ip = 192.168.1.3
 master_port = 62031
