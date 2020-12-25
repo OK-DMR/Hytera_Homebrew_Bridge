@@ -35,7 +35,7 @@ description =
 # 124 ascii letters, http:// not required, will be trimmed if exceeded
 url = http://github.com/ok-dmr/Hytera_Homebrew_Bridge
 # 40 ascii letters, will be trimmed if exceeded
-software_id = 2020.2
+software_id = 2020.3
 package_id = Hytera Homebrew Bridge
 # use these to override params read out of repeater
 rx_freq = 434787500
