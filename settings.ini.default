@@ -7,6 +7,7 @@ family = public
 
 # Hytera IPSC configuration
 [ip-site-connect]
+# Local IP on which you listen for Hytera repeater connection
 ip = 192.168.1.2
 p2p_port = 50000
 dmr_port = 50001
