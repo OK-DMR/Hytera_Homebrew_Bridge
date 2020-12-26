@@ -66,17 +66,17 @@ class BridgeSettings(LoggingTrait):
         self.hb_repeater_dmr_id: int = self.getint_safe(
             parser, self.SECTION_HB, "repeater_dmr_id", fallback=None
         )
-        self.hb_callsign: str = parser.get(self.SECTION_HB, "callsign", fallback=None)
+        self.hb_callsign: str = parser.get(self.SECTION_HB, "callsign", fallback="")
         self.hb_color_code = self.getint_safe(
             parser, self.SECTION_HB, "color_code", fallback=1
         )
-        self.hb_latitude = parser.get(self.SECTION_HB, "latitude", fallback=None)
-        self.hb_longitude = parser.get(self.SECTION_HB, "longitude", fallback=None)
+        self.hb_latitude = parser.get(self.SECTION_HB, "latitude", fallback="")
+        self.hb_longitude = parser.get(self.SECTION_HB, "longitude", fallback="")
         self.hb_antenna_height = self.getint_safe(
             parser, self.SECTION_HB, "antenna_height", fallback=0
         )
-        self.hb_location = parser.get(self.SECTION_HB, "location", fallback=None)
-        self.hb_description = parser.get(self.SECTION_HB, "description", fallback=None)
+        self.hb_location = parser.get(self.SECTION_HB, "location", fallback="")
+        self.hb_description = parser.get(self.SECTION_HB, "description", fallback="")
         self.hb_timeslots = parser.get(self.SECTION_HB, "timeslots", fallback="3")
         self.hb_url = parser.get(
             self.SECTION_HB,
