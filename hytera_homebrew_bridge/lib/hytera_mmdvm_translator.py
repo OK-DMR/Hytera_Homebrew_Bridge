@@ -78,25 +78,25 @@ class HyteraMmdvmTranslator(LoggingTrait):
             try:
                 packet: KaitaiStruct = await self.queue_hytera_to_translate.get()
             except RuntimeError as e:
-                self.log_error("Could not get Hytera packet from queue")
+                self.log_error("HYTERA->MMDVM Could not get Hytera packet from queue")
                 self.log_exception(e)
                 continue
 
             if isinstance(packet, IpSiteConnectHeartbeat):
-                self.log("Received IPSC Heartbeat, not translating")
+                self.log_debug("HYTERA->MMDVM Received IPSC Heartbeat, not translating")
                 continue
             if isinstance(packet, IpSiteConnectProtocol):
                 if (
                     packet.slot_type
                     == IpSiteConnectProtocol.SlotTypes.slot_type_ipsc_sync
                 ):
-                    self.log("Received IPSC Sync packet, not translating")
+                    # self.log("Received IPSC Sync packet, not translating")
                     continue
 
                 if self.hytera_last_sequence_in == packet.sequence_number:
                     # do not send duplicate packets
-                    self.log(
-                        f"Got duplicate IPSC packet {packet.__class__.__name__}, not translating"
+                    self.log_debug(
+                        f"HYTERA->MMDVM Got duplicate IPSC packet {packet.slot_type}, not translating"
                     )
                     continue
                 else:
@@ -208,13 +208,13 @@ class HyteraMmdvmTranslator(LoggingTrait):
             try:
                 packet: Mmdvm = await self.queue_mmdvm_to_translate.get()
             except RuntimeError as e:
-                self.log("Could not get MMDVM packet from queue")
+                self.log_error("MMDVM->HYTERA Could not get MMDVM packet from queue")
                 self.log_exception(e)
                 continue
 
             if not isinstance(packet.command_data, Mmdvm.TypeDmrData):
                 self.log_info(
-                    f"Received packet not DMRD, not translating {packet.command_data.__class__.__name__}"
+                    f"MMDVM->HYTERA Received packet not DMRD, not translating {packet.command_data.__class__.__name__}"
                 )
                 continue
 

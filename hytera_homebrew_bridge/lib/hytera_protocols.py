@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import asyncio
-import logging
 from asyncio import transports, Queue
 from binascii import hexlify
 from typing import Optional, Tuple, Coroutine
@@ -67,7 +66,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
 
     def handle_rdac_request(self, data: bytes, address: tuple) -> None:
         if not self.settings.hytera_is_registered:
-            self.log("Rejecting RDAC request for not-registered repeater")
+            self.log_debug("Rejecting RDAC request for not-registered repeater")
             self.transport.sendto(bytes(0x01), address)
             return
 
@@ -83,7 +82,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         self.settings.hytera_repeater_ip = address[0]
 
         self.transport.sendto(data, response_address)
-        self.log("RDAC Accept for %s.%s" % address)
+        self.log_debug("RDAC Accept for %s.%s" % address)
 
         # redirect repeater to correct RDAC port
         data = self.get_redirect_packet(data, self.settings.rdac_port)
@@ -103,7 +102,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
 
     def handle_dmr_request(self, data: bytes, address: tuple) -> None:
         if not self.settings.hytera_is_registered:
-            self.log("Rejecting DMR request for not-registered repeater")
+            self.log_debug("Rejecting DMR request for not-registered repeater")
             self.transport.sendto(bytes(0x01), address)
             return
 
@@ -116,7 +115,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         data.append(0x01)
 
         self.transport.sendto(data, response_address)
-        self.log("DMR Accept for %s.%s" % address)
+        self.log_debug("DMR Accept for %s.%s" % address)
 
         data = self.get_redirect_packet(data, self.settings.dmr_port)
         self.transport.sendto(data, response_address)
@@ -131,13 +130,13 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         self.transport.sendto(data, address)
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
-        self.log("connection lost")
+        self.log_debug("connection lost")
         if exc:
             self.log_exception(exc)
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.transport = transport
-        self.log("connection made")
+        self.log_debug("connection made")
 
     def datagram_received(self, data: bytes, address: Tuple[str, int]) -> None:
         packet_type = self.command_get_type(data)
@@ -157,14 +156,13 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         elif self.packet_is_ping(data):
             self.handle_ping(data, address)
         else:
-            self.log(
-                "Unknown packet received, %d bytes from %s" % (len(data), address),
-                logging.ERROR,
+            self.log_error(
+                "Unknown packet received, %d bytes from %s" % (len(data), address)
             )
-            self.log(data.hex())
+            self.log_debug(data.hex())
 
     def send_connection_reset(self):
-        self.log("Sending Connection Reset")
+        self.log_debug("Sending Connection Reset")
         self.transport.sendto(bytes(0x00))
 
     def disconnect(self):
@@ -355,7 +353,7 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
         self.step = 0
 
     def step0(self, _: bytes, address: tuple) -> None:
-        self.log("RDAC identification started")
+        self.log_debug("RDAC identification started")
         self.step = 1
         self.transport.sendto(self.STEP0_REQUEST, address)
 
@@ -454,7 +452,7 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
     def step13(self, data: bytes, address: tuple) -> None:
         if data[: len(self.STEP12_RESPONSE)] == self.STEP12_RESPONSE:
             self.step = 14
-            self.log("rdac completed identification")
+            self.log_debug("rdac completed identification")
             self.settings.print_repeater_configuration()
             self.hytera_repeater_obtain_snmp(address)
             asyncio.get_running_loop().create_task(self.rdac_completed_callback)
@@ -463,13 +461,13 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
         pass
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
-        self.log("connection lost", logging.INFO)
+        self.log_info("connection lost")
         if exc:
             self.log_exception(exc)
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.transport = transport
-        self.log("connection made", logging.DEBUG)
+        self.log_debug("connection made")
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         if len(data) == 1 and self.step != 14:
@@ -484,7 +482,7 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
             self.step = 0
             self.step0(data, addr)
         elif len(data) != 1 and self.step == 14:
-            self.log("RDAC finished, received extra data %s" % hexlify(data))
+            self.log_error("RDAC finished, received extra data %s" % hexlify(data))
         elif len(data) == 1 and self.step == 14:
             if data[0] == 0x00:
                 # no data available response
@@ -517,10 +515,11 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.transport = transport
-        self.log("connection made", logging.DEBUG)
+        self.log_debug("connection made")
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         try:
             self.queue_incoming.put_nowait(parse_hytera_data(data))
-        except EOFError:
+        except EOFError as e:
             self.log_error(f"Cannot parse IPSC DMR packet {hexlify(data)} from {addr}")
+            self.log_exception(e)

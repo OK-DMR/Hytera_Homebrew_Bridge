@@ -93,11 +93,11 @@ class HyteraHomebrewBridge:
     async def homebrew_connect(self) -> None:
         incorrect_config_params = self.settings.get_incorrect_configurations()
         if len(incorrect_config_params) > 0:
-            self.homebrew_protocol.log(
-                "Current configuration is not valid for connection", logging.ERROR
+            self.homebrew_protocol.log_error(
+                "Current configuration is not valid for connection"
             )
             for triplet in incorrect_config_params:
-                self.homebrew_protocol.log(
+                self.homebrew_protocol.log_error(
                     f"PARAM: {triplet[0]} CURRENT_VALUE: {triplet[1]} MESSAGE: {triplet[2]}"
                 )
             return

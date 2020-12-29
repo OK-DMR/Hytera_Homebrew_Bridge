@@ -1,9 +1,14 @@
 [loggers]
-keys=root
+keys=root,puresnmp
 
 [logger_root]
 level=INFO
 handlers=stdout
+
+[logger_puresnmp]
+level=WARN
+handlers=stdout
+qualname=puresnmp.transport
 
 [handlers]
 keys=stdout

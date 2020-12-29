@@ -197,13 +197,12 @@ class BridgeSettings(LoggingTrait):
         return rtn
 
     def print_settings(self) -> None:
-        self.log("Settings Loaded", logging.INFO)
-        self.log(
+        self.log_info("Settings Loaded")
+        self.log_info(
             f"Hytera Repeater is expected to connect at {self.ipsc_ip} and ports"
             f" [MASTER PORT: {self.p2p_port}] [DMR PORT: {self.dmr_port}] [RDAC PORT: {self.rdac_port}]",
-            logging.INFO,
         )
-        self.log(
+        self.log_info(
             f"Upstream Homebrew/MMDVM server is expected at {self.hb_master_host}:{self.hb_master_port}\n"
         )
 

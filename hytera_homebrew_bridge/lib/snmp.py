@@ -135,7 +135,7 @@ class SNMP(LoggingTrait):
                 settings_storage.hytera_snmp_data[oid] = snmp_result
 
         except SystemError:
-            self.log("SNMP failed to obtain repeater info", logging.ERROR)
+            self.log_error("SNMP failed to obtain repeater info")
             pass
 
         self.print_snmp_data(settings_storage=settings_storage)
@@ -143,7 +143,7 @@ class SNMP(LoggingTrait):
         return settings_storage.hytera_snmp_data
 
     def print_snmp_data(self, settings_storage: BridgeSettings):
-        self.log(
+        self.log_debug(
             "-------------- REPEATER SNMP CONFIGURATION ----------------------------"
         )
         longest_label = 0
@@ -156,14 +156,14 @@ class SNMP(LoggingTrait):
             print_settings = SNMP.READABLE_LABELS.get(key)
             if print_settings:
                 value = settings_storage.hytera_snmp_data.get(key)
-                self.log(
+                self.log_debug(
                     "%s| %s"
                     % (
                         str(print_settings[0]).ljust(longest_label + 5),
                         print_settings[1] % value,
                     )
                 )
-        self.log(
+        self.log_debug(
             "-------------- REPEATER SNMP CONFIGURATION ----------------------------"
         )
 

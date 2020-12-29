@@ -56,13 +56,13 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                 self.transport.sendto(packet)
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
-        self.log("MMDVM socket connected")
+        self.log_debug("MMDVM socket connected")
         self.transport = transport
-        # if self.connection_status is not self.CON_LOGIN_SUCCESSFULL:
-        self.send_login_request()
+        if self.connection_status is not self.CON_LOGIN_SUCCESSFULL:
+            self.send_login_request()
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
-        self.log("MMDVM socket closed")
+        self.log_debug("MMDVM socket closed")
         self.connection_status = self.CON_NEW
         if exc:
             self.log_exception(exc)
@@ -73,38 +73,39 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         if isinstance(packet.command_data, Mmdvm.TypeMasterNotAccept):
             if self.connection_status == self.CON_LOGIN_REQUEST_SENT:
                 self.connection_status = self.CON_NEW
-                self.log("Master did not accept our login request")
+                self.log_error("Master did not accept our login request")
             elif self.connection_status == self.CON_LOGIN_RESPONSE_SENT:
                 self.connection_status = self.CON_NEW
-                self.log("Master did not accept our password challenge response")
+                self.log_error("Master did not accept our password challenge response")
         elif isinstance(packet.command_data, Mmdvm.TypeMasterRepeaterAck):
             if self.connection_status == self.CON_LOGIN_REQUEST_SENT:
-                self.log("Sending Login Response")
+                self.log_info("Sending Login Response")
                 self.send_login_response(packet.command_data.repeater_id_or_challenge)
             elif self.connection_status == self.CON_LOGIN_RESPONSE_SENT:
-                self.log("Master Login Accept")
+                self.log_info("Master Login Accept")
                 self.connection_status = self.CON_LOGIN_SUCCESSFULL
                 self.send_configuration()
         elif isinstance(packet.command_data, Mmdvm.TypeMasterPong):
             # self.log("Master PONG received")
             pass
         elif isinstance(packet.command_data, Mmdvm.TypeMasterClosing):
-            self.log("Master Closing connection")
+            self.log_info("Master Closing connection")
             self.connection_status = self.CON_NEW
         elif isinstance(packet.command_data, Mmdvm.TypeDmrData):
+            self.log_debug(f"{hexlify(data)}")
             self.queue_incoming.put_nowait(packet)
         else:
-            self.log(f"UNHANDLED {packet.__class__.__name__} {hexlify(data)}")
+            self.log_error(f"UNHANDLED {packet.__class__.__name__} {hexlify(data)}")
 
     def send_login_request(self) -> None:
-        self.log("Sending Login Request")
+        self.log_info("Sending Login Request")
         self.connection_status = self.CON_LOGIN_REQUEST_SENT
         self.queue_outgoing.put_nowait(
             struct.pack(">4sI", b"RPTL", self.settings.get_repeater_dmrid())
         )
 
     def send_login_response(self, challenge: int) -> None:
-        self.log("Sending Login Response (Challenge response)")
+        self.log_info("Sending Login Response (Challenge response)")
         self.connection_status = self.CON_LOGIN_RESPONSE_SENT
         challenge_response = struct.pack(
             ">4sI32s",
@@ -124,7 +125,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         self.queue_outgoing.put_nowait(challenge_response)
 
     def send_configuration(self) -> None:
-        self.log(f"Sending self configuration to master")
+        self.log_info(f"Sending self configuration to master")
         packet = struct.pack(
             ">4sI8s9s9s2s2s8s9s3s20s19s1s124s40s40s",
             b"RPTC",
@@ -150,7 +151,6 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         self.queue_outgoing.put_nowait(packet)
 
         config: Mmdvm = Mmdvm.from_bytes(packet)
-        self.log_info("MMDVM Configuration sent")
         log_mmdvm_configuration(logger=self.get_logger(), packet=config)
 
     def send_ping(self) -> None:
@@ -158,7 +158,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         self.queue_outgoing.put_nowait(packet)
 
     def send_closing(self) -> None:
-        self.log("Closing MMDVM connection")
+        self.log_info("Closing MMDVM connection")
         packet = struct.pack(">5sI", b"RPTCL", self.settings.get_repeater_dmrid())
         self.queue_outgoing.put_nowait(packet)
 
