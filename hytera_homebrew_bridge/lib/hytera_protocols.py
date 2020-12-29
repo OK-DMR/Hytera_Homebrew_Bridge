@@ -511,7 +511,7 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
                 )
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
-        self.log("connection lost", logging.INFO)
+        self.log_info("connection lost")
         if exc:
             self.log_exception(exc)
 
@@ -523,4 +523,4 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
         try:
             self.queue_incoming.put_nowait(parse_hytera_data(data))
         except EOFError:
-            self.log(f"Cannot parse IPSC DMR packet {hexlify(data)} from {addr}")
+            self.log_error(f"Cannot parse IPSC DMR packet {hexlify(data)} from {addr}")
