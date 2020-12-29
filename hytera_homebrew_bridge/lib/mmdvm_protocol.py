@@ -4,6 +4,7 @@ import struct
 from asyncio import transports, Queue
 from binascii import hexlify, a2b_hex
 from hashlib import sha256
+from socket import socket
 from typing import Optional, Callable, Tuple
 
 from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
@@ -57,9 +58,18 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.log_debug("MMDVM socket connected")
-        self.transport = transport
-        if self.connection_status is not self.CON_LOGIN_SUCCESSFULL:
-            self.send_login_request()
+        if not self.transport or self.transport.is_closing():
+            self.log_debug("Setting transport")
+            self.transport = transport
+            if self.connection_status is not self.CON_LOGIN_SUCCESSFULL:
+                self.send_login_request()
+        else:
+            self.log_debug("ignoring new transport")
+            hb_local_socket = transport.get_extra_info("socket")
+            if isinstance(hb_local_socket, socket):
+                self.log_warning(
+                    f"Ignoring new transport {hb_local_socket.getsockname()}"
+                )
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.log_debug("MMDVM socket closed")
@@ -70,32 +80,49 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         packet = Mmdvm.from_bytes(data)
+        is_handled: bool = False
         if isinstance(packet.command_data, Mmdvm.TypeMasterNotAccept):
             if self.connection_status == self.CON_LOGIN_REQUEST_SENT:
                 self.connection_status = self.CON_NEW
                 self.log_error("Master did not accept our login request")
+                is_handled = True
             elif self.connection_status == self.CON_LOGIN_RESPONSE_SENT:
                 self.connection_status = self.CON_NEW
                 self.log_error("Master did not accept our password challenge response")
+                is_handled = True
+            elif self.connection_status == self.CON_LOGIN_SUCCESSFULL:
+                self.connection_status = self.CON_NEW
+                self.log_info("Connection timed-out or was interrupted, do login again")
+                self.send_login_request()
+                is_handled = True
         elif isinstance(packet.command_data, Mmdvm.TypeMasterRepeaterAck):
             if self.connection_status == self.CON_LOGIN_REQUEST_SENT:
                 self.log_info("Sending Login Response")
                 self.send_login_response(packet.command_data.repeater_id_or_challenge)
+                is_handled = True
             elif self.connection_status == self.CON_LOGIN_RESPONSE_SENT:
                 self.log_info("Master Login Accept")
                 self.connection_status = self.CON_LOGIN_SUCCESSFULL
                 self.send_configuration()
+                is_handled = True
+            elif self.connection_status == self.CON_LOGIN_SUCCESSFULL:
+                self.log_info("Master accepted our configuration")
+                is_handled = True
         elif isinstance(packet.command_data, Mmdvm.TypeMasterPong):
-            # self.log("Master PONG received")
+            self.log_debug("Master PONG received")
+            is_handled = True
             pass
         elif isinstance(packet.command_data, Mmdvm.TypeMasterClosing):
             self.log_info("Master Closing connection")
             self.connection_status = self.CON_NEW
+            is_handled = True
         elif isinstance(packet.command_data, Mmdvm.TypeDmrData):
-            self.log_debug(f"{hexlify(data)}")
             self.queue_incoming.put_nowait(packet)
-        else:
-            self.log_error(f"UNHANDLED {packet.__class__.__name__} {hexlify(data)}")
+            is_handled = True
+        if not is_handled:
+            self.log_error(
+                f"UNHANDLED {packet.__class__.__name__} {packet.command_data.__class__.__name__} {hexlify(data)} status {self.connection_status}"
+            )
 
     def send_login_request(self) -> None:
         self.log_info("Sending Login Request")
@@ -154,6 +181,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         log_mmdvm_configuration(logger=self.get_logger(), packet=config)
 
     def send_ping(self) -> None:
+        self.log_debug("Sending PING")
         packet = struct.pack(">7sI", b"RPTPING", self.settings.get_repeater_dmrid())
         self.queue_outgoing.put_nowait(packet)
 

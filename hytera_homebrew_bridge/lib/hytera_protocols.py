@@ -67,7 +67,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     def handle_rdac_request(self, data: bytes, address: tuple) -> None:
         if not self.settings.hytera_is_registered:
             self.log_debug("Rejecting RDAC request for not-registered repeater")
-            self.transport.sendto(bytes(0x01), address)
+            self.transport.sendto(bytes([0x00]), address)
             return
 
         response_address = (address[0], self.settings.p2p_port)
@@ -103,7 +103,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     def handle_dmr_request(self, data: bytes, address: tuple) -> None:
         if not self.settings.hytera_is_registered:
             self.log_debug("Rejecting DMR request for not-registered repeater")
-            self.transport.sendto(bytes(0x01), address)
+            self.transport.sendto(bytes([0x00]), address)
             return
 
         response_address = (address[0], self.settings.p2p_port)
@@ -519,6 +519,7 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         try:
+            self.log_debug(f"Hytera incoming {data.hex()}")
             self.queue_incoming.put_nowait(parse_hytera_data(data))
         except EOFError as e:
             self.log_error(f"Cannot parse IPSC DMR packet {hexlify(data)} from {addr}")

@@ -17,6 +17,7 @@ enums:
     0xAAAA: slot_type_data_f
     0xBBBB: slot_type_data_a
     0xCCCC: slot_type_data_b
+    0xDDDD: slot_type_wakeup_request
     0xEEEE: slot_type_ipsc_sync
     0x0000: slot_type_unknown
   packet_types:

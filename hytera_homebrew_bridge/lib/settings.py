@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
 import configparser
-import logging
-import logging.config
-from typing import Optional
 
 from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 

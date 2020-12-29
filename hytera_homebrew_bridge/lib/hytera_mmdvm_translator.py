@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 from asyncio import Queue
+from time import time
 
 from bitarray import bitarray
 from kaitaistruct import KaitaiStruct
@@ -12,7 +13,12 @@ from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnect
 from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
 from hytera_homebrew_bridge.lib import settings as module_settings
 from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
-from hytera_homebrew_bridge.lib.utils import byteswap_bytes
+from hytera_homebrew_bridge.lib.utils import (
+    byteswap_bytes,
+    assemble_hytera_ipsc_packet,
+    assemble_hytera_ipsc_wakeup_packet,
+    assemble_hytera_ipsc_sync_packet,
+)
 
 
 class HyteraMmdvmTranslator(LoggingTrait):
@@ -32,6 +38,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
         # translation / state-machine related variables
         self.mmdvm_last_sequence: int = 0
         self.mmdvm_sequence_number: int = 0
+        self.hytera_last_sent_timestamp: int = 0
         self.hytera_last_sequence_out: int = 0
         self.hytera_last_sequence_in: int = -1
         self.hytera_last_started_stream_id_out: int = -1
@@ -90,7 +97,17 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     packet.slot_type
                     == IpSiteConnectProtocol.SlotTypes.slot_type_ipsc_sync
                 ):
-                    # self.log("Received IPSC Sync packet, not translating")
+                    self.log_debug(
+                        "HYTERA->MMDVM Received IPSC Sync packet, not translating"
+                    )
+                    continue
+                if (
+                    packet.slot_type
+                    == IpSiteConnectProtocol.SlotTypes.slot_type_wakeup_request
+                ):
+                    self.log_debug(
+                        "HYTERA->MMDVM Received IPSC Wakeup packet, not translating"
+                    )
                     continue
 
                 if self.hytera_last_sequence_in == packet.sequence_number:
@@ -220,11 +237,15 @@ class HyteraMmdvmTranslator(LoggingTrait):
 
             self.mmdvm_sequence_number = (self.mmdvm_sequence_number + 1) & 0xFF
 
-            slot_type: bytes
+            swapped_bytes: bytes = byteswap_bytes(packet.command_data.dmr_data)
+
+            slot_type: IpSiteConnectProtocol.SlotTypes
             if packet.command_data.frame_type == 2:
                 if packet.command_data.data_type == 1:
                     # voice lc header
-                    slot_type = b"\x11\x11"
+                    slot_type = (
+                        IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header
+                    )
                     self.mmdvm_sequence_number = 0
                     self.log_info(
                         "MMDVM->HYTERA *%s CALL START* FROM: %s TO: %s TS: %s"
@@ -237,9 +258,23 @@ class HyteraMmdvmTranslator(LoggingTrait):
                             "1" if packet.command_data.slot_no == 1 else "2",
                         )
                     )
+                    if self.hytera_last_sent_timestamp < (time() - 60):
+                        self.log_info("Waking up repeater, both timeslots")
+                        for TS in (True, False):
+                            # send wakeup packet
+                            hytera_ipsc_packet: bytes = (
+                                assemble_hytera_ipsc_wakeup_packet(
+                                    timeslot_is_ts1=TS,
+                                    target_id=packet.command_data.target_id,
+                                    source_id=packet.command_data.source_id,
+                                )
+                            )
+                            await self.queue_hytera_output.put(hytera_ipsc_packet)
                 else:
                     # terminator with lc
-                    slot_type = b"\x22\x22"
+                    slot_type = (
+                        IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
+                    )
                     self.log_info(
                         "MMDVM->HYTERA *%s CALL  END * FROM: %s TO: %s TS: %s"
                         % (
@@ -256,66 +291,28 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     packet.command_data.data_type
                 )
 
-            swapped_bytes: bytes = byteswap_bytes(packet.command_data.dmr_data)
+            # if slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_data_a:
+            #     # send sync packet
+            #     hytera_ipsc_packet: bytes = assemble_hytera_ipsc_sync_packet(
+            #         timeslot_is_ts1=(packet.command_data.slot_no == 0),
+            #         is_private_call=(packet.command_data.call_type == 1),
+            #         target_id=packet.command_data.target_id,
+            #         source_id=packet.command_data.source_id,
+            #     )
+            #     self.log_info(f"Sending ipsc sync to repeater {hytera_ipsc_packet.hex()}")
+            #     await self.queue_hytera_output.put(hytera_ipsc_packet)
 
-            data_string: bytes = (
-                # source port
-                self.settings.dmr_port.to_bytes(2, byteorder="little")
-                +
-                # magic fixed header
-                b"\x00\x50"
-                +
-                # sequence_number
-                self.mmdvm_sequence_number.to_bytes(1, byteorder="little")
-                +
-                # reserved_3
-                b"\xE0\x00\x00"
-                +
-                # packet type
-                b"\x01"
-                +
-                # reserved_7a
-                b"\x00\x05\x01"
-                + (b"\x02" if packet.command_data.slot_no == 1 else b"\x01")
-                + b"\x00\x00\x00"
-                +
-                # timeslot_raw
-                (b"\x22\x22" if packet.command_data.slot_no == 1 else b"\x11\x11")
-                +
-                # slot_type
-                self.mmdvm_to_hytera_slottype_str.get(slot_type, b"\x00\x00")
-                +
-                # delimiter
-                b"\x11\x11"
-                +
-                # frame_type
-                b"\xBB\xBB"
-                +
-                # reserved_2a
-                b"\x40\x5C"
-                +
-                # payload data
-                swapped_bytes
-                +
-                # two byte crc16 checksum
-                b"\x00\x00"
-                # reserved_2b
-                b"\x63\x02"
-                +
-                # call_type, mmdvm true = private, ipsc 00 = private
-                (b"\x11" if packet.command_data.call_type else b"\x00")
-                +
-                # destination id
-                int(packet.command_data.target_id).to_bytes(4, byteorder="little")
-                +
-                # source id
-                max(int(packet.command_data.source_id), 4294967295).to_bytes(
-                    4, byteorder="little"
-                )
-                +
-                # reserved_1b
-                b"\x00"
+            hytera_ipsc_packet: bytes = assemble_hytera_ipsc_packet(
+                udp_port=self.settings.dmr_port,
+                sequence_number=self.mmdvm_sequence_number,
+                timeslot_is_ts1=(packet.command_data.slot_no == 0),
+                hytera_slot_type=int(slot_type.__getattribute__("value")),
+                dmr_payload=swapped_bytes,
+                is_private_call=(packet.command_data.call_type == 1),
+                target_id=packet.command_data.target_id,
+                source_id=packet.command_data.source_id,
             )
 
-            await self.queue_hytera_output.put(data_string)
+            await self.queue_hytera_output.put(hytera_ipsc_packet)
+            self.hytera_last_sent_timestamp = time()
             self.queue_mmdvm_to_translate.task_done()

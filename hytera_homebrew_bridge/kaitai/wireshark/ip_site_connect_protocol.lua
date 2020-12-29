@@ -24,6 +24,7 @@ IpSiteConnectProtocol.SlotTypes = enum.Enum {
   slot_type_data_f = 43690,
   slot_type_data_a = 48059,
   slot_type_data_b = 52428,
+  slot_type_wakeup_request = 56797,
   slot_type_ipsc_sync = 61166,
 }
 

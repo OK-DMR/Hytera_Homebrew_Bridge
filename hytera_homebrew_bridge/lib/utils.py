@@ -116,6 +116,179 @@ def parse_hytera_data(bytedata: bytes) -> KaitaiStruct:
         return HyteraDmrApplicationProtocol.from_bytes(bytedata)
 
 
+def assemble_hytera_ipsc_sync_packet(
+    is_private_call: bool, source_id: int, target_id: int, timeslot_is_ts1: bool,
+) -> bytes:
+    source_id_sync_bytes: bytes = source_id.to_bytes(3, byteorder="big")
+    source_id_sync_bytes = bytes(
+        [
+            source_id_sync_bytes[0],
+            0,
+            source_id_sync_bytes[1],
+            0,
+            source_id_sync_bytes[2],
+            0,
+        ]
+    )
+    target_id_sync_bytes: bytes = target_id.to_bytes(3, byteorder="big")
+    target_id_sync_bytes = bytes(
+        [
+            target_id_sync_bytes[0],
+            0,
+            target_id_sync_bytes[1],
+            0,
+            target_id_sync_bytes[2],
+            0,
+        ]
+    )
+    print(f"source {source_id_sync_bytes.hex()} target {target_id_sync_bytes.hex()}")
+    return (
+        bytes(8)
+        +
+        # magic
+        b"\x02\x00\x05\x01"
+        +
+        # timeslot
+        (b"\x01" if timeslot_is_ts1 else b"\x00")
+        + bytes(3)
+        +
+        # timeslot
+        (b"\x11\x11" if timeslot_is_ts1 else b"\x22\x22")
+        +
+        # slot type
+        b"\xEE\xEE"
+        +
+        # delimiter
+        b"\x11\x11"
+        +
+        # is ipsc sync?
+        b"\x11\x11"
+        + bytes(8)
+        + target_id_sync_bytes
+        + source_id_sync_bytes
+        + bytes(14)
+        + bytes(4)
+        + (b"\x00" if is_private_call else b"\x01")
+        + bytes(1)
+        + target_id.to_bytes(3, byteorder="little")
+        + bytes(1)
+        + source_id.to_bytes(3, byteorder="little")
+        + bytes(1)
+    )
+
+
+def assemble_hytera_ipsc_wakeup_packet(
+    timeslot_is_ts1: bool,
+    source_id: int,
+    target_id: int = 2293760,
+    is_private_call: bool = True,
+) -> bytes:
+    return (
+        bytes(8)
+        +
+        # magic
+        b"\x02\x00\x05\x01"
+        +
+        # timeslot = wakeup
+        b"\x02"
+        + bytes(3)
+        +
+        # timeslot
+        (b"\x11\x11" if timeslot_is_ts1 else b"\x22\x22")
+        +
+        # slot type
+        b"\xDD\xDD"
+        +
+        # delimiter
+        b"\x11\x11"
+        +
+        # is ipsc sync?
+        b"\x00\x00"
+        + b"\x40"
+        + bytes(11)
+        + b"\x01\x00\x02\x00\x02\x00\x01"
+        + bytes(13)
+        + b"\xff\xff\xef\x08\x2a\x00"
+        + (b"\x00" if is_private_call else b"\x01")
+        + bytes(1)
+        + target_id.to_bytes(3, byteorder="little")
+        + bytes(1)
+        + source_id.to_bytes(3, byteorder="little")
+        + bytes(1)
+    )
+
+
+def assemble_hytera_ipsc_packet(
+    udp_port: int,
+    sequence_number: int,
+    timeslot_is_ts1: bool,
+    hytera_slot_type: int,
+    dmr_payload: bytes,
+    is_private_call: bool,
+    source_id: int,
+    target_id: int,
+) -> bytes:
+    return (
+        # source port
+        udp_port.to_bytes(2, byteorder="little")
+        +
+        # magic fixed header
+        b"\x00\x50"
+        +
+        # sequence_number
+        sequence_number.to_bytes(1, byteorder="little")
+        +
+        # reserved_3
+        b"\xE0\x00\x00"
+        +
+        # packet type
+        b"\x01"
+        +
+        # reserved_7a
+        b"\x00\x05\x01"
+        + (b"\x01" if timeslot_is_ts1 else b"\x00")
+        + b"\x00\x00\x00"
+        +
+        # timeslot_raw
+        (b"\x11\x11" if timeslot_is_ts1 else b"\x22\x22")
+        +
+        # slot_type
+        hytera_slot_type.to_bytes(2, byteorder="little")
+        +
+        # delimiter
+        b"\x11\x11"
+        +
+        # frame_type
+        b"\xBB\xBB"
+        +
+        # reserved_2a
+        b"\x40\x5C"
+        +
+        # payload data
+        dmr_payload
+        +
+        # two byte crc16 checksum
+        b"\x00\x00"
+        +
+        # reserved_2b
+        b"\x63\x02"
+        +
+        # call_type, mmdvm true = private, ipsc 00 = private
+        (b"\x00" if is_private_call else b"\x01")
+        + b"\x00"
+        +
+        # destination id
+        target_id.to_bytes(3, byteorder="little")
+        + b"\x00"
+        +
+        # source id
+        source_id.to_bytes(3, byteorder="little")
+        +
+        # reserved_1b
+        b"\x00"
+    )
+
+
 def log_mmdvm_configuration(logger: logging.Logger, packet: Mmdvm) -> None:
     if not isinstance(packet.command_data, Mmdvm.TypeRepeaterConfigurationOrClosing):
         return
