@@ -149,7 +149,7 @@ def assemble_hytera_ipsc_sync_packet(
         b"\x02\x00\x05\x01"
         +
         # timeslot
-        (b"\x01" if timeslot_is_ts1 else b"\x00")
+        (b"\x01" if timeslot_is_ts1 else b"\x02")
         + bytes(3)
         +
         # timeslot
@@ -246,7 +246,7 @@ def assemble_hytera_ipsc_packet(
         +
         # reserved_7a
         b"\x00\x05\x01"
-        + (b"\x01" if timeslot_is_ts1 else b"\x00")
+        + (b"\x01" if timeslot_is_ts1 else b"\x02")
         + b"\x00\x00\x00"
         +
         # timeslot_raw

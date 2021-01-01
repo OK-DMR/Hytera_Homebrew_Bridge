@@ -136,6 +136,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                                 else "GROUP",
                                 packet.source_radio_id,
                                 packet.destination_radio_id,
+                                # timeslot
                                 "1"
                                 if packet.timeslot_raw
                                 == IpSiteConnectProtocol.Timeslots.timeslot_1
@@ -156,6 +157,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                             else "GROUP",
                             packet.source_radio_id,
                             packet.destination_radio_id,
+                            # timeslot
                             "1"
                             if packet.timeslot_raw
                             == IpSiteConnectProtocol.Timeslots.timeslot_1
@@ -255,7 +257,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                             else "GROUP",
                             packet.command_data.source_id,
                             packet.command_data.target_id,
-                            "1" if packet.command_data.slot_no == 1 else "2",
+                            "2" if packet.command_data.slot_no == 1 else "1",
                         )
                     )
                     if self.hytera_last_sent_timestamp < (time() - 60):
@@ -283,7 +285,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                             else "GROUP",
                             packet.command_data.source_id,
                             packet.command_data.target_id,
-                            "1" if packet.command_data.slot_no == 1 else "2",
+                            "2" if packet.command_data.slot_no == 1 else "1",
                         )
                     )
             else:
