@@ -218,6 +218,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     self.hytera_stream_id += 1
                     self.hytera_last_sequence_out = 0
 
+                # Update last timestamp, because receiving from Hytera means it's already woken up
+                self.hytera_last_sent_timestamp = time()
                 # Notify queue about finished task
                 self.queue_hytera_to_translate.task_done()
 
