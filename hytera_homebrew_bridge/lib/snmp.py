@@ -4,6 +4,7 @@ import sys
 
 from puresnmp import get
 from puresnmp.const import Version
+from puresnmp.exc import Timeout
 
 from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
@@ -117,8 +118,12 @@ class SNMP(LoggingTrait):
     OID_WALK_BASE_1: str = "1.3.6.1.4.1.40297.1.2.4"
     OID_WALK_BASE_2: str = "1.3.6.1.4.1.40297.1.2.1.2"
 
-    def walk_ip(self, address: tuple, settings_storage: BridgeSettings) -> dict:
+    def walk_ip(
+        self, address: tuple, settings_storage: BridgeSettings, first_try: bool = True
+    ) -> dict:
         ip, port = address
+        is_success: bool = False
+        other_family: str = "public" if settings_storage.snmp_family == "hytera" else "hytera"
         try:
             for oid in SNMP.ALL_KNOWN:
                 raw_oid = oid.replace("iso", "1")
@@ -133,12 +138,27 @@ class SNMP(LoggingTrait):
                 elif oid in SNMP.ALL_FLOATS:
                     snmp_result = int.from_bytes(snmp_result, byteorder="big")
                 settings_storage.hytera_snmp_data[oid] = snmp_result
-
+            is_success = True
         except SystemError:
             self.log_error("SNMP failed to obtain repeater info")
-            pass
+        except Timeout:
+            if first_try:
+                self.log_debug(
+                    "Failed with SNMP family %s, trying with %s as well"
+                    % (settings_storage.snmp_family, other_family)
+                )
+                settings_storage.snmp_family = other_family
+                self.walk_ip(
+                    address=address, settings_storage=settings_storage, first_try=False
+                )
+            else:
+                self.log_error(
+                    "SNMP failed, maybe try changing setting.ini [snmp] family = %s"
+                    % other_family
+                )
 
-        self.print_snmp_data(settings_storage=settings_storage)
+        if is_success:
+            self.print_snmp_data(settings_storage=settings_storage)
 
         return settings_storage.hytera_snmp_data
 
