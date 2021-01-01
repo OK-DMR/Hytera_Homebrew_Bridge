@@ -66,7 +66,8 @@ class HyteraHomebrewBridge:
         # connect Hytera repeater
         await self.hytera_p2p_connect()
         await self.hytera_dmr_connect()
-        await self.hytera_rdac_connect()
+        if not self.settings.hytera_disable_rdac:
+            await self.hytera_rdac_connect()
 
         # MMDVM will get connected once the Hytera is set-up and running correctly
         # it is not meant to be started here

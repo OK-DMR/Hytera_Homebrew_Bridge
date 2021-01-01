@@ -8,6 +8,7 @@ _UNSET = object()
 
 
 class BridgeSettings(LoggingTrait):
+    SECTION_GENERAL = "general"
     SECTION_HB = "homebrew"
     SECTION_IPSC = "ip-site-connect"
     SECTION_SNMP = "snmp"
@@ -93,7 +94,7 @@ class BridgeSettings(LoggingTrait):
         )
 
         self.hytera_mode: str = parser.get(
-            self.SECTION_SNMP, "hytera_mode", fallback=self.HYTERA_MODE_IPSC
+            self.SECTION_GENERAL, "hytera_mode", fallback=self.HYTERA_MODE_IPSC
         )
 
         if self.hytera_mode == self.HYTERA_MODE_IPSC:
@@ -101,6 +102,9 @@ class BridgeSettings(LoggingTrait):
             self.p2p_port: int = parser.getint(self.SECTION_IPSC, "p2p_port")
             self.dmr_port: int = parser.getint(self.SECTION_IPSC, "dmr_port")
             self.rdac_port: int = parser.getint(self.SECTION_IPSC, "rdac_port")
+            self.hytera_disable_rdac: bool = parser.getboolean(
+                self.SECTION_IPSC, "disable_rdac", fallback=False
+            )
 
         # hytera_protocols variables
         self.hytera_is_registered: bool = False

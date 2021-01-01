@@ -5,6 +5,10 @@ enabled = yes
 # some repeaters have "public" others "hytera"
 family = public
 
+[general]
+# currently only supported, ADK should be added soon https://github.com/OK-DMR/Hytera_Homebrew_Bridge/issues/3
+hytera_mode = ip-site-connect
+
 # Hytera IPSC configuration
 [ip-site-connect]
 # Local IP on which you listen for Hytera repeater connection
@@ -12,6 +16,8 @@ ip = 192.168.1.2
 p2p_port = 50000
 dmr_port = 50001
 rdac_port = 50002
+# If you have troubles using RDAC, you can turn it off and use only SNMP
+disable_rdac = False
 
 [homebrew]
 # from which IP:port the connection to MMDVM is made
