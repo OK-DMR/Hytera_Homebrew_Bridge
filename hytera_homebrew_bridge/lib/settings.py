@@ -9,13 +9,23 @@ _UNSET = object()
 
 class BridgeSettings(LoggingTrait):
     SECTION_GENERAL = "general"
-    SECTION_HB = "homebrew"
+    SECTION_HOMEBREW = "homebrew"
     SECTION_IPSC = "ip-site-connect"
     SECTION_SNMP = "snmp"
     SECTION_LOGGING = "logging"
 
     HYTERA_MODE_IPSC = "ip-site-connect"
     HYTERA_MODE_FTPC = "forward-to-pc"
+    HYTERA_ALL_MODES = (HYTERA_MODE_FTPC, HYTERA_MODE_IPSC)
+
+    MMDVM_PROTOCOL_2015 = "homebrew"
+    MMDVM_PROTOCOL_2020 = "mmdvm"
+    MMDVM_PROTOCOL_DMRG = "dmrgateway"
+    MMDVM_KNOWN_PROTOCOLS = (
+        MMDVM_PROTOCOL_2015,
+        MMDVM_PROTOCOL_2020,
+        MMDVM_PROTOCOL_DMRG,
+    )
 
     MINIMAL_SETTINGS = """
     [ip-site-connect]
@@ -55,47 +65,71 @@ class BridgeSettings(LoggingTrait):
         )
         self.snmp_family = parser.get(self.SECTION_SNMP, "family", fallback="public")
 
-        self.hb_master_host = parser.get(self.SECTION_HB, "master_ip")
-        self.hb_master_port = parser.getint(self.SECTION_HB, "master_port")
-        self.hb_local_ip = parser.get(self.SECTION_HB, "local_ip")
-        self.hb_local_port = parser.getint(self.SECTION_HB, "local_port", fallback=0)
-        self.hb_password = parser.get(self.SECTION_HB, "password")
+        self.hb_protocol = parser.get(
+            self.SECTION_HOMEBREW, "protocol", fallback=self.MMDVM_PROTOCOL_2020
+        )
+        if self.hb_protocol not in self.MMDVM_KNOWN_PROTOCOLS:
+            raise LookupError(
+                "Invalid Homebrew protocol configured (%s) valid options are %s"
+                % (self.hb_protocol, self.MMDVM_KNOWN_PROTOCOLS)
+            )
+
+        self.hb_master_host = parser.get(self.SECTION_HOMEBREW, "master_ip")
+        self.hb_master_port = parser.getint(self.SECTION_HOMEBREW, "master_port")
+        self.hb_local_ip = parser.get(self.SECTION_HOMEBREW, "local_ip")
+        self.hb_local_port = parser.getint(
+            self.SECTION_HOMEBREW, "local_port", fallback=0
+        )
+        self.hb_password = parser.get(self.SECTION_HOMEBREW, "password")
 
         self.hb_repeater_dmr_id: int = self.getint_safe(
-            parser, self.SECTION_HB, "repeater_dmr_id", fallback=None
+            parser, self.SECTION_HOMEBREW, "repeater_dmr_id", fallback=None
         )
-        self.hb_callsign: str = parser.get(self.SECTION_HB, "callsign", fallback="")
+        self.hb_callsign: str = parser.get(
+            self.SECTION_HOMEBREW, "callsign", fallback=""
+        )
         self.hb_color_code = self.getint_safe(
-            parser, self.SECTION_HB, "color_code", fallback=1
+            parser, self.SECTION_HOMEBREW, "color_code", fallback=1
         )
-        self.hb_latitude = parser.get(self.SECTION_HB, "latitude", fallback="")
-        self.hb_longitude = parser.get(self.SECTION_HB, "longitude", fallback="")
+        self.hb_latitude = parser.get(self.SECTION_HOMEBREW, "latitude", fallback="")
+        self.hb_longitude = parser.get(self.SECTION_HOMEBREW, "longitude", fallback="")
         self.hb_antenna_height = self.getint_safe(
-            parser, self.SECTION_HB, "antenna_height", fallback=0
+            parser, self.SECTION_HOMEBREW, "antenna_height", fallback=0
         )
-        self.hb_location = parser.get(self.SECTION_HB, "location", fallback="")
-        self.hb_description = parser.get(self.SECTION_HB, "description", fallback="")
-        self.hb_timeslots = parser.get(self.SECTION_HB, "timeslots", fallback="3")
+        self.hb_location = parser.get(self.SECTION_HOMEBREW, "location", fallback="")
+        self.hb_description = parser.get(
+            self.SECTION_HOMEBREW, "description", fallback=""
+        )
+        self.hb_timeslots = parser.get(self.SECTION_HOMEBREW, "timeslots", fallback="3")
         self.hb_url = parser.get(
-            self.SECTION_HB,
+            self.SECTION_HOMEBREW,
             "url",
             fallback="http://github.com/ok-dmr/Hytera_Homebrew_Bridge",
         )
         self.hb_software_id = parser.get(
-            self.SECTION_HB, "software_id", fallback="2021.1"
+            self.SECTION_HOMEBREW, "software_id", fallback="2021.1"
         )
         self.hb_package_id = parser.get(
-            self.SECTION_HB, "package_id", fallback="Hytera Homebrew Bridge"
+            self.SECTION_HOMEBREW, "package_id", fallback="Hytera Homebrew Bridge"
         )
-        self.hb_rx_freq: str = parser.get(self.SECTION_HB, "rx_freq", fallback=None)
-        self.hb_tx_freq: str = parser.get(self.SECTION_HB, "tx_freq", fallback=None)
+        self.hb_rx_freq: str = parser.get(
+            self.SECTION_HOMEBREW, "rx_freq", fallback=None
+        )
+        self.hb_tx_freq: str = parser.get(
+            self.SECTION_HOMEBREW, "tx_freq", fallback=None
+        )
         self.hb_tx_power: int = self.getint_safe(
-            parser, self.SECTION_HB, "tx_power", fallback=0
+            parser, self.SECTION_HOMEBREW, "tx_power", fallback=0
         )
 
         self.hytera_mode: str = parser.get(
             self.SECTION_GENERAL, "hytera_mode", fallback=self.HYTERA_MODE_IPSC
         )
+        if self.hytera_mode not in self.HYTERA_ALL_MODES:
+            raise LookupError(
+                "Invalid Hytera mode %s, valid options are %s"
+                % (self.hytera_mode, self.HYTERA_ALL_MODES)
+            )
 
         if self.hytera_mode == self.HYTERA_MODE_IPSC:
             self.ipsc_ip: str = parser.get(self.SECTION_IPSC, "ip")

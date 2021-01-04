@@ -20,6 +20,11 @@ rdac_port = 50002
 disable_rdac = False
 
 [homebrew]
+# valid values are
+# homebrew - 2015 PDF specification (DL5DI, G4KLX, DG1HT 2015) - for Brandmeister
+# mmdvm - for HBLink/HBlink3, DMRGateway before 8/2020 and others
+# dmrgateway - for DMRGateway versions since 9/2020
+protocol = mmdvm
 # from which IP:port the connection to MMDVM is made
 # useful for example for DMRGateway configuration (must match DMRGateway.ini configs RptAddress/RptPort)
 local_ip = 0.0.0.0
