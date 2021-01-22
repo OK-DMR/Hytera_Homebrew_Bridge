@@ -189,7 +189,8 @@ def format_kamene_packet(packet, extra_data=None):
                     ).decode("UTF-8")
                     packet_data_formatted = (
                         f"DMRD call-type {hbp.command_data.call_type} "
-                        f"frame-type {hbp.command_data.frame_type} "
+                        f"frame-type {hbp.command_data.frame_type}"
+                        f" "
                         f"data-type {hbp.command_data.data_type} "
                         f"seq {hbp.command_data.sequence_no} "
                         f"FROM: {hbp.command_data.source_id} TO: {hbp.command_data.target_id}"
@@ -200,16 +201,17 @@ def format_kamene_packet(packet, extra_data=None):
 
         if not is_hpd and not is_hbp:
             # not a Hytera or Homebrew packet
-            yield col256(f"[NOT SUPPORTED PACKET] %s" % hexlify(packet_data), 1)
+            yield col256(f"[NOT SUPPORTED PACKET] %s" % hexlify(packet_data[:6]), 1)
         else:
             yield col256(
-                "%s [ %s %s -> %s %s ] %s"
+                "%s %s [ %s %s -> %s %s ] %s"
                 % (
                     packet_hash,
-                    str(extra_data["ip.src"]).ljust(15),
-                    str(extra_data["udp.sport"]).ljust(5),
-                    str(extra_data["ip.dst"]).ljust(15),
-                    str(extra_data["udp.dport"]).ljust(5),
+                    "HBP" if is_hbp else "HPD",
+                    str(extra_data.get("ip.src")).ljust(15),
+                    str(extra_data.get("udp.sport")).ljust(5),
+                    str(extra_data.get("ip.dst")).ljust(15),
+                    str(extra_data.get("udp.dport")).ljust(5),
                     packet_data_formatted,
                 ),
                 123,
