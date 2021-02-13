@@ -4,6 +4,8 @@ from asyncio import transports, Queue
 from binascii import hexlify
 from typing import Optional, Tuple, Coroutine
 
+from kaitaistruct import ValidationNotEqualError
+
 from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
     CustomBridgeDatagramProtocol,
 )
@@ -493,7 +495,10 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
 
 class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
     def __init__(
-        self, settings: BridgeSettings, queue_incoming: Queue, queue_outgoing: Queue,
+        self,
+        settings: BridgeSettings,
+        queue_incoming: Queue,
+        queue_outgoing: Queue,
     ) -> None:
         super().__init__(settings)
         self.transport: Optional[transports.DatagramTransport] = None
@@ -523,4 +528,8 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
             self.queue_incoming.put_nowait(parse_hytera_data(data))
         except EOFError as e:
             self.log_error(f"Cannot parse IPSC DMR packet {hexlify(data)} from {addr}")
+            self.log_exception(e)
+        except ValidationNotEqualError as e:
+            self.log_error(f"Cannot parse IPSC DMR packet {hexlify(data)} from {addr}")
+            self.log_error("Parser for Hytera data failed to match the packet data")
             self.log_exception(e)
