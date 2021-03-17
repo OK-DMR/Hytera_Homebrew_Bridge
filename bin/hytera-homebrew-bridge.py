@@ -110,7 +110,6 @@ class HyteraHomebrewBridge:
             lambda: self.homebrew_protocol,
             local_addr=(self.settings.hb_local_ip, self.settings.hb_local_port),
             remote_addr=hb_target_address,
-            reuse_address=True,
             reuse_port=True,
         )
         hb_local_socket = hb_transport.get_extra_info("socket")
