@@ -6,9 +6,9 @@ local class = require("class")
 require("kaitaistruct")
 local enum = require("enum")
 
-require("datetimestring")
-require("gpsdata")
 require("radio_ip")
+require("gpsdata")
+require("datetimestring")
 require("intervalstring")
 LocationProtocol = class.class(KaitaiStruct)
 

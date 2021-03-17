@@ -12,12 +12,12 @@ if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
         % (kaitaistruct.__version__)
     )
 
+from hytera_homebrew_bridge.kaitai import data_delivery_states
+from hytera_homebrew_bridge.kaitai import radio_control_protocol
 from hytera_homebrew_bridge.kaitai import telemetry_protocol
 from hytera_homebrew_bridge.kaitai import location_protocol
 from hytera_homebrew_bridge.kaitai import text_message_protocol
-from hytera_homebrew_bridge.kaitai import data_delivery_states
 from hytera_homebrew_bridge.kaitai import radio_registration_service
-from hytera_homebrew_bridge.kaitai import radio_control_protocol
 from hytera_homebrew_bridge.kaitai import data_transmit_protocol
 
 

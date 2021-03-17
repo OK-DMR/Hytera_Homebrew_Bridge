@@ -12,9 +12,9 @@ if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
         % (kaitaistruct.__version__)
     )
 
-from hytera_homebrew_bridge.kaitai import datetimestring
-from hytera_homebrew_bridge.kaitai import gpsdata
 from hytera_homebrew_bridge.kaitai import radio_ip
+from hytera_homebrew_bridge.kaitai import gpsdata
+from hytera_homebrew_bridge.kaitai import datetimestring
 from hytera_homebrew_bridge.kaitai import intervalstring
 
 

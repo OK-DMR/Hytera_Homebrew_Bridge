@@ -59,10 +59,7 @@ function IpSiteConnectProtocol:_read()
   self.reserved_7a = self._io:read_bytes(7)
   self.timeslot_raw = IpSiteConnectProtocol.Timeslots(self._io:read_u2be())
   self.slot_type = IpSiteConnectProtocol.SlotTypes(self._io:read_u2be())
-  self.delimiter = self._io:read_bytes(2)
-  if not(self.delimiter == "\017\017") then
-    error("not equal, expected " ..  "\017\017" .. ", but got " .. self.delimiter)
-  end
+  self.color_code_raw = self._io:read_u2le()
   self.frame_type = self._io:read_u2be()
   self.reserved_2a = self._io:read_bytes(2)
   self.ipsc_payload = self._io:read_bytes(34)
@@ -96,8 +93,18 @@ function IpSiteConnectProtocol.property.destination_radio_id:get()
   return self._m_destination_radio_id
 end
 
+IpSiteConnectProtocol.property.color_code = {}
+function IpSiteConnectProtocol.property.color_code:get()
+  if self._m_color_code ~= nil then
+    return self._m_color_code
+  end
+
+  self._m_color_code = (self.color_code_raw & 15)
+  return self._m_color_code
+end
+
 -- 
 -- UDP source port of IPSC packet
 -- 
--- should be 0x1111.
+-- will be color code repeated, ie. cc=5 means two incoming bytes [0x55, 0x55].
 

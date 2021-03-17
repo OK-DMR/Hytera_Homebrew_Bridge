@@ -34,6 +34,8 @@ instances:
     value: source_radio_id_raw >> 8
   destination_radio_id:
     value: destination_radio_id_raw >> 8
+  color_code:
+    value: color_code_raw & 0x000F
 seq:
   - id: source_port
     size: 2
@@ -56,9 +58,9 @@ seq:
   - id: slot_type
     type: u2be
     enum: slot_types
-  - id: delimiter
-    contents: [0x11, 0x11]
-    doc: should be 0x1111
+  - id: color_code_raw
+    type: u2le
+    doc: will be color code repeated, ie. cc=5 means two incoming bytes [0x55, 0x55]
   - id: frame_type
     type: u2be
   - id: reserved_2a

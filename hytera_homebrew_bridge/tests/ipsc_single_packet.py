@@ -21,12 +21,13 @@ if __name__ == "__main__":
 
     packet = IpSiteConnectProtocol.from_bytes(bytes.fromhex(sys.argv[1]))
     print(
-        "source id: \t%s\ntarget id: \t%s\ncall type: \t%s\ntimeslot: \t%s\npacket_type: \t%s\nslot_type: \t%s\n\n"
+        "source id: \t%s\ntarget id: \t%s\ncall type: \t%s\ntimeslot: \t%s\ncolor_code: \t%s\npacket_type: \t%s\nslot_type: \t%s\n\n"
         % (
             packet.source_radio_id,
             packet.destination_radio_id,
             IpSiteConnectProtocol.CallTypes(packet.call_type),
             packet.Timeslots(packet.timeslot_raw),
+            packet.color_code,
             packet.packet_type,
             packet.slot_type,
         )

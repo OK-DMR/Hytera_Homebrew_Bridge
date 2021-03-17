@@ -66,11 +66,7 @@ class IpSiteConnectProtocol(KaitaiStruct):
         self.slot_type = KaitaiStream.resolve_enum(
             IpSiteConnectProtocol.SlotTypes, self._io.read_u2be()
         )
-        self.delimiter = self._io.read_bytes(2)
-        if not self.delimiter == b"\x11\x11":
-            raise kaitaistruct.ValidationNotEqualError(
-                b"\x11\x11", self.delimiter, self._io, u"/seq/8"
-            )
+        self.color_code_raw = self._io.read_u2le()
         self.frame_type = self._io.read_u2be()
         self.reserved_2a = self._io.read_bytes(2)
         self.ipsc_payload = self._io.read_bytes(34)
@@ -109,3 +105,11 @@ class IpSiteConnectProtocol(KaitaiStruct):
             if hasattr(self, "_m_destination_radio_id")
             else None
         )
+
+    @property
+    def color_code(self):
+        if hasattr(self, "_m_color_code"):
+            return self._m_color_code if hasattr(self, "_m_color_code") else None
+
+        self._m_color_code = self.color_code_raw & 15
+        return self._m_color_code if hasattr(self, "_m_color_code") else None
