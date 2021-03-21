@@ -161,7 +161,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
             self.settings.get_repeater_rx_freq()[0:9].rjust(9, "0").encode(),
             self.settings.get_repeater_tx_freq()[0:9].rjust(9, "0").encode(),
             str(self.settings.hb_tx_power & 0xFFFF).rjust(2, "0").encode(),
-            str(self.settings.hb_color_code & 0xFFFF).rjust(2, "0").encode(),
+            str(self.settings.hb_color_code & 0xF).rjust(2, "0").encode(),
             self.settings.hb_latitude[0:8].rjust(8, "0").encode(),
             self.settings.hb_longitude[0:9].rjust(9, "0").encode(),
             str(min(max(self.settings.hb_antenna_height, 0), 999))[0:3]

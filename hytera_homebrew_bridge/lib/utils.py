@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
-import string
 
+import string
 from kaitaistruct import KaitaiStruct
 
 from hytera_homebrew_bridge.kaitai.hytera_dmr_application_protocol import (
@@ -25,6 +25,10 @@ from hytera_homebrew_bridge.kaitai.real_time_transport_protocol import (
 
 def byteswap_bytes(data: bytes) -> bytes:
     return byteswap_bytearray(bytearray(data))
+
+
+def half_byte_to_bytes(half_byte: int, output_bytes: int = 2) -> bytes:
+    return bytes([half_byte | half_byte << 4]) * output_bytes
 
 
 def byteswap_bytearray(data: bytearray) -> bytes:
@@ -105,7 +109,7 @@ def parse_hytera_data(bytedata: bytes) -> KaitaiStruct:
     elif (
         int.from_bytes(bytedata[0:8], byteorder="little") == 0
         or bytedata[0:4] == b"ZZZZ"
-        or bytedata[20:22] == bytes([0x11, 0x11])
+        or bytedata[20] == bytedata[21]  # color code shall be same in both bytes
     ):
         if bytedata[5:9] == bytes([0x00, 0x00, 0x00, 0x14]):
             return IpSiteConnectHeartbeat.from_bytes(bytedata)
@@ -117,7 +121,11 @@ def parse_hytera_data(bytedata: bytes) -> KaitaiStruct:
 
 
 def assemble_hytera_ipsc_sync_packet(
-    is_private_call: bool, source_id: int, target_id: int, timeslot_is_ts1: bool,
+    is_private_call: bool,
+    source_id: int,
+    target_id: int,
+    timeslot_is_ts1: bool,
+    color_code: int = 1,
 ) -> bytes:
     source_id_sync_bytes: bytes = source_id.to_bytes(3, byteorder="big")
     source_id_sync_bytes = bytes(
@@ -158,8 +166,8 @@ def assemble_hytera_ipsc_sync_packet(
         # slot type
         b"\xEE\xEE"
         +
-        # delimiter
-        b"\x11\x11"
+        # color code
+        half_byte_to_bytes(half_byte=color_code, output_bytes=2)
         +
         # is ipsc sync?
         b"\x11\x11"
@@ -182,6 +190,7 @@ def assemble_hytera_ipsc_wakeup_packet(
     source_id: int,
     target_id: int = 2293760,
     is_private_call: bool = True,
+    color_code: int = 1,
 ) -> bytes:
     return (
         bytes(8)
@@ -199,8 +208,8 @@ def assemble_hytera_ipsc_wakeup_packet(
         # slot type
         b"\xDD\xDD"
         +
-        # delimiter
-        b"\x11\x11"
+        # color code
+        half_byte_to_bytes(half_byte=color_code, output_bytes=2)
         +
         # is ipsc sync?
         b"\x00\x00"
@@ -227,6 +236,7 @@ def assemble_hytera_ipsc_packet(
     is_private_call: bool,
     source_id: int,
     target_id: int,
+    color_code: int,
 ) -> bytes:
     return (
         # source port
@@ -255,8 +265,8 @@ def assemble_hytera_ipsc_packet(
         # slot_type
         hytera_slot_type.to_bytes(2, byteorder="little")
         +
-        # delimiter
-        b"\x11\x11"
+        # color code
+        half_byte_to_bytes(half_byte=color_code, output_bytes=2)
         +
         # frame_type
         b"\xBB\xBB"

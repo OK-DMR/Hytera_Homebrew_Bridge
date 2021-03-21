@@ -17,7 +17,6 @@ from hytera_homebrew_bridge.lib.utils import (
     byteswap_bytes,
     assemble_hytera_ipsc_packet,
     assemble_hytera_ipsc_wakeup_packet,
-    assemble_hytera_ipsc_sync_packet,
 )
 
 
@@ -92,6 +91,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
             if isinstance(packet, IpSiteConnectHeartbeat):
                 self.log_debug("HYTERA->MMDVM Received IPSC Heartbeat, not translating")
                 continue
+
             if isinstance(packet, IpSiteConnectProtocol):
                 if (
                     packet.slot_type
@@ -271,6 +271,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                                     timeslot_is_ts1=TS,
                                     target_id=packet.command_data.target_id,
                                     source_id=packet.command_data.source_id,
+                                    color_code=self.settings.hb_color_code,
                                 )
                             )
                             await self.queue_hytera_output.put(hytera_ipsc_packet)
@@ -315,6 +316,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                 is_private_call=(packet.command_data.call_type == 1),
                 target_id=packet.command_data.target_id,
                 source_id=packet.command_data.source_id,
+                color_code=self.settings.hb_color_code,
             )
 
             await self.queue_hytera_output.put(hytera_ipsc_packet)

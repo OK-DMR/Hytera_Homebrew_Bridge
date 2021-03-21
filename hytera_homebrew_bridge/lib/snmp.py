@@ -123,7 +123,9 @@ class SNMP(LoggingTrait):
     ) -> dict:
         ip, port = address
         is_success: bool = False
-        other_family: str = "public" if settings_storage.snmp_family == "hytera" else "hytera"
+        other_family: str = (
+            "public" if settings_storage.snmp_family == "hytera" else "hytera"
+        )
         try:
             for oid in SNMP.ALL_KNOWN:
                 raw_oid = oid.replace("iso", "1")
