@@ -18,8 +18,15 @@ enums:
     0xBBBB: slot_type_data_a
     0xCCCC: slot_type_data_b
     0xDDDD: slot_type_wakeup_request
-    0xEEEE: slot_type_ipsc_sync
+    # migh be data or voice sync as well
+    0xEEEE: slot_type_sync
     0x0000: slot_type_unknown
+  frame_types:
+    0x1111: frame_type_voice_sync
+    0x3333: frame_type_data_sync_or_csbk
+    0xEEEE: frame_type_sync
+    0x6666: frame_type_data_header
+    0x0000: frame_type_data
   packet_types:
     0x41: a
     0x42: b
@@ -63,6 +70,7 @@ seq:
     doc: will be color code repeated, ie. cc=5 means two incoming bytes [0x55, 0x55]
   - id: frame_type
     type: u2be
+    enum: frame_types
   - id: reserved_2a
     size: 2
   - id: ipsc_payload

@@ -16,6 +16,21 @@ if parse_version(kaitaistruct.__version__) < parse_version("0.9"):
 class IpSiteConnectProtocol(KaitaiStruct):
     """Hytera IP Multi-Site Protocol re-implementation from dmrshark original"""
 
+    class PacketTypes(Enum):
+        a = 65
+        b = 66
+
+    class FrameTypes(Enum):
+        frame_type_data = 0
+        frame_type_voice_sync = 4369
+        frame_type_data_sync_or_csbk = 13107
+        frame_type_data_header = 26214
+        frame_type_sync = 61166
+
+    class CallTypes(Enum):
+        private_call = 0
+        group_call = 1
+
     class SlotTypes(Enum):
         slot_type_unknown = 0
         slot_type_voice_lc_header = 4369
@@ -31,19 +46,11 @@ class IpSiteConnectProtocol(KaitaiStruct):
         slot_type_data_a = 48059
         slot_type_data_b = 52428
         slot_type_wakeup_request = 56797
-        slot_type_ipsc_sync = 61166
-
-    class PacketTypes(Enum):
-        a = 65
-        b = 66
+        slot_type_sync = 61166
 
     class Timeslots(Enum):
         timeslot_1 = 4369
         timeslot_2 = 8738
-
-    class CallTypes(Enum):
-        private_call = 0
-        group_call = 1
 
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
@@ -67,7 +74,9 @@ class IpSiteConnectProtocol(KaitaiStruct):
             IpSiteConnectProtocol.SlotTypes, self._io.read_u2be()
         )
         self.color_code_raw = self._io.read_u2le()
-        self.frame_type = self._io.read_u2be()
+        self.frame_type = KaitaiStream.resolve_enum(
+            IpSiteConnectProtocol.FrameTypes, self._io.read_u2be()
+        )
         self.reserved_2a = self._io.read_bytes(2)
         self.ipsc_payload = self._io.read_bytes(34)
         self.reserved_2b = self._io.read_bytes(2)

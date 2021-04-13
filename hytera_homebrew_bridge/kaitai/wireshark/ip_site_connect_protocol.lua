@@ -10,6 +10,24 @@ local enum = require("enum")
 -- Hytera IP Multi-Site Protocol re-implementation from dmrshark original
 IpSiteConnectProtocol = class.class(KaitaiStruct)
 
+IpSiteConnectProtocol.PacketTypes = enum.Enum {
+  a = 65,
+  b = 66,
+}
+
+IpSiteConnectProtocol.FrameTypes = enum.Enum {
+  frame_type_data = 0,
+  frame_type_voice_sync = 4369,
+  frame_type_data_sync_or_csbk = 13107,
+  frame_type_data_header = 26214,
+  frame_type_sync = 61166,
+}
+
+IpSiteConnectProtocol.CallTypes = enum.Enum {
+  private_call = 0,
+  group_call = 1,
+}
+
 IpSiteConnectProtocol.SlotTypes = enum.Enum {
   slot_type_unknown = 0,
   slot_type_voice_lc_header = 4369,
@@ -25,22 +43,12 @@ IpSiteConnectProtocol.SlotTypes = enum.Enum {
   slot_type_data_a = 48059,
   slot_type_data_b = 52428,
   slot_type_wakeup_request = 56797,
-  slot_type_ipsc_sync = 61166,
-}
-
-IpSiteConnectProtocol.PacketTypes = enum.Enum {
-  a = 65,
-  b = 66,
+  slot_type_sync = 61166,
 }
 
 IpSiteConnectProtocol.Timeslots = enum.Enum {
   timeslot_1 = 4369,
   timeslot_2 = 8738,
-}
-
-IpSiteConnectProtocol.CallTypes = enum.Enum {
-  private_call = 0,
-  group_call = 1,
 }
 
 function IpSiteConnectProtocol:_init(io, parent, root)
@@ -60,7 +68,7 @@ function IpSiteConnectProtocol:_read()
   self.timeslot_raw = IpSiteConnectProtocol.Timeslots(self._io:read_u2be())
   self.slot_type = IpSiteConnectProtocol.SlotTypes(self._io:read_u2be())
   self.color_code_raw = self._io:read_u2le()
-  self.frame_type = self._io:read_u2be()
+  self.frame_type = IpSiteConnectProtocol.FrameTypes(self._io:read_u2be())
   self.reserved_2a = self._io:read_bytes(2)
   self.ipsc_payload = self._io:read_bytes(34)
   self.reserved_2b = self._io:read_bytes(2)

@@ -10,7 +10,7 @@ except ImportError:
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     )
 
-from dmr_utils3.decode import voice_head_term
+from dmr_utils3.decode import voice_head_term, voice_sync
 from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
 
@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     packet = IpSiteConnectProtocol.from_bytes(bytes.fromhex(sys.argv[1]))
     print(
-        "source id: \t%s\ntarget id: \t%s\ncall type: \t%s\ntimeslot: \t%s\ncolor_code: \t%s\npacket_type: \t%s\nslot_type: \t%s\n\n"
+        "source id: \t%s\ntarget id: \t%s\ncall type: \t%s\ntimeslot: \t%s\ncolor_code: \t%s\npacket_type: \t%s\nslot_type: \t%s\nframe_type: \t%s\n\n"
         % (
             packet.source_radio_id,
             packet.destination_radio_id,
@@ -30,6 +30,7 @@ if __name__ == "__main__":
             packet.color_code,
             packet.packet_type,
             packet.slot_type,
+            packet.frame_type,
         )
     )
 
@@ -57,3 +58,6 @@ if __name__ == "__main__":
                 ahex(lc["DTYPE"]),
             )
         )
+    elif packet.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_sync:
+        lc = voice_sync(bytes(original))
+        print(lc)

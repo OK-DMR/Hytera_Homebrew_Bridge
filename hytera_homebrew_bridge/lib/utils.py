@@ -125,6 +125,7 @@ def assemble_hytera_ipsc_sync_packet(
     source_id: int,
     target_id: int,
     timeslot_is_ts1: bool,
+    sequence_number: int,
     color_code: int = 1,
 ) -> bytes:
     source_id_sync_bytes: bytes = source_id.to_bytes(3, byteorder="big")
@@ -151,10 +152,13 @@ def assemble_hytera_ipsc_sync_packet(
     )
     print(f"source {source_id_sync_bytes.hex()} target {target_id_sync_bytes.hex()}")
     return (
-        bytes(8)
+        # IPSC packet header
+        b"\x5a\x5a\x5a\x5a"
+        + sequence_number.to_bytes(1, byteorder="little")
+        + bytes(3)
         +
         # magic
-        b"\x02\x00\x05\x01"
+        b"\x42\x00\x05\x01"
         +
         # timeslot
         (b"\x01" if timeslot_is_ts1 else b"\x02")
@@ -169,9 +173,10 @@ def assemble_hytera_ipsc_sync_packet(
         # color code
         half_byte_to_bytes(half_byte=color_code, output_bytes=2)
         +
-        # is ipsc sync?
+        # 1111 => voice sync, 3333 => data sync
         b"\x11\x11"
-        + bytes(8)
+        + b"\x40"
+        + bytes(7)
         + target_id_sync_bytes
         + source_id_sync_bytes
         + bytes(14)
@@ -193,13 +198,14 @@ def assemble_hytera_ipsc_wakeup_packet(
     color_code: int = 1,
 ) -> bytes:
     return (
-        bytes(8)
+        b"\x5a\x5a\x5a\x5a"
+        + bytes(4)
         +
         # magic
-        b"\x02\x00\x05\x01"
+        b"\x42\x00\x05\x01"
         +
         # timeslot = wakeup
-        b"\x02"
+        (b"\x01" if timeslot_is_ts1 else b"\x02")
         + bytes(3)
         +
         # timeslot
@@ -239,11 +245,7 @@ def assemble_hytera_ipsc_packet(
     color_code: int,
 ) -> bytes:
     return (
-        # source port
-        udp_port.to_bytes(2, byteorder="little")
-        +
-        # magic fixed header
-        b"\x00\x50"
+        b"\x5a\x5a\x5a\x5a"
         +
         # sequence_number
         sequence_number.to_bytes(1, byteorder="little")
@@ -269,7 +271,7 @@ def assemble_hytera_ipsc_packet(
         half_byte_to_bytes(half_byte=color_code, output_bytes=2)
         +
         # frame_type
-        b"\xBB\xBB"
+        b"\x00\x00"
         +
         # reserved_2a
         b"\x40\x5C"

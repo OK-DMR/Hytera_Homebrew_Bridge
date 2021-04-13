@@ -6,6 +6,7 @@ from typing import Optional, Tuple, Coroutine
 
 from kaitaistruct import ValidationNotEqualError
 
+from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
 from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
     CustomBridgeDatagramProtocol,
 )
@@ -509,6 +510,7 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
         while asyncio.get_running_loop().is_running():
             packet: bytes = await self.queue_outgoing.get()
             if self.transport and not self.transport.is_closing():
+                self.log_debug(f"Hytera outgoing {packet.hex()}")
                 self.transport.sendto(
                     packet, (self.settings.hytera_repeater_ip, self.settings.dmr_port)
                 )
