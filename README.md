@@ -78,6 +78,8 @@ $ python3 bin/hytera-homebrew-bridge.py settings.ini
     2. Open `Conventional > General Settings > Access Manager` and in the section "Multisite Access Management" either disable the management or set correct list
 - Q: SNMP does not work correctly, what can I try to fix it?
   - A: Check if SNMP port is set to 161 in `Conventional > General Settings > Network` section `SNMP` at the bottom
+- Q: I'm not getting the upstream connection and/or I'm seeing a lot of logs similar to "MMDVMProtocol - Sending Login Request"
+  - A: This is usually misconfiguration of Hytera repeater, if you do not see any logs with 'RDAC' or the long packet with 'REPEATER SNMP CONFIGURATION' info. In such cases you should check if the Hytera repeater is programmed correctly as slave and the IP/ports do match the HHB startup log saying 'Hytera Repeater is expected to connect at xxx.xxx.xxx.xxx'
 
 ----
 
