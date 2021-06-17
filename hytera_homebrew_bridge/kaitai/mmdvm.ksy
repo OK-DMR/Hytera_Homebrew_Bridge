@@ -189,7 +189,6 @@ seq:
     type:
       switch-on: command_prefix
       cases:
-        _: type_unknown
         '"DMRA"': type_talker_alias
         '"DMRD"': type_dmr_data
         '"MSTC"': type_master_closing

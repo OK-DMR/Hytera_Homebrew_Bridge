@@ -63,15 +63,15 @@ class RealTimeTransportProtocol(KaitaiStruct):
                 )
             self.padding = self._io.read_bits_int_be(1) != 0
             self.extension = self._io.read_bits_int_be(1) != 0
-            self.csrc_count = self._io.read_bits_int_be(4)
+            self.num_csrc = self._io.read_bits_int_be(4)
             self.marker = self._io.read_bits_int_be(1) != 0
             self.payload_type = self._io.read_bits_int_be(7)
             self._io.align_to_byte()
             self.sequence_number = self._io.read_u2be()
             self.timestamp = self._io.read_u4be()
             self.ssrc = self._io.read_u4be()
-            self.csrc = [None] * (self.csrc_count)
-            for i in range(self.csrc_count):
+            self.csrc = [None] * (self.num_csrc)
+            for i in range(self.num_csrc):
                 self.csrc[i] = self._io.read_u4be()
 
     class HeaderExtension(KaitaiStruct):

@@ -83,7 +83,7 @@ function RealTimeTransportProtocol.FixedHeader:_read()
   end
   self.padding = self._io:read_bits_int_be(1)
   self.extension = self._io:read_bits_int_be(1)
-  self.csrc_count = self._io:read_bits_int_be(4)
+  self.num_csrc = self._io:read_bits_int_be(4)
   self.marker = self._io:read_bits_int_be(1)
   self.payload_type = self._io:read_bits_int_be(7)
   self._io:align_to_byte()
@@ -91,7 +91,7 @@ function RealTimeTransportProtocol.FixedHeader:_read()
   self.timestamp = self._io:read_u4be()
   self.ssrc = self._io:read_u4be()
   self.csrc = {}
-  for i = 0, self.csrc_count - 1 do
+  for i = 0, self.num_csrc - 1 do
     self.csrc[i + 1] = self._io:read_u4be()
   end
 end

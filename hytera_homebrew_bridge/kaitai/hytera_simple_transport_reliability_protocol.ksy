@@ -51,7 +51,7 @@ types:
       - id: command
         type: b7
         enum: option_commands
-      - id: option_data_length
+      - id: len_option_payload
         type: u1
       - id: option_payload
-        size: option_data_length
+        size: len_option_payload

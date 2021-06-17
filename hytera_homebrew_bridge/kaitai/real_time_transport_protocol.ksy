@@ -27,7 +27,7 @@ types:
       - id: extension
         type: b1
         doc: if set, fixed header is followed by single header extension
-      - id: csrc_count
+      - id: num_csrc
         type: b4
         doc: number of csrc identifiers that follow fixed header (val. 0-15)
       - id: marker
@@ -48,7 +48,7 @@ types:
         type: u4
         doc: contributing sources
         repeat: expr
-        repeat-expr: csrc_count
+        repeat-expr: num_csrc
   header_extension:
     seq:
       - id: header_identifier

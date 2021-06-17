@@ -82,8 +82,8 @@ function HyteraSimpleTransportReliabilityProtocol.Option:_read()
 self.expect_more_options = self._io:read_bits_int_be(1)
 self.command = HyteraSimpleTransportReliabilityProtocol.OptionCommands(self._io:read_bits_int_be(7))
 self._io:align_to_byte()
-self.option_data_length = self._io:read_u1()
-self.option_payload = self._io:read_bytes(self.option_data_length)
+self.len_option_payload = self._io:read_u1()
+self.option_payload = self._io:read_bytes(self.len_option_payload)
 end
 
 
