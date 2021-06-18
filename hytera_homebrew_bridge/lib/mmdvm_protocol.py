@@ -55,6 +55,15 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
             packet: bytes = await self.queue_outgoing.get()
             if self.transport and not self.transport.is_closing():
                 self.transport.sendto(packet)
+            else:
+                if not self.transport:
+                    self.log_info(
+                        f"Not sending packet, waiting for Hytera repeater to connect first"
+                    )
+                elif self.transport and self.transport.is_closing():
+                    self.log_info(
+                        f"Not sending packet due to MMDVM socket closing/being closed"
+                    )
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.log_debug("MMDVM socket connected")
