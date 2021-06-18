@@ -55,3 +55,5 @@ tx_freq = 434787500
 tx_power = 1
 # 1 = only TS1, 2 = only TS2, 3 = TS1 and TS2
 timeslots = 3
+# we default to generating random stream ids for outgoing traffic, but you can change the behavior
+use_random_stream_id = True

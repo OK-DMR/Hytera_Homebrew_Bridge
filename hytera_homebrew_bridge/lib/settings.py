@@ -121,6 +121,9 @@ class BridgeSettings(LoggingTrait):
         self.hb_tx_power: int = self.getint_safe(
             parser, self.SECTION_HOMEBREW, "tx_power", fallback=0
         )
+        self.hb_stream_id_random: bool = parser.getboolean(
+            self.SECTION_HOMEBREW, "use_random_stream_id", fallback=True
+        )
 
         self.hytera_mode: str = parser.get(
             self.SECTION_GENERAL, "hytera_mode", fallback=self.HYTERA_MODE_IPSC
