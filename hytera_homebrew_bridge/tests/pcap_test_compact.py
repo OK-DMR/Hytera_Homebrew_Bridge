@@ -132,11 +132,12 @@ def make_printable(data):  # todo: preserve unicode
     return stream.getvalue()
 
 
-def pprint_enhanced_packet(block):
-    if block.interface.link_type == 1:
+def pprint_enhanced_packet(packet_block):
+    if packet_block.interface.link_type == 1:
 
-        _info = format_kamene_packet(Ether(block.packet_data))
-        print("\n".join(_info))
+        _info = "\n".join(format_kamene_packet(Ether(packet_block.packet_data)))
+        if len(_info) > 2:
+            print(_info)
 
     else:
         print("        Printing information for non-ethernet packets")
@@ -147,18 +148,26 @@ def format_kamene_packet(packet, extra_data=None):
     if extra_data is None:
         extra_data = {}
 
-    if packet.__class__.__name__ is "IP":
+    extra_data["packet_hash"] = (
+        extra_data.get("packet_hash", "") + "/" + packet.__class__.__name__
+    )
+
+    if packet.__class__.__name__ == "IP":
         extra_data["ip.src"] = packet.fields["src"]
         extra_data["ip.dst"] = packet.fields["dst"]
+        extra_data["last_parent"] = "IP"
 
-    elif packet.__class__.__name__ is "UDP":
+    elif packet.__class__.__name__ == "UDP":
         extra_data["udp.sport"] = packet.fields["sport"]
         extra_data["udp.dport"] = packet.fields["dport"]
+        extra_data["last_parent"] = "UDP"
 
-    elif packet.__class__.__name__ is "Raw":
+    elif packet.__class__.__name__ == "Raw":
+        if extra_data["last_parent"] != "UDP":
+            return
         packet_data = packet.fields["load"]
         packet_data_formatted = hexlify(packet_data)
-        packet_hash = ""
+        packet_hash = "(%s)" % extra_data.get("packet_hash")
         is_hpd = True
         is_hbp = True
 
@@ -173,7 +182,16 @@ def format_kamene_packet(packet, extra_data=None):
                     f"HYTD slot-type {hpd.slot_type} frame-type {hpd.frame_type} "
                     f"call-type {hpd.call_type} seq {hpd.sequence_number} "
                     f"FROM: {hpd.source_radio_id} TO: {hpd.destination_radio_id}"
-                    f"\n{hexlify(packet_data)}"
+                )
+            elif isinstance(hpd, IpSiteConnectHeartbeat):
+                packet_data_formatted = (
+                    "IPSC HeartBeat KeepAlive (or) IPSC reset/no-data packet"
+                )
+            else:
+                packet_data_formatted = "%s %s %s" % (
+                    hpd.__class__.__name__,
+                    _prettyprint(hpd),
+                    packet_data_formatted,
                 )
         except:
             is_hpd = False
@@ -181,7 +199,9 @@ def format_kamene_packet(packet, extra_data=None):
         if not is_hpd:
             try:
                 hbp = Mmdvm.from_bytes(packet_data)
-                if isinstance(hbp.command_data, Mmdvm.TypeDmrData):
+                if isinstance(hbp.command_data, Mmdvm.TypeUnknown):
+                    raise
+                elif isinstance(hbp.command_data, Mmdvm.TypeDmrData):
                     packet_hash = hexlify(
                         (zlib.crc32(hbp.command_data.dmr_data) & 0xFFFFFFFF).to_bytes(
                             length=4, byteorder="big"
@@ -201,29 +221,46 @@ def format_kamene_packet(packet, extra_data=None):
 
         if not is_hpd and not is_hbp:
             # not a Hytera or Homebrew packet
-            yield col256(f"[NOT SUPPORTED PACKET] %s" % hexlify(packet_data[:6]), 1)
-        else:
             yield col256(
                 "%s %s [ %s %s -> %s %s ] %s"
                 % (
+                    "N/A",
                     packet_hash,
-                    "HBP" if is_hbp else "HPD",
                     str(extra_data.get("ip.src")).ljust(15),
                     str(extra_data.get("udp.sport")).ljust(5),
                     str(extra_data.get("ip.dst")).ljust(15),
                     str(extra_data.get("udp.dport")).ljust(5),
-                    packet_data_formatted,
+                    packet_data_formatted.strip(),
+                ),
+                1,
+            )
+        else:
+            yield col256(
+                "%s %s [ %s %s -> %s %s ] %s"
+                % (
+                    "HYT" if is_hpd else "HBP",
+                    packet_hash,
+                    str(extra_data.get("ip.src")).ljust(15),
+                    str(extra_data.get("udp.sport")).ljust(5),
+                    str(extra_data.get("ip.dst")).ljust(15),
+                    str(extra_data.get("udp.dport")).ljust(5),
+                    packet_data_formatted.strip(),
                 ),
                 123,
             )
 
+    else:
+        extra_data["last_parent"] = packet.__class__.__name__
+
     if packet.payload:
         if isinstance(packet.payload, kamene.packet.Packet):
             for line in format_kamene_packet(packet.payload, extra_data):
-                yield line
+                if len(line) > 1:
+                    yield line
         elif isinstance(packet.payload, kamene.packet.Raw):
             for line in format_kamene_packet(packet.payload, extra_data):
-                yield line
+                if len(line) > 1:
+                    yield line
 
 
 if __name__ == "__main__":
