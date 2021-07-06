@@ -5,6 +5,7 @@ doc: |
   Hytera IP Multi-Site Protocol re-implementation from dmrshark original
 enums:
   slot_types:
+    0x0000: slot_type_privacy_indicator
     0x1111: slot_type_voice_lc_header
     0x2222: slot_type_terminator_with_lc
     0x3333: slot_type_csbk
@@ -20,7 +21,6 @@ enums:
     0xDDDD: slot_type_wakeup_request
     # migh be data or voice sync as well
     0xEEEE: slot_type_sync
-    0x0000: slot_type_unknown
   frame_types:
     0x1111: frame_type_voice_sync
     0x3333: frame_type_data_sync_or_csbk

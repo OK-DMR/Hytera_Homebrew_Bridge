@@ -29,7 +29,7 @@ IpSiteConnectProtocol.CallTypes = enum.Enum {
 }
 
 IpSiteConnectProtocol.SlotTypes = enum.Enum {
-  slot_type_unknown = 0,
+  slot_type_privacy_indicator = 0,
   slot_type_voice_lc_header = 4369,
   slot_type_terminator_with_lc = 8738,
   slot_type_csbk = 13107,

@@ -83,8 +83,9 @@ class HyteraMmdvmTranslator(LoggingTrait):
             IpSiteConnectProtocol.SlotTypes.slot_type_data_d: "0001",
             IpSiteConnectProtocol.SlotTypes.slot_type_data_e: "0010",
             IpSiteConnectProtocol.SlotTypes.slot_type_data_f: "0011",
-            IpSiteConnectProtocol.SlotTypes.slot_type_sync: "0011",
+            IpSiteConnectProtocol.SlotTypes.slot_type_sync: "0100",
             # for data frames
+            IpSiteConnectProtocol.SlotTypes.slot_type_privacy_indicator: "0000",
             IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header: "0001",
             IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc: "0010",
             IpSiteConnectProtocol.SlotTypes.slot_type_csbk: "0011",
@@ -116,7 +117,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
             IpSiteConnectProtocol.SlotTypes.slot_type_data_header: b"\x44\x44",
             IpSiteConnectProtocol.SlotTypes.slot_type_rate_12_data: b"\x55\x55",
             IpSiteConnectProtocol.SlotTypes.slot_type_rate_34_data: b"\x66\x66",
-            IpSiteConnectProtocol.SlotTypes.slot_type_unknown: b"\x00\x00",
+            IpSiteConnectProtocol.SlotTypes.slot_type_privacy_indicator: b"\x00\x00",
         }
 
     async def translate_from_hytera(self):
@@ -172,8 +173,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         timeslot_info.mmdvm_last_started_stream_id_out
                         == timeslot_info.mmdvm_stream_id
                     ):
-                        # do not send duplicate start call headers
-                        continue
+                        # do log duplicate start call headers
+                        pass
                     else:
                         self.log_info(
                             "HYTERA->MMDVM *%s CALL START* FROM: %s TO: %s TS: %s"

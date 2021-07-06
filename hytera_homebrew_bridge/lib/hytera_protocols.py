@@ -526,7 +526,6 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         try:
-            self.log_debug(f"Hytera incoming {data.hex()}")
             self.queue_incoming.put_nowait(parse_hytera_data(data))
         except EOFError as e:
             self.log_error(f"Cannot parse IPSC DMR packet {hexlify(data)} from {addr}")
