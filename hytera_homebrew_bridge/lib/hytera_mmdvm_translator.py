@@ -305,13 +305,13 @@ class HyteraMmdvmTranslator(LoggingTrait):
                 )
                 continue
 
-            self.log_debug(
-                f"MMDVM->HYTERA Timeslot {packet.command_data.slot_no} CallType {packet.command_data.call_type} "
-                f"FrameType {packet.command_data.frame_type} DataType {packet.command_data.data_type}"
-            )
-
             timeslot: int = 2 if packet.command_data.slot_no == 1 else 1
             timeslot_info: TimeslotInfo = self.timeslot_infos[timeslot]
+
+            self.log_debug(
+                f"MMDVM->HYTERA Timeslot {timeslot} IsPrivateCall {packet.command_data.call_type} "
+                f"FrameType {packet.command_data.frame_type} DataType {packet.command_data.data_type}"
+            )
 
             swapped_bytes: bytes = byteswap_bytes(packet.command_data.dmr_data)
 
