@@ -139,7 +139,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.transport = transport
-        self.log_debug("connection made")
+        self.log_debug("connection prepared")
 
     def datagram_received(self, data: bytes, address: Tuple[str, int]) -> None:
         packet_type = self.command_get_type(data)
@@ -470,7 +470,7 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.transport = transport
-        self.log_debug("connection made")
+        self.log_debug("connection prepared")
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         if len(data) == 1 and self.step != 14:
@@ -522,7 +522,7 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.transport = transport
-        self.log_debug("connection made")
+        self.log_debug("connection prepared")
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         try:

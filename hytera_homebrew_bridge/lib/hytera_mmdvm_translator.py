@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 from asyncio import Queue
-from random import randbytes
+import os
 from time import time
 from typing import Dict
 
@@ -31,7 +31,7 @@ class TimeslotInfo(LoggingTrait):
         self.hytera_last_sequence_in: int = -1
         self.hytera_last_sequence_out: int = 0
         self.mmdvm_last_started_stream_id_out: int = -1
-        self.mmdvm_stream_id: bytes = randbytes(4)
+        self.mmdvm_stream_id: bytes = b"\x00\x00\x00\x00"
         self.mmdvm_last_timestamp: int = 0
 
     def set_hytera_last_sent_timestamp(self):
@@ -51,7 +51,7 @@ class TimeslotInfo(LoggingTrait):
 
     def regenerate_mmdvm_stream_id(self, use_random: bool = True):
         self.mmdvm_stream_id = (
-            randbytes(4) if use_random else ((self.mmdvm_stream_id + 1) & 0xFF)
+            os.urandom(4) if use_random else ((self.mmdvm_stream_id + 1) & 0xFFFFFFFF)
         )
 
 
@@ -70,8 +70,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
         self.queue_mmdvm_to_translate = mmdvm_incoming
         self.queue_mmdvm_output = mmdvm_outgoing
         # translation / state-machine related variables
-        self.timeslot_info: Dict[int, TimeslotInfo] = {
-            1: (TimeslotInfo(1),),
+        self.timeslot_infos: Dict[int, TimeslotInfo] = {
+            1: TimeslotInfo(1),
             2: TimeslotInfo(2),
         }
         # 9.3.6 Data Type of ETSI TS 102 361-1 V2.5.1
@@ -139,7 +139,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     if packet.timeslot_raw == IpSiteConnectProtocol.Timeslots.timeslot_1
                     else 2
                 )
-                timeslot_info: TimeslotInfo = self.timeslot_info[timeslot]
+                timeslot_info: TimeslotInfo = self.timeslot_infos[timeslot]
 
                 if packet.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_sync:
                     self.log_debug(
@@ -285,7 +285,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                 # Update last timestamp, because receiving from Hytera means it's already woken up
                 timeslot_info.set_hytera_last_sent_timestamp()
                 # Put the timeslot_info back to instance dict
-                self.timeslot_info[timeslot] = timeslot_info
+                self.timeslot_infos[timeslot] = timeslot_info
                 # Notify queue about finished task
                 self.queue_hytera_to_translate.task_done()
 
@@ -311,7 +311,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
             )
 
             timeslot: int = 2 if packet.command_data.slot_no == 1 else 1
-            timeslot_info: TimeslotInfo = self.timeslot_info[timeslot]
+            timeslot_info: TimeslotInfo = self.timeslot_infos[timeslot]
 
             swapped_bytes: bytes = byteswap_bytes(packet.command_data.dmr_data)
 
@@ -412,5 +412,5 @@ class HyteraMmdvmTranslator(LoggingTrait):
                 await self.queue_hytera_output.put(hytera_ipsc_packet)
 
             timeslot_info.set_hytera_last_sent_timestamp()
-            self.timeslot_info[timeslot] = timeslot_info
+            self.timeslot_infos[timeslot] = timeslot_info
             self.queue_mmdvm_to_translate.task_done()
