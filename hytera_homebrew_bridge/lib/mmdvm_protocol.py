@@ -11,6 +11,10 @@ from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
 from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
     CustomBridgeDatagramProtocol,
 )
+from hytera_homebrew_bridge.lib.packet_format import (
+    common_log_format,
+    get_dmr_data_hash,
+)
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 from hytera_homebrew_bridge.lib.utils import log_mmdvm_configuration
 
@@ -54,6 +58,19 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         while not asyncio.get_running_loop().is_closed():
             packet: bytes = await self.queue_outgoing.get()
             if self.transport and not self.transport.is_closing():
+                mmdvm: Mmdvm = Mmdvm.from_bytes(packet)
+                self.log_debug(
+                    common_log_format(
+                        proto="MFQ",
+                        from_ip_port=(),
+                        to_ip_port=(),
+                        use_color=True,
+                        packet_data=mmdvm.command_data,
+                        dmrdata_hash=get_dmr_data_hash(mmdvm.command_data.dmr_data)
+                        if isinstance(mmdvm.command_data, Mmdvm.TypeDmrData)
+                        else "",
+                    )
+                )
                 self.transport.sendto(packet)
             else:
                 if not self.transport:

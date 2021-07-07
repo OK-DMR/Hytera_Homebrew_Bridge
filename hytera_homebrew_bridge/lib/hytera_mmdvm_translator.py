@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
-from asyncio import Queue
 import os
+from asyncio import Queue
 from time import time
 from typing import Dict
 
@@ -15,6 +15,10 @@ from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnect
 from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
 from hytera_homebrew_bridge.lib import settings as module_settings
 from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
+from hytera_homebrew_bridge.lib.packet_format import (
+    common_log_format,
+    get_dmr_data_hash,
+)
 from hytera_homebrew_bridge.lib.utils import (
     byteswap_bytes,
     assemble_hytera_ipsc_packet,
@@ -96,12 +100,12 @@ class HyteraMmdvmTranslator(LoggingTrait):
             # idle, rate 1 data, unified single block data, not known in hytera yet
         }
         self.mmdvm_to_hytera_slottype: dict = {
-            4: IpSiteConnectProtocol.SlotTypes.slot_type_data_a,
-            5: IpSiteConnectProtocol.SlotTypes.slot_type_data_b,
-            0: IpSiteConnectProtocol.SlotTypes.slot_type_data_c,
-            1: IpSiteConnectProtocol.SlotTypes.slot_type_data_d,
-            2: IpSiteConnectProtocol.SlotTypes.slot_type_data_e,
-            3: IpSiteConnectProtocol.SlotTypes.slot_type_data_f,
+            0: IpSiteConnectProtocol.SlotTypes.slot_type_data_a,
+            1: IpSiteConnectProtocol.SlotTypes.slot_type_data_b,
+            2: IpSiteConnectProtocol.SlotTypes.slot_type_data_c,
+            3: IpSiteConnectProtocol.SlotTypes.slot_type_data_d,
+            4: IpSiteConnectProtocol.SlotTypes.slot_type_data_e,
+            5: IpSiteConnectProtocol.SlotTypes.slot_type_data_f,
         }
         self.mmdvm_to_hytera_slottype_str: dict = {
             IpSiteConnectProtocol.SlotTypes.slot_type_data_a: b"\xBB\xBB",
@@ -173,8 +177,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         timeslot_info.mmdvm_last_started_stream_id_out
                         == timeslot_info.mmdvm_stream_id
                     ):
-                        # do log duplicate start call headers
-                        pass
+                        # do not send duplicate voice lc header
+                        continue
                     else:
                         self.log_info(
                             "HYTERA->MMDVM *%s CALL START* FROM: %s TO: %s TS: %s"
@@ -215,7 +219,18 @@ class HyteraMmdvmTranslator(LoggingTrait):
                             else "2",
                         )
                     )
-
+                self.log_debug(
+                    common_log_format(
+                        proto="HYT",
+                        from_ip_port=(),
+                        to_ip_port=(),
+                        packet_data=packet,
+                        use_color=True,
+                        dmrdata_hash=get_dmr_data_hash(
+                            byteswap_bytes(packet.ipsc_payload)
+                        ),
+                    )
+                )
                 bitflags = bitarray(
                     [
                         # 0 => TS1, 1 => TS2
@@ -260,7 +275,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
 
                 timeslot_info.up_hytera_last_sequence_out()
 
-                await self.queue_mmdvm_output.put(
+                mmdvm_out = (
                     b"DMRD"
                     + int(timeslot_info.hytera_last_sequence_out).to_bytes(
                         1, byteorder="big"
@@ -272,6 +287,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     + timeslot_info.mmdvm_stream_id[0:4]
                     + byteswap_bytes(packet.ipsc_payload)
                 )
+
+                await self.queue_mmdvm_output.put(mmdvm_out)
 
                 # Every time transmission is terminated, increment stream id
                 if (
@@ -310,8 +327,14 @@ class HyteraMmdvmTranslator(LoggingTrait):
             timeslot_info: TimeslotInfo = self.timeslot_infos[timeslot]
 
             self.log_debug(
-                f"MMDVM->HYTERA Timeslot {timeslot} IsPrivateCall {packet.command_data.call_type} "
-                f"FrameType {packet.command_data.frame_type} DataType {packet.command_data.data_type}"
+                common_log_format(
+                    proto="HBP",
+                    from_ip_port=(),
+                    to_ip_port=(),
+                    packet_data=packet.command_data,
+                    use_color=True,
+                    dmrdata_hash=get_dmr_data_hash(packet.command_data.dmr_data),
+                )
             )
 
             swapped_bytes: bytes = byteswap_bytes(packet.command_data.dmr_data)

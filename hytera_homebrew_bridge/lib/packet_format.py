@@ -170,14 +170,17 @@ def common_log_format(
         packet_data_formatted = format_mmdvm_data(packet_data)
         color = 120
     else:
-        packet_data_formatted = f"Unknown data {hexlify(packet_data)}"
+        packet_data_formatted = (
+            f"Unsupported common_log_format for data {type(packet_data).__name__}"
+        )
         color = 1
 
-    log: str = (
-        f"{proto} {dmrdata_hash}"
-        + format_brackets(
+    if len(from_ip_port) > 1:
+        ip_from_to = format_brackets(
             text=f" {from_ip_port[0]: <15} {from_ip_port[1]: <5} -> {to_ip_port[0]: <15} {to_ip_port[1]: <5} "
         )
-        + packet_data_formatted
-    )
+    else:
+        ip_from_to = ""
+
+    log: str = f"{proto} {dmrdata_hash} " + ip_from_to + packet_data_formatted
     return _terminal_col256(log, color) if use_color else log

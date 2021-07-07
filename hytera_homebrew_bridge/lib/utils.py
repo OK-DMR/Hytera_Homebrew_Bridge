@@ -150,7 +150,6 @@ def assemble_hytera_ipsc_sync_packet(
             0,
         ]
     )
-    print(f"source {source_id_sync_bytes.hex()} target {target_id_sync_bytes.hex()}")
     return (
         # IPSC packet header
         b"\x5a\x5a\x5a\x5a"
