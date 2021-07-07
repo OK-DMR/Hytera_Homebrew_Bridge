@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 import os
 import sys
+import traceback
+
+from kaitaistruct import ValidationNotEqualError
+
+from hytera_homebrew_bridge.lib.packet_format import (
+    format_mmdvm_data,
+    get_dmr_data_hash,
+    format_ipsc_data,
+)
 
 try:
     import hytera_homebrew_bridge
@@ -10,7 +19,6 @@ except ImportError:
     )
 
 import io
-import zlib
 from binascii import hexlify
 
 import kamene.all
@@ -175,14 +183,8 @@ def format_kamene_packet(packet, extra_data=None):
             hpd = parse_hytera_data(packet_data)
             if isinstance(hpd, IpSiteConnectProtocol):
                 swap = byteswap_bytes(hpd.ipsc_payload)
-                packet_hash = hexlify(
-                    (zlib.crc32(swap) & 0xFFFFFFFF).to_bytes(length=4, byteorder="big")
-                ).decode("UTF-8")
-                packet_data_formatted = (
-                    f"HYTD slot-type {hpd.slot_type} frame-type {hpd.frame_type} "
-                    f"call-type {hpd.call_type} seq {hpd.sequence_number} "
-                    f"FROM: {hpd.source_radio_id} TO: {hpd.destination_radio_id}"
-                )
+                packet_hash = get_dmr_data_hash(swap)
+                packet_data_formatted = format_ipsc_data(hpd)
             elif isinstance(hpd, IpSiteConnectHeartbeat):
                 packet_data_formatted = (
                     "IPSC HeartBeat KeepAlive (or) IPSC reset/no-data packet"
@@ -193,30 +195,32 @@ def format_kamene_packet(packet, extra_data=None):
                     _prettyprint(hpd),
                     packet_data_formatted,
                 )
-        except:
+        except BaseException as e:
+            if (
+                not isinstance(e, EOFError)
+                and not isinstance(e, ValidationNotEqualError)
+                and not isinstance(e, UnicodeDecodeError)
+            ):
+                traceback.print_exc()
             is_hpd = False
 
         if not is_hpd:
             try:
                 hbp = Mmdvm.from_bytes(packet_data)
-                if isinstance(hbp.command_data, Mmdvm.TypeUnknown):
-                    raise
+                if not hasattr(hbp, "command_data") or isinstance(
+                    hbp.command_data, Mmdvm.TypeUnknown
+                ):
+                    is_hbp = False
                 elif isinstance(hbp.command_data, Mmdvm.TypeDmrData):
-                    packet_hash = hexlify(
-                        (zlib.crc32(hbp.command_data.dmr_data) & 0xFFFFFFFF).to_bytes(
-                            length=4, byteorder="big"
-                        )
-                    ).decode("UTF-8")
-                    packet_data_formatted = (
-                        f"DMRD call-type {hbp.command_data.call_type} "
-                        f"frame-type {hbp.command_data.frame_type}"
-                        f" "
-                        f"data-type {hbp.command_data.data_type} "
-                        f"seq {hbp.command_data.sequence_no} "
-                        f"FROM: {hbp.command_data.source_id} TO: {hbp.command_data.target_id}"
-                        f"\n{hexlify(packet_data)}"
-                    )
-            except:
+                    packet_hash = get_dmr_data_hash(hbp.command_data.dmr_data)
+                    packet_data_formatted = format_mmdvm_data(hbp.command_data)
+            except BaseException as e:
+                if (
+                    not isinstance(e, EOFError)
+                    and not isinstance(e, ValidationNotEqualError)
+                    and not isinstance(e, UnicodeDecodeError)
+                ):
+                    traceback.print_exc()
                 is_hbp = False
 
         if not is_hpd and not is_hbp:
@@ -246,7 +250,7 @@ def format_kamene_packet(packet, extra_data=None):
                     str(extra_data.get("udp.dport")).ljust(5),
                     packet_data_formatted.strip(),
                 ),
-                123,
+                110 if is_hpd else 120,
             )
 
     else:

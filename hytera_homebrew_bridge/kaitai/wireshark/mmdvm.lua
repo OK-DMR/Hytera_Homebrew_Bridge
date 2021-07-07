@@ -18,7 +18,7 @@ function Mmdvm:_init(io, parent, root)
 end
 
 function Mmdvm:_read()
-  self.command_prefix = str_decode.decode(self._io:read_bytes(4), "UTF-8")
+  self.command_prefix = str_decode.decode(self._io:read_bytes(4), "ASCII")
   local _on = self.command_prefix
   if _on == "RPTL" then
     self.command_data = Mmdvm.TypeRepeaterLoginRequest(self._io, self, self._root)

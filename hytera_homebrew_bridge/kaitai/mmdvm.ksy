@@ -183,7 +183,7 @@ instances:
 seq:
   - id: command_prefix
     type: str
-    encoding: UTF-8
+    encoding: ASCII
     size: 4
   - id: command_data
     type:

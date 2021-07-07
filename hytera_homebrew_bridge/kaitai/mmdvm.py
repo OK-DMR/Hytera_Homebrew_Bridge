@@ -22,7 +22,7 @@ class Mmdvm(KaitaiStruct):
         self._read()
 
     def _read(self):
-        self.command_prefix = (self._io.read_bytes(4)).decode(u"UTF-8")
+        self.command_prefix = (self._io.read_bytes(4)).decode(u"ASCII")
         _on = self.command_prefix
         if _on == u"RPTL":
             self.command_data = Mmdvm.TypeRepeaterLoginRequest(
