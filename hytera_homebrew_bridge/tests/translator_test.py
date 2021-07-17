@@ -46,12 +46,14 @@ async def test_mmdv_to_hytera():
     )
     hytera_parsed: KaitaiStruct = parse_hytera_data(hytera_input)
     mmdvm_output: bytes = unhexlify(
-        "444d52440123380900006f00000000050000000096fce055837d40c45895de5a9ae11ee6bd"
+        "444d52440123380900006f00000000010000000096fce055837d40c45895de5a9ae11ee6bd"
         "8a8e2dce93a571f4da0334cf2256aff9"
     )
 
     await hytera_incoming.put(hytera_parsed)
     mmdvm_translated: bytes = await mmdvm_outgoing.get()
+    # Null out StreamID for sake of this testcase
+    mmdvm_translated = mmdvm_translated[0:16] + bytes(4) + mmdvm_translated[20:]
 
     assert mmdvm_output == mmdvm_translated
 
