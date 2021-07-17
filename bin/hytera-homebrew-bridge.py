@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
 import importlib.util
-import logging
 import logging.config
 import os
 import socket
@@ -196,5 +195,7 @@ if __name__ == "__main__":
     try:
         loop.run_until_complete(bridge.go())
         loop.run_forever()
+    except BaseException as e:
+        mainlog.exception(e)
     finally:
         mainlog.info("Hytera Homebrew Bridge Ended")

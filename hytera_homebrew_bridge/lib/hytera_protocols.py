@@ -550,3 +550,6 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
             self.log_error(f"Cannot parse IPSC DMR packet {hexlify(data)} from {addr}")
             self.log_error("Parser for Hytera data failed to match the packet data")
             self.log_exception(e)
+        except BaseException as e:
+            self.log_error("[datagram_received] unhandled exception")
+            self.log_exception(e)

@@ -58,6 +58,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         while not asyncio.get_running_loop().is_closed():
             packet: bytes = await self.queue_outgoing.get()
             if self.transport and not self.transport.is_closing():
+                self.transport.sendto(packet)
                 mmdvm: Mmdvm = Mmdvm.from_bytes(packet)
                 self.log_debug(
                     common_log_format(
@@ -71,7 +72,6 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                         else "",
                     )
                 )
-                self.transport.sendto(packet)
             else:
                 if not self.transport:
                     self.log_info(

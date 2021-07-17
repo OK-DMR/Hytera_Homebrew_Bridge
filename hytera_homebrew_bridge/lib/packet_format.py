@@ -143,7 +143,10 @@ def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
             width=7,
         )
         + format_brackets(
-            text=ipsc_frame_types.get(ipsc.frame_type.value, "Unkown Frame Type"),
+            text=ipsc_frame_types.get(
+                0 if isinstance(ipsc.frame_type, int) else ipsc.frame_type.value,
+                f"Unkown Frame Type {ipsc.frame_type}",
+            ),
             width=13,
         )
         + format_brackets(

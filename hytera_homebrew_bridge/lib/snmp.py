@@ -158,6 +158,9 @@ class SNMP(LoggingTrait):
                     "SNMP failed, maybe try changing setting.ini [snmp] family = %s"
                     % other_family
                 )
+        except BaseException as e:
+            self.log_exception("Unhandled exception")
+            self.log_exception(e)
 
         if is_success:
             self.print_snmp_data(settings_storage=settings_storage)

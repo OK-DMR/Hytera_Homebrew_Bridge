@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import logging
-
 import string
+
 from kaitaistruct import KaitaiStruct
 
 from hytera_homebrew_bridge.kaitai.hytera_dmr_application_protocol import (
@@ -155,25 +155,19 @@ def assemble_hytera_ipsc_sync_packet(
         b"\x5a\x5a\x5a\x5a"
         + sequence_number.to_bytes(1, byteorder="little")
         + bytes(3)
-        +
         # magic
-        b"\x42\x00\x05\x01"
-        +
+        + b"\x42\x00\x05\x01"
         # timeslot
-        (b"\x01" if timeslot_is_ts1 else b"\x02")
+        + (b"\x01" if timeslot_is_ts1 else b"\x02")
         + bytes(3)
-        +
         # timeslot
-        (b"\x11\x11" if timeslot_is_ts1 else b"\x22\x22")
-        +
+        + (b"\x11\x11" if timeslot_is_ts1 else b"\x22\x22")
         # slot type
-        b"\xEE\xEE"
-        +
+        + b"\xEE\xEE"
         # color code
-        half_byte_to_bytes(half_byte=color_code, output_bytes=2)
-        +
+        + half_byte_to_bytes(half_byte=color_code, output_bytes=2)
         # 1111 => voice sync, 3333 => data sync
-        b"\x11\x11"
+        + b"\x11\x11"
         + b"\x40"
         + bytes(7)
         + target_id_sync_bytes
