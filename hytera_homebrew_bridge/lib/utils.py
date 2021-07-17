@@ -319,7 +319,7 @@ def log_mmdvm_configuration(logger: logging.Logger, packet: Mmdvm) -> None:
         f"Longitude\t| {c.longitude}\n"
         f"Location\t| {c.location}\n"
         f"Description\t| {c.description}\n"
-        f"Slots\t\t| {2 if c.slots == 3 else 1}\n"
+        f"Slots\t\t| {2 if c.slots == '3' else 1}\n"
         f"URL\t\t| {c.url}\n"
         f"Software ID\t| {c.software_id}\n"
         f"Package ID\t| {c.package_id}\n"

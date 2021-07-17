@@ -43,7 +43,7 @@ ipsc_frame_types: dict = {
 
 ipsc_data_types: dict = {
     0x0000: "PI HEADER",
-    0x1111: "LC HEADER",
+    0x1111: "VOICE LC HDR",
     0x2222: "TERMINATOR LC",
     0x3333: "CSBK",
     0x4444: "DATA HEADER",
