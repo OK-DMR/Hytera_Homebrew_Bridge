@@ -44,10 +44,10 @@ antenna_height = 999
 # 20 ascii letters, will be trimmed if exceeded
 location =
 description =
-# 124 ascii letters, http:// not required, will be trimmed if exceeded
-url = http://github.com/ok-dmr/Hytera_Homebrew_Bridge
+# 124 ascii letters, https:// not required, will be trimmed if exceeded
+url = https://github.com/ok-dmr/Hytera_Homebrew_Bridge
 # 40 ascii letters, will be trimmed if exceeded
-software_id = 2021.1
+software_id = 2021.2
 package_id = Hytera Homebrew Bridge
 # use these to override params read out of repeater
 rx_freq = 434787500

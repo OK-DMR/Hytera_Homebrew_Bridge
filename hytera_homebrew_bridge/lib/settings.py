@@ -107,7 +107,7 @@ class BridgeSettings(LoggingTrait):
             fallback="https://github.com/ok-dmr/Hytera_Homebrew_Bridge",
         )
         self.hb_software_id = parser.get(
-            self.SECTION_HOMEBREW, "software_id", fallback="2021.1"
+            self.SECTION_HOMEBREW, "software_id", fallback="2021.2"
         )
         self.hb_package_id = parser.get(
             self.SECTION_HOMEBREW, "package_id", fallback="Hytera Homebrew Bridge"
