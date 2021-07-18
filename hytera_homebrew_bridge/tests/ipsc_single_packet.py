@@ -3,6 +3,8 @@ import os
 import sys
 from binascii import b2a_hex as ahex, hexlify
 
+from hytera_homebrew_bridge.lib.packet_format import format_ipsc_data
+
 try:
     import hytera_homebrew_bridge
 except ImportError:
@@ -20,6 +22,9 @@ if __name__ == "__main__":
         exit(0)
 
     packet = IpSiteConnectProtocol.from_bytes(bytes.fromhex(sys.argv[1]))
+
+    print(format_ipsc_data(packet))
+
     print(
         "source id: \t%s\ntarget id: \t%s\ncall type: \t%s\ntimeslot: \t%s\ncolor_code: \t%s\npacket_type: \t%s\nslot_type: \t%s\nframe_type: \t%s\n\n"
         % (

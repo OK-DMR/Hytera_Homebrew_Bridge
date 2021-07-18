@@ -226,7 +226,7 @@ def format_kamene_packet(packet, extra_data=None):
         if not is_hpd and not is_hbp:
             # not a Hytera or Homebrew packet
             yield col256(
-                "%s %s [ %s %s -> %s %s ] %s"
+                "%s %s [ %s %s -> %s %s ] %s\n%s"
                 % (
                     "N/A",
                     packet_hash,
@@ -235,12 +235,13 @@ def format_kamene_packet(packet, extra_data=None):
                     str(extra_data.get("ip.dst")).ljust(15),
                     str(extra_data.get("udp.dport")).ljust(5),
                     packet_data_formatted.strip(),
+                    packet_data.hex(),
                 ),
                 1,
             )
         else:
             yield col256(
-                "%s %s [ %s %s -> %s %s ] %s"
+                "%s %s [ %s %s -> %s %s ] %s\n%s"
                 % (
                     "HYT" if is_hpd else "HBP",
                     packet_hash,
@@ -249,6 +250,7 @@ def format_kamene_packet(packet, extra_data=None):
                     str(extra_data.get("ip.dst")).ljust(15),
                     str(extra_data.get("udp.dport")).ljust(5),
                     packet_data_formatted.strip(),
+                    packet_data.hex(),
                 ),
                 110 if is_hpd else 120,
             )

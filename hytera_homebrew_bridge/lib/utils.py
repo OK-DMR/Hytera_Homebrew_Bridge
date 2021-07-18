@@ -236,6 +236,7 @@ def assemble_hytera_ipsc_packet(
     source_id: int,
     target_id: int,
     color_code: int,
+    frame_type: int,
 ) -> bytes:
     return (
         b"\x5a\x5a\x5a\x5a"
@@ -264,7 +265,7 @@ def assemble_hytera_ipsc_packet(
         half_byte_to_bytes(half_byte=color_code, output_bytes=2)
         +
         # frame_type
-        b"\x00\x00"
+        frame_type.to_bytes(2, byteorder="little")
         +
         # reserved_2a
         b"\x40\x5C"

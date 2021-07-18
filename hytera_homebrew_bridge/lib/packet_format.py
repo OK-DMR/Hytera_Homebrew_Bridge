@@ -3,8 +3,11 @@ import io
 import zlib
 from binascii import hexlify
 
+from dmr_utils3.decode import voice_head_term
+
 from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
 from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
+from hytera_homebrew_bridge.lib.utils import byteswap_bytes
 
 mmdvm_frame_types: dict = {0: "VOICE", 1: "VOICE SYNC", 2: "DATA SYNC", 3: "UNUSED"}
 
@@ -39,6 +42,7 @@ ipsc_frame_types: dict = {
     0x6666: "DATA HEADER",
     0x0000: "DATA",
     0xFFFF: "UNKNOWN 0xFFFF",
+    0xBBBB: "VOICE",
 }
 
 ipsc_data_types: dict = {
@@ -58,6 +62,8 @@ ipsc_data_types: dict = {
     0xDDDD: "WAKEUP",
     0xEEEE: "SYNC",
 }
+
+dmr_data_types: dict = {0: "PI HEADER", 1: "VOICE | DATA", 2: "TERMINATOR LC"}
 
 
 def _terminal_col256(text, fg=None, bg=None, bold=False):
@@ -114,11 +120,15 @@ def format_mmdvm_data(mmdvm: Mmdvm.TypeDmrData) -> str:
         ),
         width=14,
     )
+    dmr_data_type: str = dmr_data_types.get(
+        mmdvm.data_type, "DMR DT %d" % int(mmdvm.data_type)
+    )
     return (
         format_brackets(text=f"TS" + ("2" if mmdvm.slot_no else "1"), width=3)
         + format_brackets(text="PRIVATE" if mmdvm.call_type else "GROUP", width=7)
         + format_brackets(text=mmdvm_frame_types.get(mmdvm.frame_type, "N/A"), width=13)
         + data_type
+        + format_brackets(text=dmr_data_type, width=14)
         + f"[SEQ {mmdvm.sequence_no: <3}] "
         + f"[{mmdvm.source_id} -> {mmdvm.target_id}] "
         + f"[STREAM {mmdvm.stream_id}] "
@@ -126,6 +136,18 @@ def format_mmdvm_data(mmdvm: Mmdvm.TypeDmrData) -> str:
 
 
 def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
+    if (
+        ipsc.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header
+        or ipsc.slot_type
+        == IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
+    ):
+        lc = voice_head_term(byteswap_bytes(ipsc.ipsc_payload))
+        dmr_data_type: str = dmr_data_types.get(
+            int(lc["DTYPE"][0]), "DMR DT %d" % int(lc["DTYPE"][0])
+        )
+    else:
+        dmr_data_type: str = "DMR DT ?"
+
     return (
         format_brackets(
             text=f"TS"
@@ -153,6 +175,7 @@ def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
             text=ipsc_data_types.get(ipsc.slot_type.value, "Unknown Data Type"),
             width=14,
         )
+        + format_brackets(text=dmr_data_type, width=14)
         + f"[SEQ {ipsc.sequence_number: <3}] "
         + f"[{ipsc.source_radio_id} -> {ipsc.destination_radio_id}] "
     )

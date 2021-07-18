@@ -25,6 +25,7 @@ class IpSiteConnectProtocol(KaitaiStruct):
         frame_type_voice_sync = 4369
         frame_type_data_sync_or_csbk = 13107
         frame_type_data_header = 26214
+        frame_type_voice = 48059
         frame_type_sync = 61166
 
     class CallTypes(Enum):
@@ -32,7 +33,6 @@ class IpSiteConnectProtocol(KaitaiStruct):
         group_call = 1
 
     class SlotTypes(Enum):
-        slot_type_privacy_indicator = 0
         slot_type_voice_lc_header = 4369
         slot_type_terminator_with_lc = 8738
         slot_type_csbk = 13107
@@ -43,7 +43,7 @@ class IpSiteConnectProtocol(KaitaiStruct):
         slot_type_data_d = 34952
         slot_type_data_e = 39321
         slot_type_data_f = 43690
-        slot_type_data_a = 48059
+        slot_type_data_a_or_privacy = 48059
         slot_type_data_b = 52428
         slot_type_wakeup_request = 56797
         slot_type_sync = 61166

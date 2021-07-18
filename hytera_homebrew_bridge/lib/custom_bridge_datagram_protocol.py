@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import logging
 from asyncio import protocols
 
 from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait

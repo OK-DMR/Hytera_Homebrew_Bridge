@@ -82,7 +82,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
         # 9.3.6 Data Type of ETSI TS 102 361-1 V2.5.1
         self.hytera_to_mmdvm_datatype: dict = {
             # for voice frames
-            IpSiteConnectProtocol.SlotTypes.slot_type_data_a: "0000",
+            IpSiteConnectProtocol.SlotTypes.slot_type_data_a_or_privacy: "0000",
             IpSiteConnectProtocol.SlotTypes.slot_type_data_b: "0001",
             IpSiteConnectProtocol.SlotTypes.slot_type_data_c: "0010",
             IpSiteConnectProtocol.SlotTypes.slot_type_data_d: "0011",
@@ -90,7 +90,6 @@ class HyteraMmdvmTranslator(LoggingTrait):
             IpSiteConnectProtocol.SlotTypes.slot_type_data_f: "0101",
             IpSiteConnectProtocol.SlotTypes.slot_type_sync: "0101",
             # for data frames
-            IpSiteConnectProtocol.SlotTypes.slot_type_privacy_indicator: "0000",
             IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header: "0001",
             IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc: "0010",
             IpSiteConnectProtocol.SlotTypes.slot_type_csbk: "0011",
@@ -101,7 +100,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
             # idle, rate 1 data, unified single block data, not known in hytera yet
         }
         self.mmdvm_to_hytera_slottype: dict = {
-            0: IpSiteConnectProtocol.SlotTypes.slot_type_data_a,
+            0: IpSiteConnectProtocol.SlotTypes.slot_type_data_a_or_privacy,
             1: IpSiteConnectProtocol.SlotTypes.slot_type_data_b,
             2: IpSiteConnectProtocol.SlotTypes.slot_type_data_c,
             3: IpSiteConnectProtocol.SlotTypes.slot_type_data_d,
@@ -109,7 +108,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
             5: IpSiteConnectProtocol.SlotTypes.slot_type_data_f,
         }
         self.mmdvm_to_hytera_slottype_str: dict = {
-            IpSiteConnectProtocol.SlotTypes.slot_type_data_a: b"\xBB\xBB",
+            IpSiteConnectProtocol.SlotTypes.slot_type_data_a_or_privacy: b"\xBB\xBB",
             IpSiteConnectProtocol.SlotTypes.slot_type_data_b: b"\xCC\xCC",
             IpSiteConnectProtocol.SlotTypes.slot_type_data_c: b"\x77\x77",
             IpSiteConnectProtocol.SlotTypes.slot_type_data_d: b"\x88\x88",
@@ -122,7 +121,6 @@ class HyteraMmdvmTranslator(LoggingTrait):
             IpSiteConnectProtocol.SlotTypes.slot_type_data_header: b"\x44\x44",
             IpSiteConnectProtocol.SlotTypes.slot_type_rate_12_data: b"\x55\x55",
             IpSiteConnectProtocol.SlotTypes.slot_type_rate_34_data: b"\x66\x66",
-            IpSiteConnectProtocol.SlotTypes.slot_type_privacy_indicator: b"\x00\x00",
         }
 
     async def translate_from_hytera(self):
@@ -256,7 +254,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     packet.frame_type
                     == IpSiteConnectProtocol.FrameTypes.frame_type_voice_sync
                     or packet.slot_type
-                    == IpSiteConnectProtocol.SlotTypes.slot_type_data_a
+                    == IpSiteConnectProtocol.SlotTypes.slot_type_data_a_or_privacy
                 ):
                     bitflags.extend("01")
                 elif (
@@ -385,7 +383,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                             await self.queue_hytera_output.put(hytera_ipsc_packet)
                             # wait roughly 400ms after waking up the repeater
                             await asyncio.sleep(0.4)
-                else:
+                elif packet.command_data.data_type == 2:
                     # terminator with lc
                     slot_type = (
                         IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
@@ -401,10 +399,15 @@ class HyteraMmdvmTranslator(LoggingTrait):
                             "2" if packet.command_data.slot_no == 1 else "1",
                         )
                     )
+                else:  # if packet.command_data.data_type == 0:
+                    # pi header or similar
+                    slot_type = (
+                        IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
+                    )
             else:
                 slot_type = self.mmdvm_to_hytera_slottype.get(
                     packet.command_data.data_type,
-                    IpSiteConnectProtocol.SlotTypes.slot_type_data_a,
+                    IpSiteConnectProtocol.SlotTypes.slot_type_data_a_or_privacy,
                 )
 
             timeslot_info.up_hytera_last_sequence_out()
@@ -418,6 +421,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                 target_id=packet.command_data.target_id,
                 source_id=packet.command_data.source_id,
                 color_code=self.settings.hb_color_code,
+                frame_type=IpSiteConnectProtocol.FrameTypes.frame_type_voice.value,
             )
 
             await self.queue_hytera_output.put(hytera_ipsc_packet)

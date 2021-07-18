@@ -57,9 +57,6 @@ async def test_mmdv_to_hytera():
 
     assert mmdvm_output == mmdvm_translated
 
-    # testcase 2
-    mmdvm_input: bytes = unhexlify("")
-
 
 if __name__ == "__main__":
     asyncio.run(test_mmdv_to_hytera())
