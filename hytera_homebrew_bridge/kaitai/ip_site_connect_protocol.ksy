@@ -5,6 +5,7 @@ doc: |
   Hytera IP Multi-Site Protocol re-implementation from dmrshark original
 enums:
   slot_types:
+    0x0000: slot_type_privacy_indicator
     0x1111: slot_type_voice_lc_header
     0x2222: slot_type_terminator_with_lc
     0x3333: slot_type_csbk

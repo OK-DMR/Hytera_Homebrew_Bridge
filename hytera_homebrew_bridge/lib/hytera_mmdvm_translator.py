@@ -272,6 +272,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     == IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header
                     or packet.slot_type
                     == IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
+                    or packet.slot_type
+                    == IpSiteConnectProtocol.SlotTypes.slot_type_privacy_indicator
                 ):
                     bitflags.extend("10")
                 else:

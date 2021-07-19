@@ -166,13 +166,16 @@ def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
         )
         + format_brackets(
             text=ipsc_frame_types.get(
-                0 if isinstance(ipsc.frame_type, int) else ipsc.frame_type.value,
+                -1 if isinstance(ipsc.frame_type, int) else ipsc.frame_type.value,
                 f"Unkown Frame Type {ipsc.frame_type}",
             ),
             width=13,
         )
         + format_brackets(
-            text=ipsc_data_types.get(ipsc.slot_type.value, "Unknown Data Type"),
+            text=ipsc_data_types.get(
+                -1 if isinstance(ipsc.slot_type, int) else ipsc.slot_type.value,
+                f"Unknown Data Type {ipsc.slot_type}",
+            ),
             width=14,
         )
         + format_brackets(text=dmr_data_type, width=14)
