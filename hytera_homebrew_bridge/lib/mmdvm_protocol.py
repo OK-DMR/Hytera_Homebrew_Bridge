@@ -62,7 +62,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                 mmdvm: Mmdvm = Mmdvm.from_bytes(packet)
                 self.log_debug(
                     common_log_format(
-                        proto="MFQ",
+                        proto="HHB->MMDVM",
                         from_ip_port=(),
                         to_ip_port=(),
                         use_color=True,

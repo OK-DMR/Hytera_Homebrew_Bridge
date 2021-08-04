@@ -517,7 +517,7 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
                 ipsc = IpSiteConnectProtocol.from_bytes(packet)
                 self.log_debug(
                     common_log_format(
-                        proto="HFQ",
+                        proto="HHB->HYTER",
                         from_ip_port=(),
                         to_ip_port=(),
                         use_color=True,

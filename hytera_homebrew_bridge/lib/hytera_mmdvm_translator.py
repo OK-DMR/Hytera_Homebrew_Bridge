@@ -129,16 +129,16 @@ class HyteraMmdvmTranslator(LoggingTrait):
             try:
                 packet: KaitaiStruct = await self.queue_hytera_to_translate.get()
             except RuntimeError as e:
-                self.log_error("HYTERA->MMDVM Could not get Hytera packet from queue")
+                self.log_error("HYTER->HHB Could not get Hytera packet from queue")
                 self.log_exception(e)
                 continue
             except BaseException as e:
-                self.log_error("HYTERA->MMDVM unhandled exception")
+                self.log_error("HYTER->HHB unhandled exception")
                 self.log_exception(e)
                 continue
 
             if isinstance(packet, IpSiteConnectHeartbeat):
-                self.log_debug("HYTERA->MMDVM Received IPSC Heartbeat, not translating")
+                self.log_debug("HYTER->HHB Received IPSC Heartbeat, not translating")
                 continue
 
             if isinstance(packet, IpSiteConnectProtocol):
@@ -151,7 +151,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
 
                 if packet.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_sync:
                     self.log_debug(
-                        "HYTERA->MMDVM Received IPSC Sync packet, not translating"
+                        "HYTER->HHB Received IPSC Sync packet, not translating"
                     )
                     continue
                 if (
@@ -159,14 +159,14 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     == IpSiteConnectProtocol.SlotTypes.slot_type_wakeup_request
                 ):
                     self.log_debug(
-                        "HYTERA->MMDVM Received IPSC Wakeup packet, not translating"
+                        "HYTER->HHB Received IPSC Wakeup packet, not translating"
                     )
                     continue
 
                 if timeslot_info.hytera_last_sequence_in == packet.sequence_number:
                     # do not send duplicate packets
                     self.log_debug(
-                        f"HYTERA->MMDVM Got duplicate IPSC packet {packet.slot_type}, not translating"
+                        f"HYTER->HHB Got duplicate IPSC packet {packet.slot_type}, not translating"
                     )
                     continue
                 else:
@@ -181,13 +181,11 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         == timeslot_info.mmdvm_stream_id
                     ):
                         # do not send duplicate voice lc header
-                        self.log_debug(
-                            f"HYTERA->MMDVM Got duplicate LC HEADER, ignoring"
-                        )
+                        self.log_debug(f"HYTER->HHB Got duplicate LC HEADER, ignoring")
                         continue
                     else:
                         self.log_info(
-                            "HYTERA->MMDVM *%s CALL START* FROM: %s TO: %s TS: %s"
+                            "HYTER->HHB *%s CALL START* FROM: %s TO: %s TS: %s"
                             % (
                                 "PRIVATE"
                                 if packet.call_type
@@ -210,7 +208,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     == IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
                 ):
                     self.log_info(
-                        "HYTERA->MMDVM *%s CALL  END * FROM: %s TO: %s TS: %s"
+                        "HYTER->HHB *%s CALL  END * FROM: %s TO: %s TS: %s"
                         % (
                             "PRIVATE"
                             if packet.call_type
@@ -227,7 +225,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     )
                 self.log_debug(
                     common_log_format(
-                        proto="HYT",
+                        proto="HYTER->HHB",
                         from_ip_port=(),
                         to_ip_port=(),
                         packet_data=packet,
@@ -321,17 +319,17 @@ class HyteraMmdvmTranslator(LoggingTrait):
             try:
                 packet: Mmdvm = await self.queue_mmdvm_to_translate.get()
             except RuntimeError as e:
-                self.log_error("MMDVM->HYTERA Could not get MMDVM packet from queue")
+                self.log_error("MMDVM->HHB Could not get MMDVM packet from queue")
                 self.log_exception(e)
                 continue
             except BaseException as e:
-                self.log_error("MMDVM->HYTERA unhandled exception")
+                self.log_error("MMDVM->HHB unhandled exception")
                 self.log_exception(e)
                 continue
 
             if not isinstance(packet.command_data, Mmdvm.TypeDmrData):
                 self.log_info(
-                    f"MMDVM->HYTERA Received packet not DMRD, not translating {packet.command_data.__class__.__name__}"
+                    f"MMDVM->HHB Received packet not DMRD, not translating {packet.command_data.__class__.__name__}"
                 )
                 continue
 
@@ -340,7 +338,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
 
             self.log_debug(
                 common_log_format(
-                    proto="HBP",
+                    proto="MMDVM->HHB",
                     from_ip_port=(),
                     to_ip_port=(),
                     packet_data=packet.command_data,
@@ -360,7 +358,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     )
                     timeslot_info.hytera_last_sequence_out = 0
                     self.log_info(
-                        "MMDVM->HYTERA *%s CALL START* FROM: %s TO: %s TS: %s"
+                        "MMDVM->HHB *%s CALL START* FROM: %s TO: %s TS: %s"
                         % (
                             "PRIVATE"
                             if packet.command_data.call_type == 1
@@ -391,7 +389,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
                     )
                     self.log_info(
-                        "MMDVM->HYTERA *%s CALL  END * FROM: %s TO: %s TS: %s"
+                        "MMDVM->HHB *%s CALL  END * FROM: %s TO: %s TS: %s"
                         % (
                             "PRIVATE"
                             if packet.command_data.call_type == 1
