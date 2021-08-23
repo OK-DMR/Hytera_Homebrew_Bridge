@@ -24,10 +24,10 @@ if __name__ == "__main__":
         print("use as %s <hexstring>" % sys.argv[0])
         exit(0)
 
+    print(sys.argv[1])
     packet = Mmdvm.from_bytes(bytes.fromhex(sys.argv[1]))
     if isinstance(packet.command_data, Mmdvm.TypeDmrData):
         print(format_mmdvm_data(packet.command_data))
         print(decode_data_burst(packet.command_data.dmr_data))
 
-    print("MMDVM (2020) packet")
     prettyprint(packet)
