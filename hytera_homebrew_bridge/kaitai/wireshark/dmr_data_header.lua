@@ -11,26 +11,6 @@ local stringstream = require("string_stream")
 -- TS 102 361-1 V2.5.1 Data Header
 DmrDataHeader = class.class(KaitaiStruct)
 
-DmrDataHeader.DataPacketFormats = enum.Enum {
-  unified_data_transport = 0,
-  response_packet = 1,
-  data_packet_unconfirmed = 2,
-  data_packet_confirmed = 3,
-  short_data_defined = 13,
-  short_data_raw_or_status_or_precoded = 14,
-  proprietary = 15,
-}
-
-DmrDataHeader.SapIdentifiers = enum.Enum {
-  unified_data_transport = 0,
-  tcp_ip_header_compression = 2,
-  udp_ip_header_compression = 3,
-  ip_based_packet_data = 4,
-  arp_address_resolution_protocol = 5,
-  proprietary_packet_data = 9,
-  short_data = 10,
-}
-
 DmrDataHeader.UdtFormats = enum.Enum {
   binary = 0,
   ms_or_tg_address = 1,
@@ -45,7 +25,7 @@ DmrDataHeader.UdtFormats = enum.Enum {
   mixed_address_and_16bit_utf16be_characters = 10,
 }
 
-DmrDataHeader.UdtOpcodes = enum.Enum {
+DmrDataHeader.CsbkMbcUdtOpcodes = enum.Enum {
   c_aloha = 25,
   c_udthd = 26,
   c_udthu = 27,
@@ -72,6 +52,60 @@ DmrDataHeader.UdtOpcodes = enum.Enum {
   pd_grant_mi = 55,
   td_grant_mi = 56,
   c_move = 57,
+}
+
+DmrDataHeader.DataPacketFormats = enum.Enum {
+  unified_data_transport = 0,
+  response_packet = 1,
+  data_packet_unconfirmed = 2,
+  data_packet_confirmed = 3,
+  short_data_defined = 13,
+  short_data_raw_or_status_or_precoded = 14,
+  proprietary = 15,
+}
+
+DmrDataHeader.SapIdentifiers = enum.Enum {
+  unified_data_transport = 0,
+  tcp_ip_header_compression = 2,
+  udp_ip_header_compression = 3,
+  ip_based_packet_data = 4,
+  arp_address_resolution_protocol = 5,
+  proprietary_packet_data = 9,
+  short_data = 10,
+}
+
+DmrDataHeader.DefinedDataFormats = enum.Enum {
+  binary = 0,
+  bcd = 1,
+  coding_7bit = 2,
+  coding_8bit_8859_1 = 3,
+  coding_8bit_8859_2 = 4,
+  coding_8bit_8859_3 = 5,
+  coding_8bit_8859_4 = 6,
+  coding_8bit_8859_5 = 7,
+  coding_8bit_8859_6 = 8,
+  coding_8bit_8859_7 = 9,
+  coding_8bit_8859_8 = 10,
+  coding_8bit_8859_9 = 11,
+  coding_8bit_8859_10 = 12,
+  coding_8bit_8859_11 = 13,
+  coding_8bit_8859_13 = 14,
+  coding_8bit_8859_14 = 15,
+  coding_8bit_8859_15 = 16,
+  coding_8bit_8859_16 = 17,
+  unicode_utf8 = 18,
+  unicode_utf16 = 19,
+  unicode_utf16be = 20,
+  unicode_utf16le = 21,
+  unicode_utf32 = 22,
+  unicode_utf32be = 23,
+  unicode_utf32le = 24,
+}
+
+DmrDataHeader.ResponsePacketClasses = enum.Enum {
+  ack = 0,
+  nack = 1,
+  sack = 2,
 }
 
 function DmrDataHeader:_init(io, parent, root)
@@ -158,7 +192,7 @@ function DmrDataHeader.DataResponse:_read()
   self.llid_source = self._io:read_bits_int_be(24)
   self.full_message_flag = self._io:read_bits_int_be(1)
   self.blocks_to_follow = self._io:read_bits_int_be(7)
-  self.response_class = self._io:read_bits_int_be(2)
+  self.response_class = DmrDataHeader.ResponsePacketClasses(self._io:read_bits_int_be(2))
   self.response_type = self._io:read_bits_int_be(3)
   self.response_status = self._io:read_bits_int_be(3)
   self._io:align_to_byte()
@@ -175,6 +209,8 @@ end
 -- 0b0000 expected.
 -- 
 -- 0b0 expected.
+-- 
+-- NI/VI/FSN per ETSI TS 102 361-1 V2.5.1, Table 8.3 (page 87), Response Packet Class, Type, and Status definitions.
 
 -- 
 -- 9.2.9 Proprietary Header (P_HEAD) PDU.
@@ -229,6 +265,8 @@ function DmrDataHeader.DataShortStatusPrecoded:_read()
 end
 
 -- 
+-- response demanded if destination is individual MS.
+-- 
 -- 0b00 expected.
 -- 
 -- 0b0000 expected.
@@ -263,6 +301,8 @@ function DmrDataHeader.DataConfirmed:_read()
   self.crc = self._io:read_bytes(2)
 end
 
+-- 
+-- response demanded if destination is individual MS.
 -- 
 -- 0b0 expected.
 
@@ -341,7 +381,7 @@ function DmrDataHeader.DataUdt:_read()
   self.appended_blocks = self._io:read_bits_int_be(2)
   self.supplementary_flag = self._io:read_bits_int_be(1)
   self.protect_flag = self._io:read_bits_int_be(1)
-  self.udt_opcode = DmrDataHeader.UdtOpcodes(self._io:read_bits_int_be(6))
+  self.udt_opcode = DmrDataHeader.CsbkMbcUdtOpcodes(self._io:read_bits_int_be(6))
   self._io:align_to_byte()
   self.crc = self._io:read_bytes(2)
 end
@@ -353,7 +393,11 @@ end
 -- 
 -- ETSI TS 102 361-4 V1.9.1, 7.2.27 UDT Format.
 -- 
--- ETSI TS 102 361-4 V1.2.1, Annex B, B.1 CSBK/MBC/UDT Opcode List.
+-- Number of Blocks appended to this UDT Header.
+-- 
+-- 0=>short data, 1=>supplementary data, ETSI TS 102 361-1 V2.5.1, 9.3.41 Supplementary Flag (SF).
+-- 
+-- ETSI TS 102 361-4 V1.10.1, Annex B, B.1 CSBK/MBC/UDT Opcode List.
 
 -- 
 -- 9.2.11 Raw short data packet Header (R_HEAD) PDU.
@@ -385,11 +429,13 @@ function DmrDataHeader.DataShortRaw:_read()
 end
 
 -- 
+-- response demanded if destination is individual MS.
+-- 
 -- 0b00 expected.
 -- 
 -- 0b0000 expected.
 -- 
--- SARQ.
+-- flag whether source requires SARQ.
 -- 
 -- 0b00000000 expected.
 
@@ -413,7 +459,7 @@ function DmrDataHeader.DataShortDefined:_read()
   self.appended_blocks_lsb = self._io:read_bits_int_be(4)
   self.llid_destination = self._io:read_bits_int_be(24)
   self.llid_source = self._io:read_bits_int_be(24)
-  self.defined_data = self._io:read_bits_int_be(6)
+  self.defined_data = DmrDataHeader.DefinedDataFormats(self._io:read_bits_int_be(6))
   self.selective_automatic_repeat_request = self._io:read_bits_int_be(1)
   self.full_message_flag = self._io:read_bits_int_be(1)
   self.bit_padding = self._io:read_bits_int_be(8)
@@ -422,11 +468,13 @@ function DmrDataHeader.DataShortDefined:_read()
 end
 
 -- 
+-- response demanded if destination is individual MS.
+-- 
 -- 0b00 expected.
 -- 
 -- 0b0000 expected.
 -- 
--- data format.
+-- ETSI TS 102 361-1 V2.5.1, Table 9.50, DD information element content.
 -- 
 -- SARQ.
 

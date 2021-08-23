@@ -32,7 +32,7 @@ enums:
     0b1000: manufacturer_specific
     0b1001: manufacturer_specific_2
     0b1010: mixed_address_and_16bit_utf16be_characters
-  udt_opcodes:
+  csbk_mbc_udt_opcodes:
     0b110000: pv_grant
     0b110001: tv_grant
     0b110010: btv_grant
@@ -59,6 +59,36 @@ enums:
     0b011111: c_rand
     0b011110: c_ackvit
     0b101010: p_maint
+  defined_data_formats:
+    0b000000: binary
+    0b000001: bcd
+    0b000010: coding_7bit
+    0b000011: coding_8bit_8859_1
+    0b000100: coding_8bit_8859_2
+    0b000101: coding_8bit_8859_3
+    0b000110: coding_8bit_8859_4
+    0b000111: coding_8bit_8859_5
+    0b001000: coding_8bit_8859_6
+    0b001001: coding_8bit_8859_7
+    0b001010: coding_8bit_8859_8
+    0b001011: coding_8bit_8859_9
+    0b001100: coding_8bit_8859_10
+    0b001101: coding_8bit_8859_11
+    0b001110: coding_8bit_8859_13
+    0b001111: coding_8bit_8859_14
+    0b010000: coding_8bit_8859_15
+    0b010001: coding_8bit_8859_16
+    0b010010: unicode_utf8
+    0b010011: unicode_utf16
+    0b010100: unicode_utf16be
+    0b010101: unicode_utf16le
+    0b010110: unicode_utf32
+    0b010111: unicode_utf32be
+    0b011000: unicode_utf32le
+  response_packet_classes:
+    0b00: ack
+    0b01: nack
+    0b10: sack
 types:
   data_undefined:
     seq:
@@ -112,14 +142,16 @@ types:
         type: b1
       - id: appended_blocks
         type: b2
+        doc: Number of Blocks appended to this UDT Header
       - id: supplementary_flag
         type: b1
+        doc: 0=>short data, 1=>supplementary data, ETSI TS 102 361-1 V2.5.1, 9.3.41 Supplementary Flag (SF)
       - id: protect_flag
         type: b1
       - id: udt_opcode
         type: b6
-        enum: udt_opcodes
-        doc: ETSI TS 102 361-4 V1.2.1, Annex B, B.1 CSBK/MBC/UDT Opcode List
+        enum: csbk_mbc_udt_opcodes
+        doc: ETSI TS 102 361-4 V1.10.1, Annex B, B.1 CSBK/MBC/UDT Opcode List
       - id: crc
         size: 2
   data_response:
@@ -154,10 +186,12 @@ types:
         type: b7
       - id: response_class
         type: b2
+        enum: response_packet_classes
       - id: response_type
         type: b3
       - id: response_status
         type: b3
+        doc: NI/VI/FSN per ETSI TS 102 361-1 V2.5.1, Table 8.3 (page 87), Response Packet Class, Type, and Status definitions
       - id: crc
         size: 2
   data_unconfirmed:
@@ -203,6 +237,7 @@ types:
         type: b1
       - id: response_requested
         type: b1
+        doc: response demanded if destination is individual MS
       - id: reserved1
         type: b1
         doc: 0b0 expected
@@ -239,6 +274,7 @@ types:
         type: b1
       - id: response_requested
         type: b1
+        doc: response demanded if destination is individual MS
       - id: appended_blocks_msb
         type: b2
         doc: 0b00 expected
@@ -260,7 +296,7 @@ types:
       - id: destination_port
         type: b3
       - id: selective_automatic_repeat_request
-        doc: SARQ
+        doc: flag whether source requires SARQ
         type: b1
       - id: full_message_flag
         type: b1
@@ -276,6 +312,7 @@ types:
         type: b1
       - id: response_requested
         type: b1
+        doc: response demanded if destination is individual MS
       - id: appended_blocks_msb
         type: b2
         doc: 0b00 expected
@@ -294,7 +331,8 @@ types:
         type: b24
       - id: defined_data
         type: b6
-        doc: data format
+        enum: defined_data_formats
+        doc: ETSI TS 102 361-1 V2.5.1, Table 9.50, DD information element content
       - id: selective_automatic_repeat_request
         doc: SARQ
         type: b1
@@ -311,6 +349,7 @@ types:
         type: b1
       - id: response_requested
         type: b1
+        doc: response demanded if destination is individual MS
       - id: appended_blocks_msb
         type: b2
         doc: 0b00 expected
