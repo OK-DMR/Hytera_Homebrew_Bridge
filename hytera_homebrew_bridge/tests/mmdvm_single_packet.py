@@ -28,6 +28,6 @@ if __name__ == "__main__":
     packet = Mmdvm.from_bytes(bytes.fromhex(sys.argv[1]))
     if isinstance(packet.command_data, Mmdvm.TypeDmrData):
         print(format_mmdvm_data(packet.command_data))
-        print(decode_data_burst(packet.command_data.dmr_data))
+        decode_data_burst(packet.command_data.dmr_data)
 
     prettyprint(packet)

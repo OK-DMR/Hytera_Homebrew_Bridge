@@ -4,7 +4,9 @@ from bitarray import bitarray
 from dmr_utils3.decode import to_bits, to_bytes
 
 from hytera_homebrew_bridge.kaitai.dmr_csbk import DmrCsbk
+from hytera_homebrew_bridge.kaitai.dmr_data import DmrData
 from hytera_homebrew_bridge.kaitai.dmr_data_header import DmrDataHeader
+from hytera_homebrew_bridge.kaitai.dmr_ip_udp import DmrIpUdp
 from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
 
 SYNC_PATTERNS: dict = {
@@ -163,10 +165,6 @@ def decode_complete_lc(_data):
 
 
 def decode_csbk(csbk: bytes):
-    as_bits = to_bits(csbk)
-    last_block = as_bits[0] == 1
-    protect_flag = as_bits[1]
-    csbk_opcode = as_bits[2:8]
     csbk_kaitai = DmrCsbk.from_bytes(csbk)
     print(_prettyprint(csbk_kaitai))
 
@@ -183,7 +181,7 @@ def decode_data_burst(dmr_data: bytes):
     burst_sync = burst[108:156]
     burst_sync_signature = SYNC_PATTERNS.get(
         as_int(to_bytes(burst_sync), "big"),
-        f"Embedded Signalling {as_int(to_bytes(burst_sync))}",
+        f"Embedded Signalling {to_bytes(burst_sync).hex().upper()}",
     )
     link_control = decode_complete_lc(burst_info).tobytes()
     color_code = as_int(to_bytes(burst_slot_type[0:4]))
@@ -196,3 +194,6 @@ def decode_data_burst(dmr_data: bytes):
         decode_csbk(link_control)
     elif data_type == 6:
         decode_data_header(link_control)
+    elif data_type == 7:
+        print(_prettyprint(DmrIpUdp.UdpIpv4CompressedHeader.from_bytes(link_control)))
+        print(_prettyprint(DmrData.Rate12Unconfirmed.from_bytes(link_control)))
