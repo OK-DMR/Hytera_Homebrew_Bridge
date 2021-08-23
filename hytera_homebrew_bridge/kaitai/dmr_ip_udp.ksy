@@ -25,24 +25,26 @@ types:
       - id: source_ip_address_id
         type: b4
         doc: SAID
+        enum: source_ip_address_ids
       - id: destination_ip_address_id
         type: b4
         doc: DAID
+        enum: destination_ip_address_ids
       - id: header_compression_opcode_msb
         type: b1
       - id: udp_source_port_id
         type: b7
         doc: SPID
+        enum: udp_port_ids
       - id: header_compression_opcode_lsb
         type: b1
       - id: udp_destination_port_id
         type: b7
         doc: DPID
-      - id: extended_header_1
+        enum: udp_port_ids
+      - id: udp_source_port
         size: 2
-        doc: |
-          in this order: source port (if SPID==0) or destination port (if SPID!=0) or data (if SPID!=0 and DPID!=0)
-      - id: extended_header_2
+        if: udp_source_port_id == udp_port_ids::present_in_extended_header
+      - id: udp_destination_port
         size: 2
-        doc: |
-          in this order: destination port (if SPID==0 and DPID==0) or data (if SPID!=0 and DPID!=0)
+        if: udp_destination_port_id == udp_port_ids::present_in_extended_header

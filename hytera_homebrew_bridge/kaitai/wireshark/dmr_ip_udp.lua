@@ -51,15 +51,19 @@ end
 
 function DmrIpUdp.UdpIpv4CompressedHeader:_read()
   self.ipv4_identification = self._io:read_bytes(2)
-  self.source_ip_address_id = self._io:read_bits_int_be(4)
-  self.destination_ip_address_id = self._io:read_bits_int_be(4)
+  self.source_ip_address_id = DmrIpUdp.SourceIpAddressIds(self._io:read_bits_int_be(4))
+  self.destination_ip_address_id = DmrIpUdp.DestinationIpAddressIds(self._io:read_bits_int_be(4))
   self.header_compression_opcode_msb = self._io:read_bits_int_be(1)
-  self.udp_source_port_id = self._io:read_bits_int_be(7)
+  self.udp_source_port_id = DmrIpUdp.UdpPortIds(self._io:read_bits_int_be(7))
   self.header_compression_opcode_lsb = self._io:read_bits_int_be(1)
-  self.udp_destination_port_id = self._io:read_bits_int_be(7)
+  self.udp_destination_port_id = DmrIpUdp.UdpPortIds(self._io:read_bits_int_be(7))
   self._io:align_to_byte()
-  self.extended_header_1 = self._io:read_bytes(2)
-  self.extended_header_2 = self._io:read_bytes(2)
+  if self.udp_source_port_id == DmrIpUdp.UdpPortIds.present_in_extended_header then
+    self.udp_source_port = self._io:read_bytes(2)
+  end
+  if self.udp_destination_port_id == DmrIpUdp.UdpPortIds.present_in_extended_header then
+    self.udp_destination_port = self._io:read_bytes(2)
+  end
 end
 
 -- 
@@ -70,8 +74,4 @@ end
 -- SPID.
 -- 
 -- DPID.
--- 
--- in this order: source port (if SPID==0) or destination port (if SPID!=0) or data (if SPID!=0 and DPID!=0)
--- 
--- in this order: destination port (if SPID==0 and DPID==0) or data (if SPID!=0 and DPID!=0).
 
