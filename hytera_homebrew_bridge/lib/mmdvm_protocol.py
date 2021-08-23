@@ -105,6 +105,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         self.connection_lost_callback()
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
+        self.log_debug(f"MMDVM->HHB {data.hex()}")
         packet = Mmdvm.from_bytes(data)
         is_handled: bool = False
         if isinstance(packet.command_data, Mmdvm.TypeMasterNotAccept):

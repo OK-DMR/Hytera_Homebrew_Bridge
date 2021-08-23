@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 import os
 import sys
+from binascii import hexlify, b2a_hex
 
+from dmr_utils3.ambe_utils import deinterleave
+
+from hytera_homebrew_bridge.dmrlib.decode import decode_data_burst
 from hytera_homebrew_bridge.lib.packet_format import format_mmdvm_data
 
 try:
@@ -23,5 +27,7 @@ if __name__ == "__main__":
     packet = Mmdvm.from_bytes(bytes.fromhex(sys.argv[1]))
     if isinstance(packet.command_data, Mmdvm.TypeDmrData):
         print(format_mmdvm_data(packet.command_data))
+        print(decode_data_burst(packet.command_data.dmr_data))
+
     print("MMDVM (2020) packet")
     prettyprint(packet)
