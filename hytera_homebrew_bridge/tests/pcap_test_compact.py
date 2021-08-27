@@ -2,7 +2,6 @@
 import os
 import sys
 import traceback
-from typing import Union
 
 from kaitaistruct import ValidationNotEqualError
 

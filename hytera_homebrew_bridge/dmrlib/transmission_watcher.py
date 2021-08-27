@@ -28,7 +28,7 @@ class TransmissionWatcher:
         if not hasattr(parsed, "command_data") or isinstance(
             parsed.command_data, Mmdvm.TypeUnknown
         ):
-            print(f"MMDVM unknown {parsed.command_data.__class__.__name__}")
+            print(f"MMDVM unknown {parsed.__class__.__name__}")
         elif isinstance(parsed.command_data, Mmdvm.TypeDmrData):
             terminal_id = parsed.command_data.source_id
             timeslot = get_mmdvm_timeslot(parsed.command_data)
