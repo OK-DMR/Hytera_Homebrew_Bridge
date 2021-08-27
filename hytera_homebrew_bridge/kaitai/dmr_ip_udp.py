@@ -76,3 +76,5 @@ class DmrIpUdp(KaitaiStruct):
                 == DmrIpUdp.UdpPortIds.present_in_extended_header
             ):
                 self.udp_destination_port = self._io.read_bytes(2)
+
+            self.user_data = self._io.read_bytes_full()

@@ -64,6 +64,7 @@ function DmrIpUdp.UdpIpv4CompressedHeader:_read()
   if self.udp_destination_port_id == DmrIpUdp.UdpPortIds.present_in_extended_header then
     self.udp_destination_port = self._io:read_bytes(2)
   end
+  self.user_data = self._io:read_bytes_full()
 end
 
 -- 

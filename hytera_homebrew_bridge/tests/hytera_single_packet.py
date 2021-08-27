@@ -21,4 +21,4 @@ if __name__ == "__main__":
     if packet:
         prettyprint(packet)
     else:
-        print("Unknown Hytera packet")
+        print("Idle Hytera packet")

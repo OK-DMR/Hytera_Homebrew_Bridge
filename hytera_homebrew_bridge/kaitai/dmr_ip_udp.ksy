@@ -48,3 +48,5 @@ types:
       - id: udp_destination_port
         size: 2
         if: udp_destination_port_id == udp_port_ids::present_in_extended_header
+      - id: user_data
+        size-eos: true

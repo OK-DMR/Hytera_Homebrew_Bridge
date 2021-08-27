@@ -56,7 +56,7 @@ class TransmissionWatcher:
         payload_swap = byteswap_bytes(parsed.ipsc_payload)
         self.ensure_terminal(terminal_id)
         self.terminals[terminal_id].process_dmr_data(payload_swap, timeslot=timeslot)
-        # self.terminals[terminal_id].debug()
+        self.terminals[terminal_id].debug()
 
     def process_packet(self, parsed: KaitaiStruct):
         if isinstance(parsed, Mmdvm):

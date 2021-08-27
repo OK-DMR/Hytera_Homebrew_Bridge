@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
 import time
-from binascii import hexlify
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Optional, Union
 
 from bitarray import bitarray
 from bitarray.util import ba2int
 from dmr_utils3.decode import to_bits
+from dmr_utils3.golay import encode_2087
+from dmr_utils3.qr import ENCODE_1676
+from kaitaistruct import KaitaiStruct
 
-
-class TerminalStatus(Enum):
-    Idle = 0
-    VoiceCallActive = 1
-    DataCallActive = 2
+from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
+from hytera_homebrew_bridge.kaitai.dmr_csbk import DmrCsbk
+from hytera_homebrew_bridge.kaitai.dmr_data import DmrData
+from hytera_homebrew_bridge.kaitai.dmr_data_header import DmrDataHeader
+from hytera_homebrew_bridge.kaitai.dmr_ip_udp import DmrIpUdp
+from hytera_homebrew_bridge.kaitai.link_control import LinkControl
+from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
 
 
 class TransmissionType(Enum):
-    Unknown = 0
+    Idle = 0
     VoiceTransmission = 1
     DataTransmission = 2
 
@@ -37,7 +41,7 @@ class SyncType(Enum):
 
 
 class DataType(Enum):
-    PiHeader = 0
+    PrivacyIndicatorHeader = 0
     VoiceLCHeader = 1
     TerminatorWithLC = 2
     CSBK = 3
@@ -47,7 +51,24 @@ class DataType(Enum):
     Rate12DataContinuation = 7
     Rate34DataContinuation = 8
     Idle = 9
-    UnifiedSingleBlockData = 10
+    Rate1DataContinuation = 10
+    UnifiedSingleBlockData = 11
+    VoiceBurstA = 12
+    VoiceBurstB = 13
+    VoiceBurstC = 14
+    VoiceBurstD = 15
+    VoiceBurstE = 16
+    VoiceBurstF = 17
+    IPSCSync = 18
+    UnknownDataType = 19
+
+
+class DataBlock:
+    def __init__(self):
+        self.is_confirmed = False
+        self.data_block_serial_number: int = 0
+        self.crc9: int = 0
+        self.ok: bool = False
 
 
 class BurstInfo:
@@ -61,9 +82,17 @@ class BurstInfo:
         self.is_data_or_control: bool = False
         self.is_valid: bool = False
         self.color_code: int = 0
-        self.data_type: int = 0
+        self.data_type: DataType = DataType.UnknownDataType
+        """
+        Parity for slot_type information
+        """
         self.fec_parity: int = 0
+        self.fec_parity_ok: bool = False
+        """
+        Parity for EMB metadata
+        """
         self.emb_parity: int = 0
+        self.emb_parity_ok: bool = False
         """
         0 =>    The embedded signalling carries information
                 associated to the same logical channel or the Null
@@ -102,15 +131,24 @@ class BurstInfo:
             return
         """Section 6.2 Data and control"""
         slot_type_bits = self.data_bits[98:108] + self.data_bits[156:166]
+        # Check FEC for SlotType
+        calculated_fec = encode_2087(chr(ba2int(slot_type_bits[0:8])))
+        self.fec_parity_ok = calculated_fec == ba2int(slot_type_bits)
+        # Parse SlotType data
         self.color_code = ba2int(slot_type_bits[:4])
-        self.data_type = ba2int(slot_type_bits[4:8])
+        self.data_type = DataType(ba2int(slot_type_bits[4:8]))
         self.fec_parity = ba2int(slot_type_bits[8:])
 
     def parse_emb(self):
-        if not self.has_emb:
+        if not self.has_emb or self.is_voice_superframe_start:
             return
         """Section 9.1.2 Embedded signalling (EMB) PDU"""
         emb_bits = self.data_bits[108:116] + self.data_bits[148:156]
+        # Check EMB Parity
+        calculated_parity = ENCODE_1676[ba2int(emb_bits[:7])]
+        # This does not work always
+        self.emb_parity_ok = calculated_parity == ba2int(emb_bits)
+        # Parse EMB data
         self.color_code = ba2int(emb_bits[:4])
         self.pre_emption_and_power_control_indicator = ba2int(emb_bits[4:5])
         self.link_control_start_stop_lcss = ba2int(emb_bits[6:8])
@@ -120,34 +158,299 @@ class BurstInfo:
         status: str = f"[{self.sync_type.name}] [CC {self.color_code}]"
         if self.is_data_or_control:
             status += (
-                f" [FEC {self.fec_parity.to_bytes(2, byteorder='big').hex()}]"
+                f" [FEC {self.fec_parity.to_bytes(2, byteorder='big').hex()}"
+                f"{' VERIFIED' if self.fec_parity_ok else ''}]"
                 f" [DATA TYPE {DataType(self.data_type)}]"
             )
         if self.has_emb:
             status += (
                 f" [PI {self.pre_emption_and_power_control_indicator}]"
                 f" [LCSS {self.link_control_start_stop_lcss}]"
-                f" [EMB Parity {self.emb_parity.to_bytes(2, byteorder='big').hex()}]"
+                f" [EMB Parity {self.emb_parity.to_bytes(2, byteorder='big').hex()}"
+                f"{' VERIFIED' if self.emb_parity_ok else ''}]"
             )
         if printout:
             print(status)
         return status
 
 
-class DataBlock:
-    def __init__(self):
-        self.is_confirmed = False
-        self.data_block_serial_number: int = 0
-        self.crc9: int = 0
-        self.ok: bool = False
-
-
 class Transmission:
     def __init__(self):
-        self.type = TransmissionType.Unknown
+        self.type = TransmissionType.Idle
         self.blocks_expected: int = 0
         self.blocks_received: int = 0
-        self.blocks: List[DataBlock] = list()
+        self.last_burst_data_type: DataType = DataType.UnknownDataType
+        self.confirmed: bool = False
+        self.finished: bool = False
+        self.blocks: List[KaitaiStruct] = list()
+        self.header: Optional[KaitaiStruct] = None
+
+    def new_transmission(self, newtype: TransmissionType):
+        self.type = newtype
+        self.blocks_expected = 0
+        self.blocks_received = 0
+        self.confirmed = False
+        self.finished = False
+        self.blocks = list()
+        self.header = None
+
+    def process_voice_header(self, voice_header: LinkControl):
+        self.new_transmission(TransmissionType.VoiceTransmission)
+        self.header = voice_header
+
+        # header + terminator
+        self.blocks_expected += 2
+        self.blocks_received += 1
+
+    def process_data_header(self, data_header: DmrDataHeader):
+        if not self.type == TransmissionType.DataTransmission:
+            self.new_transmission(TransmissionType.DataTransmission)
+        if self.blocks_expected == 0:
+            self.blocks_expected = data_header.data.blocks_to_follow
+        elif self.blocks_expected != (
+            self.blocks_received + data_header.data.blocks_to_follow
+        ):
+            print(
+                f"Header block count mismatch {self.blocks_expected}-{self.blocks_received} != {data_header.data.blocks_to_follow}"
+            )
+        self.header = data_header
+        self.blocks_received += 1
+        self.blocks.append(data_header)
+
+    def process_csbk(self, csbk: DmrCsbk):
+        if not self.type == TransmissionType.DataTransmission:
+            self.new_transmission(TransmissionType.DataTransmission)
+        if csbk.csbk_opcode == DmrCsbk.CsbkoTypes.preamble:
+            if self.blocks_expected == 0:
+                self.blocks_expected = csbk.preamble_csbk_blocks_to_follow + 1
+            self.blocks_received += 1
+        self.blocks.append(csbk)
+
+    def process_rate_12_confirmed(
+        self, data: Union[DmrData.Rate12Confirmed, DmrData.Rate12LastBlockConfirmed]
+    ):
+        self.blocks_received += 1
+        self.blocks.append(data)
+        if isinstance(data, DmrData.Rate12LastBlockConfirmed):
+            self.end_data_transmission()
+
+    def process_rate_12_unconfirmed(
+        self, data: Union[DmrData.Rate12Unconfirmed, DmrData.Rate12LastBlockUnconfirmed]
+    ):
+        self.blocks_received += 1
+        self.blocks.append(data)
+        if isinstance(data, DmrData.Rate12LastBlockUnconfirmed):
+            self.end_data_transmission()
+
+    def process_rate_34_confirmed(
+        self, data: Union[DmrData.Rate34Confirmed, DmrData.Rate34LastBlockConfirmed]
+    ):
+        self.blocks_received += 1
+        self.blocks.append(data)
+        if isinstance(data, DmrData.Rate34LastBlockConfirmed):
+            self.end_data_transmission()
+
+    def process_rate_34_unconfirmed(
+        self, data: Union[DmrData.Rate34Unconfirmed, DmrData.Rate34LastBlockUnconfirmed]
+    ):
+        self.blocks_received += 1
+        self.blocks.append(data)
+        if isinstance(data, DmrData.Rate34LastBlockUnconfirmed):
+            self.end_data_transmission()
+
+    def process_rate_1_confirmed(
+        self, data: Union[DmrData.Rate1Confirmed, DmrData.Rate1LastBlockConfirmed]
+    ):
+        self.blocks_received += 1
+        self.blocks.append(data)
+        if isinstance(data, DmrData.Rate1LastBlockConfirmed):
+            self.end_data_transmission()
+
+    def process_rate_1_unconfirmed(
+        self, data: Union[DmrData.Rate1Unconfirmed, DmrData.Rate1LastBlockUnconfirmed]
+    ):
+        self.blocks_received += 1
+        self.blocks.append(data)
+        if isinstance(data, DmrData.Rate1LastBlockUnconfirmed):
+            self.end_data_transmission()
+
+    def is_last_block(self, called_before_processing: bool = False):
+        return self.blocks_expected != 0 and (
+            self.blocks_expected
+            == self.blocks_received + (1 if called_before_processing else 0)
+        )
+
+    def end_voice_transmission(self):
+        if self.finished or self.type == TransmissionType.Idle:
+            return
+        print(f"[VOICE CALL END]")
+        if isinstance(self.header, LinkControl):
+            if isinstance(self.header.specific_data, LinkControl.GroupVoiceChannelUser):
+                print(
+                    f"[GROUP] [{self.header.specific_data.source_address} -> "
+                    f"{self.header.specific_data.group_address}]"
+                )
+            elif isinstance(
+                self.header.specific_data, LinkControl.UnitToUnitVoiceChannelUser
+            ):
+                print(
+                    f"[PRIVATE] [{self.header.specific_data.source_address} ->"
+                    f" {self.header.specific_data.target_address}]"
+                )
+
+        self.new_transmission(TransmissionType.Idle)
+
+    def end_data_transmission(self):
+        if self.finished or self.type == TransmissionType.Idle:
+            return
+        if not isinstance(self.header, DmrDataHeader):
+            print(f"Unexpected header type {self.header.__class__.__name__}")
+            return
+        print(
+            f"[DATA CALL END] [CONFIRMED: {self.confirmed}] "
+            f"[Packets {self.blocks_received}/{self.blocks_expected} ({len(self.blocks)})] "
+        )
+        user_data: bytes = bytes()
+        for packet in self.blocks:
+            if isinstance(packet, DmrCsbk):
+                print(
+                    f"[CSBK] [{packet.preamble_source_address} -> {packet.preamble_target_address}] [{packet.preamble_group_or_individual}]"
+                )
+            elif isinstance(packet, DmrDataHeader):
+                print(
+                    f"[DATA HDR] [{packet.data_packet_format}] [{packet.data.__class__.__name__}]"
+                )
+                print(_prettyprint(packet.data))
+            elif hasattr(packet, "user_data"):
+                print(f"[DATA] [{packet.__class__.__name__}] [{packet.user_data}]")
+                user_data += packet.user_data
+        if (
+            self.header.data.sap_identifier
+            == DmrDataHeader.SapIdentifiers.udp_ip_header_compression
+        ):
+            udp_header_with_data = DmrIpUdp.UdpIpv4CompressedHeader.from_bytes(
+                user_data
+            )
+            print(_prettyprint(udp_header_with_data))
+            print(
+                "UDP DATA: " + bytes(udp_header_with_data.user_data).decode("latin-1")
+            )
+        self.new_transmission(TransmissionType.Idle)
+
+    def fix_voice_burst_type(self, burst: BurstInfo) -> BurstInfo:
+        if not self.type == TransmissionType.VoiceTransmission:
+            return burst
+
+        if burst.is_voice_superframe_start:
+            burst.data_type = DataType.VoiceBurstA
+            self.last_burst_data_type = DataType.VoiceBurstA
+        elif (
+            burst.data_type == DataType.UnknownDataType
+            and self.last_burst_data_type
+            in [
+                DataType.VoiceBurstA,
+                DataType.VoiceBurstB,
+                DataType.VoiceBurstC,
+                DataType.VoiceBurstD,
+                DataType.VoiceBurstE,
+                DataType.VoiceBurstF,
+            ]
+        ):
+            burst.data_type = DataType(self.last_burst_data_type.value + 1)
+            self.last_burst_data_type = burst.data_type
+
+        return burst
+
+    def process_packet(self, burst: BurstInfo):
+        burst = self.fix_voice_burst_type(burst)
+        print(burst.data_type)
+        lc_info_bits = decode_complete_lc(burst.data_bits[:98] + burst.data_bits[166:])
+        if burst.data_type == DataType.VoiceLCHeader:
+            self.process_voice_header(LinkControl.from_bytes(lc_info_bits))
+        elif burst.data_type == DataType.DataHeader:
+            self.process_data_header(DmrDataHeader.from_bytes(lc_info_bits))
+        elif burst.data_type == DataType.CSBK:
+            self.process_csbk(DmrCsbk.from_bytes(lc_info_bits))
+        elif burst.data_type == DataType.TerminatorWithLC:
+            self.blocks_received += 1
+            self.end_voice_transmission()
+        elif burst.data_type in [
+            DataType.VoiceBurstA,
+            DataType.VoiceBurstB,
+            DataType.VoiceBurstC,
+            DataType.VoiceBurstD,
+            DataType.VoiceBurstE,
+            DataType.VoiceBurstF,
+        ]:
+            if burst.data_type == DataType.VoiceBurstA:
+                self.blocks_expected += 6
+            self.blocks_received += 1
+        elif burst.data_type == DataType.Rate12DataContinuation:
+            if self.confirmed:
+                if self.is_last_block(True):
+                    self.process_rate_12_confirmed(
+                        DmrData.Rate12LastBlockConfirmed.from_bytes(lc_info_bits)
+                    )
+                else:
+                    self.process_rate_12_confirmed(
+                        DmrData.Rate12Confirmed.from_bytes(lc_info_bits)
+                    )
+            else:
+                if self.is_last_block(True):
+                    self.process_rate_12_unconfirmed(
+                        DmrData.Rate12LastBlockUnconfirmed.from_bytes(lc_info_bits)
+                    )
+                else:
+                    self.process_rate_12_unconfirmed(
+                        DmrData.Rate12Unconfirmed.from_bytes(lc_info_bits)
+                    )
+        elif burst.data_type == DataType.Rate34DataContinuation:
+            if self.confirmed:
+                if self.is_last_block(True):
+                    self.process_rate_34_confirmed(
+                        DmrData.Rate34LastBlockConfirmed.from_bytes(lc_info_bits)
+                    )
+                else:
+                    self.process_rate_34_confirmed(
+                        DmrData.Rate34Confirmed.from_bytes(lc_info_bits)
+                    )
+            else:
+                if self.is_last_block(True):
+                    self.process_rate_34_unconfirmed(
+                        DmrData.Rate34LastBlockUnconfirmed.from_bytes(lc_info_bits)
+                    )
+                else:
+                    self.process_rate_34_unconfirmed(
+                        DmrData.Rate34Unconfirmed.from_bytes(lc_info_bits)
+                    )
+        elif burst.data_type == DataType.Rate1DataContinuation:
+            if self.confirmed:
+                if self.is_last_block(True):
+                    self.process_rate_1_confirmed(
+                        DmrData.Rate1LastBlockConfirmed.from_bytes(lc_info_bits)
+                    )
+                else:
+                    self.process_rate_1_confirmed(
+                        DmrData.Rate1Confirmed.from_bytes(lc_info_bits)
+                    )
+            else:
+                if self.is_last_block(True):
+                    self.process_rate_1_unconfirmed(
+                        DmrData.Rate1LastBlockUnconfirmed.from_bytes(lc_info_bits)
+                    )
+                else:
+                    self.process_rate_1_unconfirmed(
+                        DmrData.Rate1Unconfirmed.from_bytes(lc_info_bits)
+                    )
+
+        print(
+            f"[Received/Expected (Total)] => [{self.blocks_received}/{self.blocks_expected} ({len(self.blocks)})]"
+        )
+        if self.is_last_block():
+            if self.type == TransmissionType.DataTransmission:
+                self.end_data_transmission()
+            elif self.type == TransmissionType.VoiceTransmission:
+                self.end_voice_transmission()
 
 
 class Timeslot:
@@ -160,9 +463,17 @@ class Timeslot:
 
     def process_burst(self, dmrdata: BurstInfo):
         self.last_packet_received = time.time()
+        if dmrdata.color_code != 0:
+            self.color_code = dmrdata.color_code
+        self.transmission.process_packet(dmrdata)
 
     def debug(self, printout: bool = True) -> str:
-        status: str = f"[TS {self.timeslot}] [LAST PACKET {datetime.fromtimestamp(self.last_packet_received)}]"
+        status: str = (
+            f"[TS {self.timeslot}] "
+            f"[STATUS {self.transmission.type.name}] "
+            f"[LAST PACKET {datetime.fromtimestamp(self.last_packet_received)}] "
+            f"[COLOR CODE {self.color_code}]"
+        )
         if printout:
             print(status)
         return status
@@ -170,7 +481,6 @@ class Timeslot:
 
 class Terminal:
     def __init__(self, dmrid: int, callsign: str = ""):
-        self.status: TerminalStatus = TerminalStatus.Idle
         self.id: int = dmrid
         self.call: str = callsign
         self.timeslots: Dict[int, Timeslot] = {
@@ -185,11 +495,15 @@ class Terminal:
         burst = BurstInfo(data=dmrdata)
         burst.debug()
         self.timeslots[timeslot].process_burst(burst)
+        self.timeslots[timeslot].debug()
+
+    def get_status(self) -> TransmissionType:
+        for tsdata in self.timeslots.values():
+            return tsdata.transmission.type
+        return TransmissionType.Idle
 
     def debug(self, printout: bool = True) -> str:
-        status: str = (
-            f"[STATUS: {self.status.name}] [ID: {self.id}] [CALL: {self.call}]\n"
-        )
+        status: str = f"[ID: {self.id}] [CALL: {self.call}]\n"
         for ts in self.timeslots.values():
             status += "\t" + ts.debug(False) + "\n"
 
