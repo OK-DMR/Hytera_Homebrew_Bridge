@@ -4,11 +4,22 @@
 
 local class = require("class")
 require("kaitaistruct")
+local enum = require("enum")
 local str_decode = require("string_decode")
 
 -- 
 -- MMDVM protocol structure (MMDVMHost/HBlink3/DMRGateway) based on reversing effort
 Mmdvm = class.class(KaitaiStruct)
+
+Mmdvm.Timeslots = enum.Enum {
+  timeslot_1 = 0,
+  timeslot_2 = 1,
+}
+
+Mmdvm.CallTypes = enum.Enum {
+  group_call = 0,
+  private_call = 1,
+}
 
 function Mmdvm:_init(io, parent, root)
   KaitaiStruct._init(self, io)
@@ -225,8 +236,8 @@ function Mmdvm.TypeDmrData:_read()
   self.target_id = self._io:read_bits_int_be(24)
   self._io:align_to_byte()
   self.repeater_id = self._io:read_u4be()
-  self.slot_no = self._io:read_bits_int_be(1)
-  self.call_type = self._io:read_bits_int_be(1)
+  self.slot_no = Mmdvm.Timeslots(self._io:read_bits_int_be(1))
+  self.call_type = Mmdvm.CallTypes(self._io:read_bits_int_be(1))
   self.frame_type = self._io:read_bits_int_be(2)
   self.data_type = self._io:read_bits_int_be(4)
   self._io:align_to_byte()

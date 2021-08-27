@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from bitarray import bitarray
+from dmr_utils3.bptc import decode_full_lc
 from dmr_utils3.decode import to_bits, to_bytes
 
 from hytera_homebrew_bridge.kaitai.dmr_csbk import DmrCsbk
@@ -39,10 +40,6 @@ def decode_complete_lc(_data):
             _data[61],
             _data[46],
             _data[31],
-        ]
-    )
-    binlc.extend(
-        [
             _data[152],
             _data[137],
             _data[122],
@@ -54,10 +51,6 @@ def decode_complete_lc(_data):
             _data[32],
             _data[17],
             _data[2],
-        ]
-    )
-    binlc.extend(
-        [
             _data[123],
             _data[108],
             _data[93],
@@ -69,10 +62,6 @@ def decode_complete_lc(_data):
             _data[3],
             _data[184],
             _data[169],
-        ]
-    )
-    binlc.extend(
-        [
             _data[94],
             _data[79],
             _data[64],
@@ -84,10 +73,6 @@ def decode_complete_lc(_data):
             _data[170],
             _data[155],
             _data[140],
-        ]
-    )
-    binlc.extend(
-        [
             _data[65],
             _data[50],
             _data[35],
@@ -99,10 +84,6 @@ def decode_complete_lc(_data):
             _data[141],
             _data[126],
             _data[111],
-        ]
-    )
-    binlc.extend(
-        [
             _data[36],
             _data[21],
             _data[6],
@@ -114,10 +95,6 @@ def decode_complete_lc(_data):
             _data[112],
             _data[97],
             _data[82],
-        ]
-    )
-    binlc.extend(
-        [
             _data[7],
             _data[188],
             _data[173],
@@ -127,10 +104,6 @@ def decode_complete_lc(_data):
             _data[113],
             _data[98],
             _data[83],
-        ]
-    )
-    binlc.extend(
-        [
             _data[68],
             _data[53],
             _data[174],
@@ -143,10 +116,6 @@ def decode_complete_lc(_data):
             _data[69],
             _data[54],
             _data[39],
-        ]
-    )
-    binlc.extend(
-        [
             _data[24],
             _data[145],
             _data[130],

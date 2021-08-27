@@ -3,6 +3,13 @@ meta:
   endian: be
 doc: |
   MMDVM protocol structure (MMDVMHost/HBlink3/DMRGateway) based on reversing effort
+enums:
+  timeslots:
+    0: "timeslot_1"
+    1: "timeslot_2"
+  call_types:
+    0: "group_call"
+    1: "private_call"
 types:
   type_unknown:
     seq:
@@ -30,8 +37,10 @@ types:
         type: u4
       - id: slot_no
         type: b1
+        enum: timeslots
       - id: call_type
         type: b1
+        enum: call_types
       - id: frame_type
         type: b2
       - id: data_type
