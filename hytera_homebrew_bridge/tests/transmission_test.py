@@ -12,7 +12,6 @@ from kamene.utils import PcapReader
 
 from hytera_homebrew_bridge.dmrlib.packet_utils import try_parse_packet
 from hytera_homebrew_bridge.dmrlib.transmission_watcher import TransmissionWatcher
-from hytera_homebrew_bridge.tests.prettyprint import _array_prettyprint
 
 
 def arguments() -> ArgumentParser:
@@ -58,6 +57,7 @@ def feed_from_pcapng(filepath: str, _watcher: TransmissionWatcher):
                 )
                 if packetdata:
                     _watcher.process_packet(packetdata)
+    _watcher.end_all_transmissions()
 
 
 if __name__ == "__main__":

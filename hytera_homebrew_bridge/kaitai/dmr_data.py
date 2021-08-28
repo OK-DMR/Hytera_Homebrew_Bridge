@@ -163,7 +163,7 @@ class DmrData(KaitaiStruct):
             self._read()
 
         def _read(self):
-            self.user_data = self._io.read_bytes(18)
+            self.user_data = self._io.read_bytes_full()
 
     class Rate12LastBlockUnconfirmed(KaitaiStruct):
         """9.2.8 Rate ½ coded Last Data block (R_1_2_LDATA) PDU, Table 9.15B: R_1_2_LDATA PDU content for confirmed data"""

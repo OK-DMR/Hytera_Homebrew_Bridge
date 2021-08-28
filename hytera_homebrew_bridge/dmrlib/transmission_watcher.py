@@ -75,3 +75,8 @@ class TransmissionWatcher:
             print(
                 f"TransmissionWatcher::process_packet unknown {parsed.__class__.__name__}"
             )
+
+    def end_all_transmissions(self):
+        for terminal in self.terminals.values():
+            for timeslot in terminal.timeslots.values():
+                timeslot.transmission.end_transmissions()

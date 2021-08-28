@@ -8,6 +8,7 @@ from typing import Dict
 from bitarray import bitarray
 from kaitaistruct import KaitaiStruct
 
+from hytera_homebrew_bridge.dmrlib.transmission_watcher import TransmissionWatcher
 from hytera_homebrew_bridge.kaitai.ip_site_connect_heartbeat import (
     IpSiteConnectHeartbeat,
 )
@@ -69,6 +70,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
         mmdvm_incoming: Queue,
         mmdvm_outgoing: Queue,
     ):
+        self.transmission_watcher: TransmissionWatcher = TransmissionWatcher()
         self.settings = settings
         self.queue_hytera_to_translate = hytera_incoming
         self.queue_hytera_output = hytera_outgoing
@@ -136,6 +138,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                 self.log_error("HYTER->HHB unhandled exception")
                 self.log_exception(e)
                 continue
+
+            self.transmission_watcher.process_packet(packet)
 
             if isinstance(packet, IpSiteConnectHeartbeat):
                 self.log_debug("HYTER->HHB Received IPSC Heartbeat, not translating")
@@ -327,6 +331,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                 self.log_exception(e)
                 continue
 
+            self.transmission_watcher.process_packet(packet)
+
             if not isinstance(packet.command_data, Mmdvm.TypeDmrData):
                 self.log_info(
                     f"MMDVM->HHB Received packet not DMRD, not translating {packet.command_data.__class__.__name__}"
@@ -341,7 +347,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     proto="MMDVM->HHB",
                     from_ip_port=(),
                     to_ip_port=(),
-                    packet_data=packet.command_data,
+                    packet_data=packet,
                     use_color=True,
                     dmrdata_hash=get_dmr_data_hash(packet.command_data.dmr_data),
                 )

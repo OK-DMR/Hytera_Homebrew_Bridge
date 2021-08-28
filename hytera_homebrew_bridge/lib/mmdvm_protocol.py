@@ -66,7 +66,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                         from_ip_port=(),
                         to_ip_port=(),
                         use_color=True,
-                        packet_data=mmdvm.command_data,
+                        packet_data=mmdvm,
                         dmrdata_hash=get_dmr_data_hash(mmdvm.command_data.dmr_data)
                         if isinstance(mmdvm.command_data, Mmdvm.TypeDmrData)
                         else "",

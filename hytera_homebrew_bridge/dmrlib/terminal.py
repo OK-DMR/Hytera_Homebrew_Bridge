@@ -13,6 +13,7 @@ from kaitaistruct import KaitaiStruct
 from kamene.layers.inet import IP
 
 from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
+from hytera_homebrew_bridge.dmrlib.trellis import trellis_34_decode
 from hytera_homebrew_bridge.kaitai.dmr_csbk import DmrCsbk
 from hytera_homebrew_bridge.kaitai.dmr_data import DmrData
 from hytera_homebrew_bridge.kaitai.dmr_data_header import DmrDataHeader
@@ -216,9 +217,11 @@ class Transmission:
                 print(
                     f"Header block count mismatch {self.blocks_expected}-{self.blocks_received} != {data_header.data.blocks_to_follow}"
                 )
+                print(_prettyprint(data_header.data))
         self.header = data_header
         self.blocks_received += 1
         self.blocks.append(data_header)
+        self.confirmed = data_header.data.response_requested
 
     def process_csbk(self, csbk: DmrCsbk):
         if not self.type == TransmissionType.DataTransmission:
@@ -226,7 +229,11 @@ class Transmission:
         if csbk.csbk_opcode == DmrCsbk.CsbkoTypes.preamble:
             if self.blocks_expected == 0:
                 self.blocks_expected = csbk.preamble_csbk_blocks_to_follow + 1
-            self.blocks_received += 1
+            elif csbk.preamble_csbk_blocks_to_follow:
+                self.blocks_received = (
+                    self.blocks_expected - csbk.preamble_csbk_blocks_to_follow
+                )
+        self.blocks_received += 1
         self.blocks.append(csbk)
         print(_prettyprint(csbk))
 
@@ -346,12 +353,12 @@ class Transmission:
             == DmrDataHeader.SapIdentifiers.ip_based_packet_data
         ):
             ip = IP(user_data)
-            print(ip)
+            ip.display()
         self.new_transmission(TransmissionType.Idle)
-        exit()
 
     def fix_voice_burst_type(self, burst: BurstInfo) -> BurstInfo:
         if not self.type == TransmissionType.VoiceTransmission:
+            self.last_burst_data_type = burst.data_type
             return burst
 
         if burst.is_voice_superframe_start or (
@@ -378,6 +385,7 @@ class Transmission:
 
     def process_packet(self, burst: BurstInfo):
         burst = self.fix_voice_burst_type(burst)
+        print(burst.data_type)
 
         lc_info_bits = decode_complete_lc(burst.data_bits[:98] + burst.data_bits[166:])
         if burst.data_type == DataType.VoiceLCHeader:
@@ -421,6 +429,7 @@ class Transmission:
                         DmrData.Rate12Unconfirmed.from_bytes(lc_info_bits)
                     )
         elif burst.data_type == DataType.Rate34DataContinuation:
+            lc_info_bits = trellis_34_decode(burst.info_bits)
             if self.confirmed:
                 if self.is_last_block(True):
                     self.process_rate_34_confirmed(
@@ -460,10 +469,13 @@ class Transmission:
                     )
 
         if self.is_last_block():
-            if self.type == TransmissionType.DataTransmission:
-                self.end_data_transmission()
-            elif self.type == TransmissionType.VoiceTransmission:
-                self.end_voice_transmission()
+            self.end_transmissions()
+
+    def end_transmissions(self):
+        if self.type == TransmissionType.DataTransmission:
+            self.end_data_transmission()
+        elif self.type == TransmissionType.VoiceTransmission:
+            self.end_voice_transmission()
 
 
 class Timeslot:
@@ -507,7 +519,6 @@ class Terminal:
     def process_dmr_data(self, dmrdata: bytes, timeslot: int):
         burst = BurstInfo(data=dmrdata)
         self.timeslots[timeslot].process_burst(burst)
-        self.debug()
 
     def get_status(self) -> TransmissionType:
         for tsdata in self.timeslots.values():
