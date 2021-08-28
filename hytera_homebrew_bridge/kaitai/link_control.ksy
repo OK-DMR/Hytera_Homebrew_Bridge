@@ -26,6 +26,15 @@ enums:
     0b01: coding_8bit
     0b10: unicode_utf8
     0b11: unicode_utf16
+  feature_set_ids:
+    0b00000000: standardized_ts_102_361_2
+    0b00000001: reserved1
+    0b00000010: reserved2
+    0b00000011: reserved3
+    0b00000100: mfid_start
+    0b01111111: mfid_end
+    0b10000000: mfid_reserved_start
+    0b11111111: mfid_reserved_end
 types:
   group_voice_channel_user:
     seq:
@@ -77,6 +86,10 @@ seq:
   - id: full_link_control_opcode
     type: b6
     enum: flcos
+  - id: feature_set_id
+    type: b8
+    doc: fid
+    enum: feature_set_ids
   - id: specific_data
     type:
       switch-on: full_link_control_opcode

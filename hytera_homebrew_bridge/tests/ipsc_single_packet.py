@@ -2,8 +2,13 @@
 import os
 import sys
 from binascii import b2a_hex as ahex, hexlify
+from turtle import Terminator
 
+from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
+from hytera_homebrew_bridge.dmrlib.terminal import BurstInfo, DataType
+from hytera_homebrew_bridge.kaitai.link_control import LinkControl
 from hytera_homebrew_bridge.lib.packet_format import format_ipsc_data
+from hytera_homebrew_bridge.lib.utils import byteswap_bytes
 
 try:
     import hytera_homebrew_bridge
@@ -13,7 +18,7 @@ except ImportError:
     )
 
 from dmr_utils3.decode import voice_head_term, voice_sync
-from hytera_homebrew_bridge.tests.prettyprint import prettyprint
+from hytera_homebrew_bridge.tests.prettyprint import prettyprint, _prettyprint
 from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
 
 if __name__ == "__main__":
@@ -41,28 +46,8 @@ if __name__ == "__main__":
 
     prettyprint(packet)
 
-    original = bytearray(packet.ipsc_payload)
-    # swap bytes
-    original[0::2], original[1::2] = original[1::2], original[0::2]
-
-    print(hexlify(original))
-
-    if (
-        packet.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header
-        or packet.slot_type
-        == IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
-    ):
-        lc = voice_head_term(bytes(original))
-        print(lc)
-        print(
-            "LC: OPT-{} SRC-{} DST-{}, SLOT TYPE: CC-{} DTYPE-{}".format(
-                ahex(lc["LC"][0:3]),
-                ahex(lc["LC"][3:6]),
-                ahex(lc["LC"][6:9]),
-                ahex(lc["CC"]),
-                ahex(lc["DTYPE"]),
-            )
-        )
-    elif packet.slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_sync:
-        lc = voice_sync(bytes(original))
-        print(lc)
+    burst = BurstInfo(data=byteswap_bytes(packet.ipsc_payload))
+    burst.debug()
+    if burst.data_type == DataType.TerminatorWithLC:
+        info_bytes = decode_complete_lc(burst.info_bits)
+        print(_prettyprint(LinkControl.from_bytes(info_bytes)))

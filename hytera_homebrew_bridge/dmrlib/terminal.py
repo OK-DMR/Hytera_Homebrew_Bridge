@@ -10,6 +10,7 @@ from dmr_utils3.decode import to_bits
 from dmr_utils3.golay import encode_2087
 from dmr_utils3.qr import ENCODE_1676
 from kaitaistruct import KaitaiStruct
+from kamene.layers.inet import IP
 
 from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
 from hytera_homebrew_bridge.kaitai.dmr_csbk import DmrCsbk
@@ -75,6 +76,7 @@ class BurstInfo:
     def __init__(self, data: bytes):
         self.data_bits: bitarray = to_bits(data)
         self.payload_bits: bitarray = self.data_bits[:108] + self.data_bits[156:]
+        self.info_bits: bitarray = self.data_bits[:98] + self.data_bits[166:]
         self.sync_or_emb: bitarray = self.data_bits[108:156]
         self.sync_type: SyncType = SyncType.Reserved
         self.has_emb: bool = False
@@ -205,14 +207,15 @@ class Transmission:
     def process_data_header(self, data_header: DmrDataHeader):
         if not self.type == TransmissionType.DataTransmission:
             self.new_transmission(TransmissionType.DataTransmission)
-        if self.blocks_expected == 0:
-            self.blocks_expected = data_header.data.blocks_to_follow
-        elif self.blocks_expected != (
-            self.blocks_received + data_header.data.blocks_to_follow
-        ):
-            print(
-                f"Header block count mismatch {self.blocks_expected}-{self.blocks_received} != {data_header.data.blocks_to_follow}"
-            )
+        if hasattr(data_header.data, "blocks_to_follow"):
+            if self.blocks_expected == 0:
+                self.blocks_expected = data_header.data.blocks_to_follow
+            elif self.blocks_expected != (
+                self.blocks_received + data_header.data.blocks_to_follow
+            ):
+                print(
+                    f"Header block count mismatch {self.blocks_expected}-{self.blocks_received} != {data_header.data.blocks_to_follow}"
+                )
         self.header = data_header
         self.blocks_received += 1
         self.blocks.append(data_header)
@@ -225,6 +228,7 @@ class Transmission:
                 self.blocks_expected = csbk.preamble_csbk_blocks_to_follow + 1
             self.blocks_received += 1
         self.blocks.append(csbk)
+        print(_prettyprint(csbk))
 
     def process_rate_12_confirmed(
         self, data: Union[DmrData.Rate12Confirmed, DmrData.Rate12LastBlockConfirmed]
@@ -316,6 +320,7 @@ class Transmission:
                 print(
                     f"[CSBK] [{packet.preamble_source_address} -> {packet.preamble_target_address}] [{packet.preamble_group_or_individual}]"
                 )
+                print(_prettyprint(packet))
             elif isinstance(packet, DmrDataHeader):
                 print(
                     f"[DATA HDR] [{packet.data_packet_format}] [{packet.data.__class__.__name__}]"
@@ -323,6 +328,7 @@ class Transmission:
                 print(_prettyprint(packet.data))
             elif hasattr(packet, "user_data"):
                 print(f"[DATA] [{packet.__class__.__name__}] [{packet.user_data}]")
+                print(_prettyprint(packet))
                 user_data += packet.user_data
         if (
             self.header.data.sap_identifier
@@ -335,13 +341,23 @@ class Transmission:
             print(
                 "UDP DATA: " + bytes(udp_header_with_data.user_data).decode("latin-1")
             )
+        elif (
+            self.header.data.sap_identifier
+            == DmrDataHeader.SapIdentifiers.ip_based_packet_data
+        ):
+            ip = IP(user_data)
+            print(ip)
         self.new_transmission(TransmissionType.Idle)
+        exit()
 
     def fix_voice_burst_type(self, burst: BurstInfo) -> BurstInfo:
         if not self.type == TransmissionType.VoiceTransmission:
             return burst
 
-        if burst.is_voice_superframe_start:
+        if burst.is_voice_superframe_start or (
+            self.last_burst_data_type == DataType.VoiceBurstF
+            and burst.data_type == DataType.UnknownDataType
+        ):
             burst.data_type = DataType.VoiceBurstA
             self.last_burst_data_type = DataType.VoiceBurstA
         elif (
@@ -353,7 +369,6 @@ class Transmission:
                 DataType.VoiceBurstC,
                 DataType.VoiceBurstD,
                 DataType.VoiceBurstE,
-                DataType.VoiceBurstF,
             ]
         ):
             burst.data_type = DataType(self.last_burst_data_type.value + 1)
@@ -363,7 +378,7 @@ class Transmission:
 
     def process_packet(self, burst: BurstInfo):
         burst = self.fix_voice_burst_type(burst)
-        print(burst.data_type)
+
         lc_info_bits = decode_complete_lc(burst.data_bits[:98] + burst.data_bits[166:])
         if burst.data_type == DataType.VoiceLCHeader:
             self.process_voice_header(LinkControl.from_bytes(lc_info_bits))
@@ -374,6 +389,7 @@ class Transmission:
         elif burst.data_type == DataType.TerminatorWithLC:
             self.blocks_received += 1
             self.end_voice_transmission()
+            print(_prettyprint(LinkControl.from_bytes(lc_info_bits)))
         elif burst.data_type in [
             DataType.VoiceBurstA,
             DataType.VoiceBurstB,
@@ -443,9 +459,6 @@ class Transmission:
                         DmrData.Rate1Unconfirmed.from_bytes(lc_info_bits)
                     )
 
-        print(
-            f"[Received/Expected (Total)] => [{self.blocks_received}/{self.blocks_expected} ({len(self.blocks)})]"
-        )
         if self.is_last_block():
             if self.type == TransmissionType.DataTransmission:
                 self.end_data_transmission()
@@ -471,7 +484,7 @@ class Timeslot:
         status: str = (
             f"[TS {self.timeslot}] "
             f"[STATUS {self.transmission.type.name}] "
-            f"[LAST PACKET {datetime.fromtimestamp(self.last_packet_received)}] "
+            f"[LAST PACKET {datetime.fromtimestamp(self.last_packet_received)} {self.transmission.last_burst_data_type.name}] "
             f"[COLOR CODE {self.color_code}]"
         )
         if printout:
@@ -493,9 +506,8 @@ class Terminal:
 
     def process_dmr_data(self, dmrdata: bytes, timeslot: int):
         burst = BurstInfo(data=dmrdata)
-        burst.debug()
         self.timeslots[timeslot].process_burst(burst)
-        self.timeslots[timeslot].debug()
+        self.debug()
 
     def get_status(self) -> TransmissionType:
         for tsdata in self.timeslots.values():

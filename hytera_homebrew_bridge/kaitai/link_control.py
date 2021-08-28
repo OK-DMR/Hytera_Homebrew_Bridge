@@ -41,6 +41,16 @@ class LinkControl(KaitaiStruct):
         unicode_utf8 = 2
         unicode_utf16 = 3
 
+    class FeatureSetIds(Enum):
+        standardized_ts_102_361_2 = 0
+        reserved1 = 1
+        reserved2 = 2
+        reserved3 = 3
+        mfid_start = 4
+        mfid_end = 127
+        mfid_reserved_start = 128
+        mfid_reserved_end = 255
+
     def __init__(self, _io, _parent=None, _root=None):
         self._io = _io
         self._parent = _parent
@@ -52,6 +62,9 @@ class LinkControl(KaitaiStruct):
         self.reserved = self._io.read_bits_int_be(1) != 0
         self.full_link_control_opcode = KaitaiStream.resolve_enum(
             LinkControl.Flcos, self._io.read_bits_int_be(6)
+        )
+        self.feature_set_id = KaitaiStream.resolve_enum(
+            LinkControl.FeatureSetIds, self._io.read_bits_int_be(8)
         )
         self._io.align_to_byte()
         _on = self.full_link_control_opcode

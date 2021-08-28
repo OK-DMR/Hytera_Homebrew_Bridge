@@ -5,9 +5,16 @@ from kaitaistruct import KaitaiStruct
 
 from hytera_homebrew_bridge.dmrlib.mmdvm_utils import get_mmdvm_timeslot
 from hytera_homebrew_bridge.dmrlib.terminal import Terminal
+from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
+    HyteraRadioNetworkProtocol,
+)
+from hytera_homebrew_bridge.kaitai.ip_site_connect_heartbeat import (
+    IpSiteConnectHeartbeat,
+)
 from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
 from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes
+from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
 
 
 class TransmissionWatcher:
@@ -25,10 +32,11 @@ class TransmissionWatcher:
     def process_mmdvm(self, parsed: Mmdvm):
         terminal_id: Optional[int] = None
 
-        if not hasattr(parsed, "command_data") or isinstance(
-            parsed.command_data, Mmdvm.TypeUnknown
-        ):
-            print(f"MMDVM unknown {parsed.__class__.__name__}")
+        if not hasattr(parsed, "command_data"):
+            print(f"MMDVM unknown packet")
+            print(_prettyprint(parsed))
+        elif isinstance(parsed.command_data, Mmdvm.TypeUnknown):
+            print(f"MMDVM unknown command {parsed.command_data.__class__.__name__}")
         elif isinstance(parsed.command_data, Mmdvm.TypeDmrData):
             terminal_id = parsed.command_data.source_id
             timeslot = get_mmdvm_timeslot(parsed.command_data)
@@ -56,13 +64,17 @@ class TransmissionWatcher:
         payload_swap = byteswap_bytes(parsed.ipsc_payload)
         self.ensure_terminal(terminal_id)
         self.terminals[terminal_id].process_dmr_data(payload_swap, timeslot=timeslot)
-        self.terminals[terminal_id].debug()
 
     def process_packet(self, parsed: KaitaiStruct):
         if isinstance(parsed, Mmdvm):
             self.process_mmdvm(parsed)
         elif isinstance(parsed, IpSiteConnectProtocol):
             self.process_hytera_ipsc(parsed)
+        elif isinstance(parsed, IpSiteConnectHeartbeat):
+            # ignore these
+            pass
+        elif isinstance(parsed, HyteraRadioNetworkProtocol):
+            print("HRNP", _prettyprint(parsed))
         else:
             print(
                 f"TransmissionWatcher::process_packet unknown {parsed.__class__.__name__}"

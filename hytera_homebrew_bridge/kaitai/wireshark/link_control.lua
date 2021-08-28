@@ -38,6 +38,17 @@ LinkControl.TalkerDataFormats = enum.Enum {
   unicode_utf16 = 3,
 }
 
+LinkControl.FeatureSetIds = enum.Enum {
+  standardized_ts_102_361_2 = 0,
+  reserved1 = 1,
+  reserved2 = 2,
+  reserved3 = 3,
+  mfid_start = 4,
+  mfid_end = 127,
+  mfid_reserved_start = 128,
+  mfid_reserved_end = 255,
+}
+
 function LinkControl:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
@@ -49,6 +60,7 @@ function LinkControl:_read()
   self.protect_flag = self._io:read_bits_int_be(1)
   self.reserved = self._io:read_bits_int_be(1)
   self.full_link_control_opcode = LinkControl.Flcos(self._io:read_bits_int_be(6))
+  self.feature_set_id = LinkControl.FeatureSetIds(self._io:read_bits_int_be(8))
   self._io:align_to_byte()
   local _on = self.full_link_control_opcode
   if _on == LinkControl.Flcos.talker_alias_header then
@@ -68,6 +80,8 @@ function LinkControl:_read()
   end
 end
 
+-- 
+-- fid.
 
 LinkControl.GpsInfoLcPdu = class.class(KaitaiStruct)
 

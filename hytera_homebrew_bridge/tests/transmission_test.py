@@ -54,6 +54,8 @@ def feed_from_pcapng(filepath: str, _watcher: TransmissionWatcher):
             if isinstance(block, EnhancedPacket) and block.interface.link_type == 1:
                 eth = Ether(block.packet_data)
                 udp = eth.getlayer(UDP)
+                if not udp:
+                    continue
                 packetdata: Optional[KaitaiStruct] = try_parse_packet(
                     udp.getfieldval("load")
                 )
