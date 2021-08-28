@@ -25,10 +25,6 @@ class TransmissionWatcher:
         if dmrid not in self.terminals:
             self.terminals[dmrid] = Terminal(dmrid)
 
-    def update_terminal(self, dmrid: int, terminal: Terminal):
-        print(terminal.debug())
-        self.terminals[dmrid] = terminal
-
     def process_mmdvm(self, parsed: Mmdvm):
         terminal_id: Optional[int] = None
 

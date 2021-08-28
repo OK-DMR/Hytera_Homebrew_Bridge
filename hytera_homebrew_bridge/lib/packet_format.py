@@ -5,9 +5,16 @@ from binascii import hexlify
 
 from dmr_utils3.decode import voice_head_term
 
+from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
+    HyteraRadioNetworkProtocol,
+)
+from hytera_homebrew_bridge.kaitai.ip_site_connect_heartbeat import (
+    IpSiteConnectHeartbeat,
+)
 from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
 from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes
+from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
 
 mmdvm_frame_types: dict = {0: "VOICE", 1: "VOICE SYNC", 2: "DATA SYNC", 3: "UNUSED"}
 
@@ -191,13 +198,48 @@ def common_log_format(
     to_ip_port: tuple,
     packet_data: any,
     use_color: bool = False,
+    color_default: int = 7,
+    color_ipsc: int = 11,
+    color_mmdvm: int = 14,
 ) -> str:
-    if isinstance(packet_data, IpSiteConnectProtocol):
+    packet_data_formatted: str = ""
+    color: int = color_default
+    prefix_mmdvm: str = "MMDVM"
+    prefix_ipsc: str = "IPSC"
+    prefix_hrnp: str = "HRNP"
+    if not packet_data:
+        return ""
+    elif isinstance(packet_data, IpSiteConnectProtocol):
         packet_data_formatted = format_ipsc_data(packet_data)
-        color = 110
+        color = color_ipsc
+        proto = prefix_ipsc
+    elif isinstance(packet_data, IpSiteConnectHeartbeat):
+        packet_data_formatted = "[ IPSC Heartbeat / KeepAlive ]"
+        color = color_default
+        proto = prefix_ipsc
+    elif isinstance(packet_data, HyteraRadioNetworkProtocol):
+        packet_data_formatted = _prettyprint(packet_data).__str__()
+        color = color_ipsc
+        proto = prefix_hrnp
+    elif isinstance(packet_data, Mmdvm):
+        proto = prefix_mmdvm
+        if hasattr(packet_data, "command_data"):
+            if isinstance(packet_data.command_data, Mmdvm.TypeDmrData):
+                packet_data_formatted = format_mmdvm_data(packet_data.command_data)
+                color = color_mmdvm
+            else:
+                packet_data_formatted = (
+                    f"[ {packet_data.command_data.__class__.__name__} ]"
+                )
+                color = color_default
+
+        if not packet_data_formatted:
+            packet_data_formatted += f"[ {packet_data.command_prefix} ]"
+            color = color_default
     elif isinstance(packet_data, Mmdvm.TypeDmrData):
+        proto = prefix_mmdvm
         packet_data_formatted = format_mmdvm_data(packet_data)
-        color = 120
+        color = color_mmdvm
     else:
         packet_data_formatted = (
             f"Unsupported common_log_format for data {type(packet_data).__name__}"
@@ -211,5 +253,5 @@ def common_log_format(
     else:
         ip_from_to = ""
 
-    log: str = f"{proto} {dmrdata_hash} " + ip_from_to + packet_data_formatted
+    log: str = f"[ {proto: <5} ] {dmrdata_hash} " + ip_from_to + packet_data_formatted
     return _terminal_col256(log, color) if use_color else log

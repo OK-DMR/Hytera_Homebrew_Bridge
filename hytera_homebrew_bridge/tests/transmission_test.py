@@ -8,8 +8,7 @@ from typing import Optional
 from kaitaistruct import KaitaiStruct
 from kamene.layers.inet import UDP
 from kamene.layers.l2 import Ether
-from pcapng import FileScanner
-from pcapng.blocks import EnhancedPacket
+from kamene.utils import PcapReader
 
 from hytera_homebrew_bridge.dmrlib.packet_utils import try_parse_packet
 from hytera_homebrew_bridge.dmrlib.transmission_watcher import TransmissionWatcher
@@ -48,12 +47,10 @@ def feed_from_file(filepath: str, _watcher: TransmissionWatcher):
 
 
 def feed_from_pcapng(filepath: str, _watcher: TransmissionWatcher):
-    with open(filepath, "rb") as filehandle:
-        scanner = FileScanner(filehandle)
-        for block in scanner:
-            if isinstance(block, EnhancedPacket) and block.interface.link_type == 1:
-                eth = Ether(block.packet_data)
-                udp = eth.getlayer(UDP)
+    with PcapReader(filepath) as pcap_reader:
+        for block in pcap_reader:
+            if isinstance(block, Ether) and block.haslayer(UDP.name):
+                udp = block.getlayer(UDP)
                 if not udp:
                     continue
                 packetdata: Optional[KaitaiStruct] = try_parse_packet(

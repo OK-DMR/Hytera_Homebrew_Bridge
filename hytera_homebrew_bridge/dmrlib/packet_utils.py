@@ -74,4 +74,4 @@ def try_parse_packet(udpdata: bytes) -> Optional[KaitaiStruct]:
         ):
             traceback.print_exc()
 
-    print(f"Unknown packet: {udpdata.hex()}")
+    return None
