@@ -133,35 +133,35 @@ function DmrDataHeader.property.data:get()
   if _on == DmrDataHeader.DataPacketFormats.proprietary then
     self._raw__m_data = _io:read_bytes(12)
     local _io = KaitaiStream(stringstream(self._raw__m_data))
-    self._m_data = DmrDataHeader.DataProprietary(_io, self, self._root)
+    self._m_data = DmrDataHeader.DataHeaderProprietary(_io, self, self._root)
   elseif _on == DmrDataHeader.DataPacketFormats.short_data_defined then
     self._raw__m_data = _io:read_bytes(12)
     local _io = KaitaiStream(stringstream(self._raw__m_data))
-    self._m_data = DmrDataHeader.DataShortDefined(_io, self, self._root)
+    self._m_data = DmrDataHeader.DataHeaderShortDefined(_io, self, self._root)
   elseif _on == DmrDataHeader.DataPacketFormats.data_packet_unconfirmed then
     self._raw__m_data = _io:read_bytes(12)
     local _io = KaitaiStream(stringstream(self._raw__m_data))
-    self._m_data = DmrDataHeader.DataUnconfirmed(_io, self, self._root)
+    self._m_data = DmrDataHeader.DataHeaderUnconfirmed(_io, self, self._root)
   elseif _on == DmrDataHeader.DataPacketFormats.data_packet_confirmed then
     self._raw__m_data = _io:read_bytes(12)
     local _io = KaitaiStream(stringstream(self._raw__m_data))
-    self._m_data = DmrDataHeader.DataConfirmed(_io, self, self._root)
+    self._m_data = DmrDataHeader.DataHeaderConfirmed(_io, self, self._root)
   elseif _on == DmrDataHeader.DataPacketFormats.unified_data_transport then
     self._raw__m_data = _io:read_bytes(12)
     local _io = KaitaiStream(stringstream(self._raw__m_data))
-    self._m_data = DmrDataHeader.DataUdt(_io, self, self._root)
+    self._m_data = DmrDataHeader.DataHeaderUdt(_io, self, self._root)
   elseif _on == DmrDataHeader.DataPacketFormats.short_data_raw_or_status_precoded then
     self._raw__m_data = _io:read_bytes(12)
     local _io = KaitaiStream(stringstream(self._raw__m_data))
-    self._m_data = DmrDataHeader.DataShortStatusPrecoded(_io, self, self._root)
+    self._m_data = DmrDataHeader.DataHeaderShortStatusPrecoded(_io, self, self._root)
   elseif _on == DmrDataHeader.DataPacketFormats.response_packet then
     self._raw__m_data = _io:read_bytes(12)
     local _io = KaitaiStream(stringstream(self._raw__m_data))
-    self._m_data = DmrDataHeader.DataResponse(_io, self, self._root)
+    self._m_data = DmrDataHeader.DataHeaderResponse(_io, self, self._root)
   else
     self._raw__m_data = _io:read_bytes(12)
     local _io = KaitaiStream(stringstream(self._raw__m_data))
-    self._m_data = DmrDataHeader.DataUndefined(_io, self, self._root)
+    self._m_data = DmrDataHeader.DataHeaderUndefined(_io, self, self._root)
   end
   _io:seek(_pos)
   return self._m_data
@@ -171,17 +171,130 @@ end
 -- Data packet format / identification, section 9.3.17.
 
 -- 
--- 9.2.4 Confirmed Response packet Header (C_RHEAD) PDU.
-DmrDataHeader.DataResponse = class.class(KaitaiStruct)
+-- 9.2.11 Raw short data packet Header (R_HEAD) PDU.
+DmrDataHeader.DataHeaderShortRaw = class.class(KaitaiStruct)
 
-function DmrDataHeader.DataResponse:_init(io, parent, root)
+function DmrDataHeader.DataHeaderShortRaw:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function DmrDataHeader.DataResponse:_read()
+function DmrDataHeader.DataHeaderShortRaw:_read()
+  self.llid_destination_is_group = self._io:read_bits_int_be(1)
+  self.response_requested = self._io:read_bits_int_be(1)
+  self.appended_blocks_msb = self._io:read_bits_int_be(2)
+  self.format = DmrDataHeader.DataPacketFormats(self._io:read_bits_int_be(4))
+  self.sap_identifier = DmrDataHeader.SapIdentifiers(self._io:read_bits_int_be(4))
+  self.appended_blocks_lsb = self._io:read_bits_int_be(4)
+  self.llid_destination = self._io:read_bits_int_be(24)
+  self.llid_source = self._io:read_bits_int_be(24)
+  self.source_port = self._io:read_bits_int_be(3)
+  self.destination_port = self._io:read_bits_int_be(3)
+  self.selective_automatic_repeat_request = self._io:read_bits_int_be(1)
+  self.full_message_flag = self._io:read_bits_int_be(1)
+  self.bit_padding = self._io:read_bits_int_be(8)
+  self._io:align_to_byte()
+  self.crc = self._io:read_bytes(2)
+end
+
+-- 
+-- response demanded if destination is individual MS.
+-- 
+-- 0b00 expected.
+-- 
+-- 0b0000 expected.
+-- 
+-- flag whether source requires SARQ.
+-- 
+-- 0b00000000 expected.
+
+-- 
+-- 9.2.9 Proprietary Header (P_HEAD) PDU.
+DmrDataHeader.DataHeaderProprietary = class.class(KaitaiStruct)
+
+function DmrDataHeader.DataHeaderProprietary:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function DmrDataHeader.DataHeaderProprietary:_read()
+  self.sap_identifier = DmrDataHeader.SapIdentifiers(self._io:read_bits_int_be(4))
+  self.format = DmrDataHeader.DataPacketFormats(self._io:read_bits_int_be(4))
+  self.mfid = self._io:read_bits_int_be(8)
+  self._io:align_to_byte()
+  self.proprietary_data = self._io:read_bytes(8)
+  self.crc = self._io:read_bytes(2)
+end
+
+-- 
+-- manufacturer's id.
+-- 
+-- 64bits / 8bytes of proprietary data.
+
+DmrDataHeader.DataHeaderUndefined = class.class(KaitaiStruct)
+
+function DmrDataHeader.DataHeaderUndefined:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function DmrDataHeader.DataHeaderUndefined:_read()
+  self.bytedata = self._io:read_bytes_full()
+end
+
+
+-- 
+-- 9.2.10 Status/Precoded short data packet Header (SP_HEAD) PDU.
+DmrDataHeader.DataHeaderShortStatusPrecoded = class.class(KaitaiStruct)
+
+function DmrDataHeader.DataHeaderShortStatusPrecoded:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function DmrDataHeader.DataHeaderShortStatusPrecoded:_read()
+  self.llid_destination_is_group = self._io:read_bits_int_be(1)
+  self.response_requested = self._io:read_bits_int_be(1)
+  self.appended_blocks_msb = self._io:read_bits_int_be(2)
+  self.format = DmrDataHeader.DataPacketFormats(self._io:read_bits_int_be(4))
+  self.sap_identifier = DmrDataHeader.SapIdentifiers(self._io:read_bits_int_be(4))
+  self.appended_blocks_lsb = self._io:read_bits_int_be(4)
+  self.llid_destination = self._io:read_bits_int_be(24)
+  self.llid_source = self._io:read_bits_int_be(24)
+  self.source_port = self._io:read_bits_int_be(3)
+  self.destination_port = self._io:read_bits_int_be(3)
+  self.status_precoded = self._io:read_bits_int_be(10)
+  self._io:align_to_byte()
+  self.crc = self._io:read_bytes(2)
+end
+
+-- 
+-- response demanded if destination is individual MS.
+-- 
+-- 0b00 expected.
+-- 
+-- 0b0000 expected.
+
+-- 
+-- 9.2.4 Confirmed Response packet Header (C_RHEAD) PDU.
+DmrDataHeader.DataHeaderResponse = class.class(KaitaiStruct)
+
+function DmrDataHeader.DataHeaderResponse:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function DmrDataHeader.DataHeaderResponse:_read()
   self.reserved1 = self._io:read_bits_int_be(1)
   self.response_requested = self._io:read_bits_int_be(1)
   self.reserved2 = self._io:read_bits_int_be(2)
@@ -213,76 +326,17 @@ end
 -- NI/VI/FSN per ETSI TS 102 361-1 V2.5.1, Table 8.3 (page 87), Response Packet Class, Type, and Status definitions.
 
 -- 
--- 9.2.9 Proprietary Header (P_HEAD) PDU.
-DmrDataHeader.DataProprietary = class.class(KaitaiStruct)
-
-function DmrDataHeader.DataProprietary:_init(io, parent, root)
-  KaitaiStruct._init(self, io)
-  self._parent = parent
-  self._root = root or self
-  self:_read()
-end
-
-function DmrDataHeader.DataProprietary:_read()
-  self.sap_identifier = DmrDataHeader.SapIdentifiers(self._io:read_bits_int_be(4))
-  self.format = DmrDataHeader.DataPacketFormats(self._io:read_bits_int_be(4))
-  self.mfid = self._io:read_bits_int_be(8)
-  self._io:align_to_byte()
-  self.proprietary_data = self._io:read_bytes(8)
-  self.crc = self._io:read_bytes(2)
-end
-
--- 
--- manufacturer's id.
--- 
--- 64bits / 8bytes of proprietary data.
-
--- 
--- 9.2.10 Status/Precoded short data packet Header (SP_HEAD) PDU.
-DmrDataHeader.DataShortStatusPrecoded = class.class(KaitaiStruct)
-
-function DmrDataHeader.DataShortStatusPrecoded:_init(io, parent, root)
-  KaitaiStruct._init(self, io)
-  self._parent = parent
-  self._root = root or self
-  self:_read()
-end
-
-function DmrDataHeader.DataShortStatusPrecoded:_read()
-  self.llid_destination_is_group = self._io:read_bits_int_be(1)
-  self.response_requested = self._io:read_bits_int_be(1)
-  self.appended_blocks_msb = self._io:read_bits_int_be(2)
-  self.format = DmrDataHeader.DataPacketFormats(self._io:read_bits_int_be(4))
-  self.sap_identifier = DmrDataHeader.SapIdentifiers(self._io:read_bits_int_be(4))
-  self.appended_blocks_lsb = self._io:read_bits_int_be(4)
-  self.llid_destination = self._io:read_bits_int_be(24)
-  self.llid_source = self._io:read_bits_int_be(24)
-  self.source_port = self._io:read_bits_int_be(3)
-  self.destination_port = self._io:read_bits_int_be(3)
-  self.status_precoded = self._io:read_bits_int_be(10)
-  self._io:align_to_byte()
-  self.crc = self._io:read_bytes(2)
-end
-
--- 
--- response demanded if destination is individual MS.
--- 
--- 0b00 expected.
--- 
--- 0b0000 expected.
-
--- 
 -- 9.2.1 Confirmed packet Header (C_HEAD) PDU.
-DmrDataHeader.DataConfirmed = class.class(KaitaiStruct)
+DmrDataHeader.DataHeaderConfirmed = class.class(KaitaiStruct)
 
-function DmrDataHeader.DataConfirmed:_init(io, parent, root)
+function DmrDataHeader.DataHeaderConfirmed:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function DmrDataHeader.DataConfirmed:_read()
+function DmrDataHeader.DataHeaderConfirmed:_read()
   self.llid_destination_is_group = self._io:read_bits_int_be(1)
   self.response_requested = self._io:read_bits_int_be(1)
   self.reserved1 = self._io:read_bits_int_be(1)
@@ -306,32 +360,18 @@ end
 -- 
 -- 0b0 expected.
 
-DmrDataHeader.DataUndefined = class.class(KaitaiStruct)
-
-function DmrDataHeader.DataUndefined:_init(io, parent, root)
-  KaitaiStruct._init(self, io)
-  self._parent = parent
-  self._root = root or self
-  self:_read()
-end
-
-function DmrDataHeader.DataUndefined:_read()
-  self.bytedata = self._io:read_bytes_full()
-end
-
-
 -- 
 -- 9.2.6 Unconfirmed data packet Header (U_HEAD) PDU.
-DmrDataHeader.DataUnconfirmed = class.class(KaitaiStruct)
+DmrDataHeader.DataHeaderUnconfirmed = class.class(KaitaiStruct)
 
-function DmrDataHeader.DataUnconfirmed:_init(io, parent, root)
+function DmrDataHeader.DataHeaderUnconfirmed:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function DmrDataHeader.DataUnconfirmed:_read()
+function DmrDataHeader.DataHeaderUnconfirmed:_read()
   self.llid_destination_is_group = self._io:read_bits_int_be(1)
   self.response_requested = self._io:read_bits_int_be(1)
   self.reserved1 = self._io:read_bits_int_be(1)
@@ -357,17 +397,56 @@ end
 -- 0b0000 expected.
 
 -- 
--- 9.2.13 Unified Data Transport Header (UDT_HEAD) PDU.
-DmrDataHeader.DataUdt = class.class(KaitaiStruct)
+-- 9.2.12 Defined Data short data packet Header (DD_HEAD) PDU.
+DmrDataHeader.DataHeaderShortDefined = class.class(KaitaiStruct)
 
-function DmrDataHeader.DataUdt:_init(io, parent, root)
+function DmrDataHeader.DataHeaderShortDefined:_init(io, parent, root)
   KaitaiStruct._init(self, io)
   self._parent = parent
   self._root = root or self
   self:_read()
 end
 
-function DmrDataHeader.DataUdt:_read()
+function DmrDataHeader.DataHeaderShortDefined:_read()
+  self.llid_destination_is_group = self._io:read_bits_int_be(1)
+  self.response_requested = self._io:read_bits_int_be(1)
+  self.appended_blocks_msb = self._io:read_bits_int_be(2)
+  self.format = DmrDataHeader.DataPacketFormats(self._io:read_bits_int_be(4))
+  self.sap_identifier = DmrDataHeader.SapIdentifiers(self._io:read_bits_int_be(4))
+  self.appended_blocks_lsb = self._io:read_bits_int_be(4)
+  self.llid_destination = self._io:read_bits_int_be(24)
+  self.llid_source = self._io:read_bits_int_be(24)
+  self.defined_data = DmrDataHeader.DefinedDataFormats(self._io:read_bits_int_be(6))
+  self.selective_automatic_repeat_request = self._io:read_bits_int_be(1)
+  self.full_message_flag = self._io:read_bits_int_be(1)
+  self.bit_padding = self._io:read_bits_int_be(8)
+  self._io:align_to_byte()
+  self.crc = self._io:read_bytes(2)
+end
+
+-- 
+-- response demanded if destination is individual MS.
+-- 
+-- 0b00 expected.
+-- 
+-- 0b0000 expected.
+-- 
+-- ETSI TS 102 361-1 V2.5.1, Table 9.50, DD information element content.
+-- 
+-- SARQ.
+
+-- 
+-- 9.2.13 Unified Data Transport Header (UDT_HEAD) PDU.
+DmrDataHeader.DataHeaderUdt = class.class(KaitaiStruct)
+
+function DmrDataHeader.DataHeaderUdt:_init(io, parent, root)
+  KaitaiStruct._init(self, io)
+  self._parent = parent
+  self._root = root or self
+  self:_read()
+end
+
+function DmrDataHeader.DataHeaderUdt:_read()
   self.llid_destination_is_group = self._io:read_bits_int_be(1)
   self.response_requested = self._io:read_bits_int_be(1)
   self.reserved1 = self._io:read_bits_int_be(2)
@@ -398,83 +477,4 @@ end
 -- 0=>short data, 1=>supplementary data, ETSI TS 102 361-1 V2.5.1, 9.3.41 Supplementary Flag (SF).
 -- 
 -- ETSI TS 102 361-4 V1.10.1, Annex B, B.1 CSBK/MBC/UDT Opcode List.
-
--- 
--- 9.2.11 Raw short data packet Header (R_HEAD) PDU.
-DmrDataHeader.DataShortRaw = class.class(KaitaiStruct)
-
-function DmrDataHeader.DataShortRaw:_init(io, parent, root)
-  KaitaiStruct._init(self, io)
-  self._parent = parent
-  self._root = root or self
-  self:_read()
-end
-
-function DmrDataHeader.DataShortRaw:_read()
-  self.llid_destination_is_group = self._io:read_bits_int_be(1)
-  self.response_requested = self._io:read_bits_int_be(1)
-  self.appended_blocks_msb = self._io:read_bits_int_be(2)
-  self.format = DmrDataHeader.DataPacketFormats(self._io:read_bits_int_be(4))
-  self.sap_identifier = DmrDataHeader.SapIdentifiers(self._io:read_bits_int_be(4))
-  self.appended_blocks_lsb = self._io:read_bits_int_be(4)
-  self.llid_destination = self._io:read_bits_int_be(24)
-  self.llid_source = self._io:read_bits_int_be(24)
-  self.source_port = self._io:read_bits_int_be(3)
-  self.destination_port = self._io:read_bits_int_be(3)
-  self.selective_automatic_repeat_request = self._io:read_bits_int_be(1)
-  self.full_message_flag = self._io:read_bits_int_be(1)
-  self.bit_padding = self._io:read_bits_int_be(8)
-  self._io:align_to_byte()
-  self.crc = self._io:read_bytes(2)
-end
-
--- 
--- response demanded if destination is individual MS.
--- 
--- 0b00 expected.
--- 
--- 0b0000 expected.
--- 
--- flag whether source requires SARQ.
--- 
--- 0b00000000 expected.
-
--- 
--- 9.2.12 Defined Data short data packet Header (DD_HEAD) PDU.
-DmrDataHeader.DataShortDefined = class.class(KaitaiStruct)
-
-function DmrDataHeader.DataShortDefined:_init(io, parent, root)
-  KaitaiStruct._init(self, io)
-  self._parent = parent
-  self._root = root or self
-  self:_read()
-end
-
-function DmrDataHeader.DataShortDefined:_read()
-  self.llid_destination_is_group = self._io:read_bits_int_be(1)
-  self.response_requested = self._io:read_bits_int_be(1)
-  self.appended_blocks_msb = self._io:read_bits_int_be(2)
-  self.format = DmrDataHeader.DataPacketFormats(self._io:read_bits_int_be(4))
-  self.sap_identifier = DmrDataHeader.SapIdentifiers(self._io:read_bits_int_be(4))
-  self.appended_blocks_lsb = self._io:read_bits_int_be(4)
-  self.llid_destination = self._io:read_bits_int_be(24)
-  self.llid_source = self._io:read_bits_int_be(24)
-  self.defined_data = DmrDataHeader.DefinedDataFormats(self._io:read_bits_int_be(6))
-  self.selective_automatic_repeat_request = self._io:read_bits_int_be(1)
-  self.full_message_flag = self._io:read_bits_int_be(1)
-  self.bit_padding = self._io:read_bits_int_be(8)
-  self._io:align_to_byte()
-  self.crc = self._io:read_bytes(2)
-end
-
--- 
--- response demanded if destination is individual MS.
--- 
--- 0b00 expected.
--- 
--- 0b0000 expected.
--- 
--- ETSI TS 102 361-1 V2.5.1, Table 9.50, DD information element content.
--- 
--- SARQ.
 

@@ -197,6 +197,7 @@ TRELLIS_34_CONSTELLATION_POINTS = {
 def t34_make_dibits(stream: bitarray) -> array:
     if len(stream) != 196:
         raise Exception("t34_make_dibits expects 196 bits in bitarray")
+
     out: array = array("b", [0] * 98)
 
     for i in range(0, 196, 2):
@@ -229,7 +230,6 @@ def t34_constellation_points(deinterleaved: array) -> array:
 
 def t34_extract_tribits(constellation_points: array) -> array:
     out: array = array("b", [0] * 48)
-
     last: int = 0
 
     for i in range(48):
@@ -241,7 +241,6 @@ def t34_extract_tribits(constellation_points: array) -> array:
                 matches = True
                 last = abs((j - start) % 255)
                 out[i] = last
-                break
 
         if not matches:
             raise Exception(
@@ -254,27 +253,31 @@ def t34_extract_tribits(constellation_points: array) -> array:
 def t34_tribits_to_binary(tribits: array) -> bitarray:
     if len(tribits) != 48:
         raise Exception(f"Expected 48 tribits got {len(tribits)}")
-    out: bitarray = bitarray(196)
+
+    out: bitarray = bitarray(196 * "0", endian="big")
 
     for i in range(0, 144, 3):
         o = int(i / 3)
-        if tribits[o] & 4 > 0:
-            out[i] = 1
-        if tribits[o] & 2 > 0:
-            out[i + 1] = 1
-        if tribits[o] & 1 > 0:
-            out[i + 2] = 1
+        out[i] = (tribits[o] & 0x4) > 0
+        out[i + 1] = (tribits[o] & 0x2) > 0
+        out[i + 2] = (tribits[o] & 0x1) > 0
 
     return out
 
 
-def trellis_34_decode(encoded: bitarray) -> bytes:
+def trellis_34_decode(encoded: bitarray) -> bitarray:
     if not len(encoded) == 196:
-        raise Exception(f"Trellis 3/4 decoder needs at least 18 bytes (196 bits)")
+        raise Exception(
+            f"Trellis 3/4 decoder needs at least 18 bytes (196 bits), got {len(encoded)}"
+        )
     dibits: array = t34_make_dibits(encoded)
     deinterleaved: array = t34_deinterleave(dibits)
     points: array = t34_constellation_points(deinterleaved)
     tribits: array = t34_extract_tribits(points)
     decoded: bitarray = t34_tribits_to_binary(tribits)
-    decoded_bytes: bytes = to_bytes(decoded)
-    return decoded_bytes
+    return decoded
+
+
+def trellis_34_decode_as_bytes(encoded: bitarray) -> bytes:
+    bits: bitarray = trellis_34_decode(encoded)
+    return to_bytes(bits + bitarray("0000"))

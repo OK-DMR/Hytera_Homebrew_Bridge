@@ -90,11 +90,11 @@ enums:
     0b01: nack
     0b10: sack
 types:
-  data_undefined:
+  data_header_undefined:
     seq:
       - id: bytedata
         size-eos: true
-  data_proprietary:
+  data_header_proprietary:
     doc: 9.2.9 Proprietary Header (P_HEAD) PDU
     seq:
       - id: sap_identifier
@@ -111,7 +111,7 @@ types:
         doc: 64bits / 8bytes of proprietary data
       - id: crc
         size: 2
-  data_udt:
+  data_header_udt:
     doc: 9.2.13 Unified Data Transport Header (UDT_HEAD) PDU
     seq:
       - id: llid_destination_is_group
@@ -154,7 +154,7 @@ types:
         doc: ETSI TS 102 361-4 V1.10.1, Annex B, B.1 CSBK/MBC/UDT Opcode List
       - id: crc
         size: 2
-  data_response:
+  data_header_response:
     doc: 9.2.4 Confirmed Response packet Header (C_RHEAD) PDU
     seq:
       - id: reserved1
@@ -194,7 +194,7 @@ types:
         doc: NI/VI/FSN per ETSI TS 102 361-1 V2.5.1, Table 8.3 (page 87), Response Packet Class, Type, and Status definitions
       - id: crc
         size: 2
-  data_unconfirmed:
+  data_header_unconfirmed:
     doc: 9.2.6 Unconfirmed data packet Header (U_HEAD) PDU
     seq:
       - id: llid_destination_is_group
@@ -230,7 +230,7 @@ types:
         type: b4
       - id: crc
         size: 2
-  data_confirmed:
+  data_header_confirmed:
     doc: 9.2.1 Confirmed packet Header (C_HEAD) PDU
     seq:
       - id: llid_destination_is_group
@@ -267,7 +267,7 @@ types:
         type: b4
       - id: crc
         size: 2
-  data_short_raw:
+  data_header_short_raw:
     doc: 9.2.11 Raw short data packet Header (R_HEAD) PDU
     seq:
       - id: llid_destination_is_group
@@ -305,7 +305,7 @@ types:
         doc: 0b00000000 expected
       - id: crc
         size: 2
-  data_short_defined:
+  data_header_short_defined:
     doc: 9.2.12 Defined Data short data packet Header (DD_HEAD) PDU
     seq:
       - id: llid_destination_is_group
@@ -342,7 +342,7 @@ types:
         type: b8
       - id: crc
         size: 2
-  data_short_status_precoded:
+  data_header_short_status_precoded:
     doc: 9.2.10 Status/Precoded short data packet Header (SP_HEAD) PDU
     seq:
       - id: llid_destination_is_group
@@ -389,11 +389,11 @@ instances:
     type:
       switch-on: data_packet_format
       cases:
-        'data_packet_formats::unified_data_transport': data_udt
-        'data_packet_formats::response_packet': data_response
-        'data_packet_formats::data_packet_unconfirmed': data_unconfirmed
-        'data_packet_formats::data_packet_confirmed': data_confirmed
-        'data_packet_formats::short_data_defined': data_short_defined
-        'data_packet_formats::short_data_raw_or_status_precoded': data_short_status_precoded
-        'data_packet_formats::proprietary': data_proprietary
-        _: data_undefined
+        'data_packet_formats::unified_data_transport': data_header_udt
+        'data_packet_formats::response_packet': data_header_response
+        'data_packet_formats::data_packet_unconfirmed': data_header_unconfirmed
+        'data_packet_formats::data_packet_confirmed': data_header_confirmed
+        'data_packet_formats::short_data_defined': data_header_short_defined
+        'data_packet_formats::short_data_raw_or_status_precoded': data_header_short_status_precoded
+        'data_packet_formats::proprietary': data_header_proprietary
+        _: data_header_undefined

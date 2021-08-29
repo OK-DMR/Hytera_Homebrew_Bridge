@@ -13,7 +13,7 @@ from kaitaistruct import KaitaiStruct
 from kamene.layers.inet import IP
 
 from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
-from hytera_homebrew_bridge.dmrlib.trellis import trellis_34_decode
+from hytera_homebrew_bridge.dmrlib.trellis import trellis_34_decode_as_bytes
 from hytera_homebrew_bridge.kaitai.dmr_csbk import DmrCsbk
 from hytera_homebrew_bridge.kaitai.dmr_data import DmrData
 from hytera_homebrew_bridge.kaitai.dmr_data_header import DmrDataHeader
@@ -210,7 +210,7 @@ class Transmission:
             self.new_transmission(TransmissionType.DataTransmission)
         if hasattr(data_header.data, "blocks_to_follow"):
             if self.blocks_expected == 0:
-                self.blocks_expected = data_header.data.blocks_to_follow
+                self.blocks_expected = data_header.data.blocks_to_follow + 1
             elif self.blocks_expected != (
                 self.blocks_received + data_header.data.blocks_to_follow
             ):
@@ -224,17 +224,14 @@ class Transmission:
         self.confirmed = data_header.data.response_requested
 
     def process_csbk(self, csbk: DmrCsbk):
-        if not self.type == TransmissionType.DataTransmission:
-            self.new_transmission(TransmissionType.DataTransmission)
-        if csbk.csbk_opcode == DmrCsbk.CsbkoTypes.preamble:
-            if self.blocks_expected == 0:
-                self.blocks_expected = csbk.preamble_csbk_blocks_to_follow + 1
-            elif csbk.preamble_csbk_blocks_to_follow:
-                self.blocks_received = (
-                    self.blocks_expected - csbk.preamble_csbk_blocks_to_follow
-                )
-        self.blocks_received += 1
-        self.blocks.append(csbk)
+        # if not self.type == TransmissionType.DataTransmission:
+        #    self.new_transmission(TransmissionType.DataTransmission)
+        # if csbk.csbk_opcode == DmrCsbk.CsbkoTypes.preamble:
+        #    if self.blocks_expected == 0:
+        #        self.blocks_expected = csbk.preamble_csbk_blocks_to_follow + 1
+
+        # self.blocks_received += 1
+        # self.blocks.append(csbk)
         print(_prettyprint(csbk))
 
     def process_rate_12_confirmed(
@@ -337,6 +334,8 @@ class Transmission:
                 print(f"[DATA] [{packet.__class__.__name__}] [{packet.user_data}]")
                 print(_prettyprint(packet))
                 user_data += packet.user_data
+            else:
+                print(f"[UNUSED] [{packet.__class__.__name__}]")
         if (
             self.header.data.sap_identifier
             == DmrDataHeader.SapIdentifiers.udp_ip_header_compression
@@ -352,6 +351,7 @@ class Transmission:
             self.header.data.sap_identifier
             == DmrDataHeader.SapIdentifiers.ip_based_packet_data
         ):
+            print(user_data)
             ip = IP(user_data)
             ip.display()
         self.new_transmission(TransmissionType.Idle)
@@ -429,7 +429,7 @@ class Transmission:
                         DmrData.Rate12Unconfirmed.from_bytes(lc_info_bits)
                     )
         elif burst.data_type == DataType.Rate34DataContinuation:
-            lc_info_bits = trellis_34_decode(burst.info_bits)
+            lc_info_bits = trellis_34_decode_as_bytes(burst.info_bits)
             if self.confirmed:
                 if self.is_last_block(True):
                     self.process_rate_34_confirmed(

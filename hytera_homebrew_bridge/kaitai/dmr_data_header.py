@@ -119,7 +119,96 @@ class DmrDataHeader(KaitaiStruct):
             DmrDataHeader.DataPacketFormats, self._io.read_bits_int_be(4)
         )
 
-    class DataResponse(KaitaiStruct):
+    class DataHeaderShortRaw(KaitaiStruct):
+        """9.2.11 Raw short data packet Header (R_HEAD) PDU."""
+
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.llid_destination_is_group = self._io.read_bits_int_be(1) != 0
+            self.response_requested = self._io.read_bits_int_be(1) != 0
+            self.appended_blocks_msb = self._io.read_bits_int_be(2)
+            self.format = KaitaiStream.resolve_enum(
+                DmrDataHeader.DataPacketFormats, self._io.read_bits_int_be(4)
+            )
+            self.sap_identifier = KaitaiStream.resolve_enum(
+                DmrDataHeader.SapIdentifiers, self._io.read_bits_int_be(4)
+            )
+            self.appended_blocks_lsb = self._io.read_bits_int_be(4)
+            self.llid_destination = self._io.read_bits_int_be(24)
+            self.llid_source = self._io.read_bits_int_be(24)
+            self.source_port = self._io.read_bits_int_be(3)
+            self.destination_port = self._io.read_bits_int_be(3)
+            self.selective_automatic_repeat_request = self._io.read_bits_int_be(1) != 0
+            self.full_message_flag = self._io.read_bits_int_be(1) != 0
+            self.bit_padding = self._io.read_bits_int_be(8)
+            self._io.align_to_byte()
+            self.crc = self._io.read_bytes(2)
+
+    class DataHeaderProprietary(KaitaiStruct):
+        """9.2.9 Proprietary Header (P_HEAD) PDU."""
+
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.sap_identifier = KaitaiStream.resolve_enum(
+                DmrDataHeader.SapIdentifiers, self._io.read_bits_int_be(4)
+            )
+            self.format = KaitaiStream.resolve_enum(
+                DmrDataHeader.DataPacketFormats, self._io.read_bits_int_be(4)
+            )
+            self.mfid = self._io.read_bits_int_be(8)
+            self._io.align_to_byte()
+            self.proprietary_data = self._io.read_bytes(8)
+            self.crc = self._io.read_bytes(2)
+
+    class DataHeaderUndefined(KaitaiStruct):
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.bytedata = self._io.read_bytes_full()
+
+    class DataHeaderShortStatusPrecoded(KaitaiStruct):
+        """9.2.10 Status/Precoded short data packet Header (SP_HEAD) PDU."""
+
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.llid_destination_is_group = self._io.read_bits_int_be(1) != 0
+            self.response_requested = self._io.read_bits_int_be(1) != 0
+            self.appended_blocks_msb = self._io.read_bits_int_be(2)
+            self.format = KaitaiStream.resolve_enum(
+                DmrDataHeader.DataPacketFormats, self._io.read_bits_int_be(4)
+            )
+            self.sap_identifier = KaitaiStream.resolve_enum(
+                DmrDataHeader.SapIdentifiers, self._io.read_bits_int_be(4)
+            )
+            self.appended_blocks_lsb = self._io.read_bits_int_be(4)
+            self.llid_destination = self._io.read_bits_int_be(24)
+            self.llid_source = self._io.read_bits_int_be(24)
+            self.source_port = self._io.read_bits_int_be(3)
+            self.destination_port = self._io.read_bits_int_be(3)
+            self.status_precoded = self._io.read_bits_int_be(10)
+            self._io.align_to_byte()
+            self.crc = self._io.read_bytes(2)
+
+    class DataHeaderResponse(KaitaiStruct):
         """9.2.4 Confirmed Response packet Header (C_RHEAD) PDU."""
 
         def __init__(self, _io, _parent=None, _root=None):
@@ -151,56 +240,7 @@ class DmrDataHeader(KaitaiStruct):
             self._io.align_to_byte()
             self.crc = self._io.read_bytes(2)
 
-    class DataProprietary(KaitaiStruct):
-        """9.2.9 Proprietary Header (P_HEAD) PDU."""
-
-        def __init__(self, _io, _parent=None, _root=None):
-            self._io = _io
-            self._parent = _parent
-            self._root = _root if _root else self
-            self._read()
-
-        def _read(self):
-            self.sap_identifier = KaitaiStream.resolve_enum(
-                DmrDataHeader.SapIdentifiers, self._io.read_bits_int_be(4)
-            )
-            self.format = KaitaiStream.resolve_enum(
-                DmrDataHeader.DataPacketFormats, self._io.read_bits_int_be(4)
-            )
-            self.mfid = self._io.read_bits_int_be(8)
-            self._io.align_to_byte()
-            self.proprietary_data = self._io.read_bytes(8)
-            self.crc = self._io.read_bytes(2)
-
-    class DataShortStatusPrecoded(KaitaiStruct):
-        """9.2.10 Status/Precoded short data packet Header (SP_HEAD) PDU."""
-
-        def __init__(self, _io, _parent=None, _root=None):
-            self._io = _io
-            self._parent = _parent
-            self._root = _root if _root else self
-            self._read()
-
-        def _read(self):
-            self.llid_destination_is_group = self._io.read_bits_int_be(1) != 0
-            self.response_requested = self._io.read_bits_int_be(1) != 0
-            self.appended_blocks_msb = self._io.read_bits_int_be(2)
-            self.format = KaitaiStream.resolve_enum(
-                DmrDataHeader.DataPacketFormats, self._io.read_bits_int_be(4)
-            )
-            self.sap_identifier = KaitaiStream.resolve_enum(
-                DmrDataHeader.SapIdentifiers, self._io.read_bits_int_be(4)
-            )
-            self.appended_blocks_lsb = self._io.read_bits_int_be(4)
-            self.llid_destination = self._io.read_bits_int_be(24)
-            self.llid_source = self._io.read_bits_int_be(24)
-            self.source_port = self._io.read_bits_int_be(3)
-            self.destination_port = self._io.read_bits_int_be(3)
-            self.status_precoded = self._io.read_bits_int_be(10)
-            self._io.align_to_byte()
-            self.crc = self._io.read_bytes(2)
-
-    class DataConfirmed(KaitaiStruct):
+    class DataHeaderConfirmed(KaitaiStruct):
         """9.2.1 Confirmed packet Header (C_HEAD) PDU."""
 
         def __init__(self, _io, _parent=None, _root=None):
@@ -231,17 +271,7 @@ class DmrDataHeader(KaitaiStruct):
             self._io.align_to_byte()
             self.crc = self._io.read_bytes(2)
 
-    class DataUndefined(KaitaiStruct):
-        def __init__(self, _io, _parent=None, _root=None):
-            self._io = _io
-            self._parent = _parent
-            self._root = _root if _root else self
-            self._read()
-
-        def _read(self):
-            self.bytedata = self._io.read_bytes_full()
-
-    class DataUnconfirmed(KaitaiStruct):
+    class DataHeaderUnconfirmed(KaitaiStruct):
         """9.2.6 Unconfirmed data packet Header (U_HEAD) PDU."""
 
         def __init__(self, _io, _parent=None, _root=None):
@@ -271,7 +301,38 @@ class DmrDataHeader(KaitaiStruct):
             self._io.align_to_byte()
             self.crc = self._io.read_bytes(2)
 
-    class DataUdt(KaitaiStruct):
+    class DataHeaderShortDefined(KaitaiStruct):
+        """9.2.12 Defined Data short data packet Header (DD_HEAD) PDU."""
+
+        def __init__(self, _io, _parent=None, _root=None):
+            self._io = _io
+            self._parent = _parent
+            self._root = _root if _root else self
+            self._read()
+
+        def _read(self):
+            self.llid_destination_is_group = self._io.read_bits_int_be(1) != 0
+            self.response_requested = self._io.read_bits_int_be(1) != 0
+            self.appended_blocks_msb = self._io.read_bits_int_be(2)
+            self.format = KaitaiStream.resolve_enum(
+                DmrDataHeader.DataPacketFormats, self._io.read_bits_int_be(4)
+            )
+            self.sap_identifier = KaitaiStream.resolve_enum(
+                DmrDataHeader.SapIdentifiers, self._io.read_bits_int_be(4)
+            )
+            self.appended_blocks_lsb = self._io.read_bits_int_be(4)
+            self.llid_destination = self._io.read_bits_int_be(24)
+            self.llid_source = self._io.read_bits_int_be(24)
+            self.defined_data = KaitaiStream.resolve_enum(
+                DmrDataHeader.DefinedDataFormats, self._io.read_bits_int_be(6)
+            )
+            self.selective_automatic_repeat_request = self._io.read_bits_int_be(1) != 0
+            self.full_message_flag = self._io.read_bits_int_be(1) != 0
+            self.bit_padding = self._io.read_bits_int_be(8)
+            self._io.align_to_byte()
+            self.crc = self._io.read_bytes(2)
+
+    class DataHeaderUdt(KaitaiStruct):
         """9.2.13 Unified Data Transport Header (UDT_HEAD) PDU."""
 
         def __init__(self, _io, _parent=None, _root=None):
@@ -306,67 +367,6 @@ class DmrDataHeader(KaitaiStruct):
             self._io.align_to_byte()
             self.crc = self._io.read_bytes(2)
 
-    class DataShortRaw(KaitaiStruct):
-        """9.2.11 Raw short data packet Header (R_HEAD) PDU."""
-
-        def __init__(self, _io, _parent=None, _root=None):
-            self._io = _io
-            self._parent = _parent
-            self._root = _root if _root else self
-            self._read()
-
-        def _read(self):
-            self.llid_destination_is_group = self._io.read_bits_int_be(1) != 0
-            self.response_requested = self._io.read_bits_int_be(1) != 0
-            self.appended_blocks_msb = self._io.read_bits_int_be(2)
-            self.format = KaitaiStream.resolve_enum(
-                DmrDataHeader.DataPacketFormats, self._io.read_bits_int_be(4)
-            )
-            self.sap_identifier = KaitaiStream.resolve_enum(
-                DmrDataHeader.SapIdentifiers, self._io.read_bits_int_be(4)
-            )
-            self.appended_blocks_lsb = self._io.read_bits_int_be(4)
-            self.llid_destination = self._io.read_bits_int_be(24)
-            self.llid_source = self._io.read_bits_int_be(24)
-            self.source_port = self._io.read_bits_int_be(3)
-            self.destination_port = self._io.read_bits_int_be(3)
-            self.selective_automatic_repeat_request = self._io.read_bits_int_be(1) != 0
-            self.full_message_flag = self._io.read_bits_int_be(1) != 0
-            self.bit_padding = self._io.read_bits_int_be(8)
-            self._io.align_to_byte()
-            self.crc = self._io.read_bytes(2)
-
-    class DataShortDefined(KaitaiStruct):
-        """9.2.12 Defined Data short data packet Header (DD_HEAD) PDU."""
-
-        def __init__(self, _io, _parent=None, _root=None):
-            self._io = _io
-            self._parent = _parent
-            self._root = _root if _root else self
-            self._read()
-
-        def _read(self):
-            self.llid_destination_is_group = self._io.read_bits_int_be(1) != 0
-            self.response_requested = self._io.read_bits_int_be(1) != 0
-            self.appended_blocks_msb = self._io.read_bits_int_be(2)
-            self.format = KaitaiStream.resolve_enum(
-                DmrDataHeader.DataPacketFormats, self._io.read_bits_int_be(4)
-            )
-            self.sap_identifier = KaitaiStream.resolve_enum(
-                DmrDataHeader.SapIdentifiers, self._io.read_bits_int_be(4)
-            )
-            self.appended_blocks_lsb = self._io.read_bits_int_be(4)
-            self.llid_destination = self._io.read_bits_int_be(24)
-            self.llid_source = self._io.read_bits_int_be(24)
-            self.defined_data = KaitaiStream.resolve_enum(
-                DmrDataHeader.DefinedDataFormats, self._io.read_bits_int_be(6)
-            )
-            self.selective_automatic_repeat_request = self._io.read_bits_int_be(1) != 0
-            self.full_message_flag = self._io.read_bits_int_be(1) != 0
-            self.bit_padding = self._io.read_bits_int_be(8)
-            self._io.align_to_byte()
-            self.crc = self._io.read_bytes(2)
-
     @property
     def data(self):
         if hasattr(self, "_m_data"):
@@ -379,47 +379,49 @@ class DmrDataHeader(KaitaiStruct):
         if _on == DmrDataHeader.DataPacketFormats.proprietary:
             self._raw__m_data = io.read_bytes(12)
             _io__raw__m_data = KaitaiStream(BytesIO(self._raw__m_data))
-            self._m_data = DmrDataHeader.DataProprietary(
+            self._m_data = DmrDataHeader.DataHeaderProprietary(
                 _io__raw__m_data, self, self._root
             )
         elif _on == DmrDataHeader.DataPacketFormats.short_data_defined:
             self._raw__m_data = io.read_bytes(12)
             _io__raw__m_data = KaitaiStream(BytesIO(self._raw__m_data))
-            self._m_data = DmrDataHeader.DataShortDefined(
+            self._m_data = DmrDataHeader.DataHeaderShortDefined(
                 _io__raw__m_data, self, self._root
             )
         elif _on == DmrDataHeader.DataPacketFormats.data_packet_unconfirmed:
             self._raw__m_data = io.read_bytes(12)
             _io__raw__m_data = KaitaiStream(BytesIO(self._raw__m_data))
-            self._m_data = DmrDataHeader.DataUnconfirmed(
+            self._m_data = DmrDataHeader.DataHeaderUnconfirmed(
                 _io__raw__m_data, self, self._root
             )
         elif _on == DmrDataHeader.DataPacketFormats.data_packet_confirmed:
             self._raw__m_data = io.read_bytes(12)
             _io__raw__m_data = KaitaiStream(BytesIO(self._raw__m_data))
-            self._m_data = DmrDataHeader.DataConfirmed(
+            self._m_data = DmrDataHeader.DataHeaderConfirmed(
                 _io__raw__m_data, self, self._root
             )
         elif _on == DmrDataHeader.DataPacketFormats.unified_data_transport:
             self._raw__m_data = io.read_bytes(12)
             _io__raw__m_data = KaitaiStream(BytesIO(self._raw__m_data))
-            self._m_data = DmrDataHeader.DataUdt(_io__raw__m_data, self, self._root)
+            self._m_data = DmrDataHeader.DataHeaderUdt(
+                _io__raw__m_data, self, self._root
+            )
         elif _on == DmrDataHeader.DataPacketFormats.short_data_raw_or_status_precoded:
             self._raw__m_data = io.read_bytes(12)
             _io__raw__m_data = KaitaiStream(BytesIO(self._raw__m_data))
-            self._m_data = DmrDataHeader.DataShortStatusPrecoded(
+            self._m_data = DmrDataHeader.DataHeaderShortStatusPrecoded(
                 _io__raw__m_data, self, self._root
             )
         elif _on == DmrDataHeader.DataPacketFormats.response_packet:
             self._raw__m_data = io.read_bytes(12)
             _io__raw__m_data = KaitaiStream(BytesIO(self._raw__m_data))
-            self._m_data = DmrDataHeader.DataResponse(
+            self._m_data = DmrDataHeader.DataHeaderResponse(
                 _io__raw__m_data, self, self._root
             )
         else:
             self._raw__m_data = io.read_bytes(12)
             _io__raw__m_data = KaitaiStream(BytesIO(self._raw__m_data))
-            self._m_data = DmrDataHeader.DataUndefined(
+            self._m_data = DmrDataHeader.DataHeaderUndefined(
                 _io__raw__m_data, self, self._root
             )
         io.seek(_pos)

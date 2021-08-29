@@ -197,7 +197,7 @@ function DmrData.Rate34Unconfirmed:_init(io, parent, root)
 end
 
 function DmrData.Rate34Unconfirmed:_read()
-  self.user_data = self._io:read_bytes_full()
+  self.user_data = self._io:read_bytes(18)
 end
 
 

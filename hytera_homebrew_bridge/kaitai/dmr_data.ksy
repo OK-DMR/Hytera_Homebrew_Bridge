@@ -19,7 +19,7 @@ types:
       9.2.2 Rate ¾ coded packet Data (R_3_4_DATA) PDU, Table 9.11A: R_3_4_DATA PDU content for unconfirmed data
     seq:
       - id: user_data
-        size-eos: true
+        size: 18
   rate_34_last_block_confirmed:
     doc: |
       9.2.3 Rate ¾ coded Last Data block (R_3_4_LDATA) PDU, Table 9.12: R_3_4_LDATA PDU content for confirmed data
