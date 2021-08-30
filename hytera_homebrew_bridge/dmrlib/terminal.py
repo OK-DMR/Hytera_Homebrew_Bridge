@@ -12,6 +12,7 @@ from dmr_utils3.qr import ENCODE_1676
 from kaitaistruct import KaitaiStruct
 from kamene.layers.inet import IP
 
+from hytera_homebrew_bridge.dmrlib.bcd import bcdDigits
 from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
 from hytera_homebrew_bridge.dmrlib.trellis import trellis_34_decode_as_bytes
 from hytera_homebrew_bridge.kaitai.dmr_csbk import DmrCsbk
@@ -217,7 +218,8 @@ class Transmission:
                 print(
                     f"Header block count mismatch {self.blocks_expected}-{self.blocks_received} != {data_header.data.blocks_to_follow}"
                 )
-                print(_prettyprint(data_header.data))
+
+        print(_prettyprint(data_header.data))
         self.header = data_header
         self.blocks_received += 1
         self.blocks.append(data_header)
@@ -354,6 +356,9 @@ class Transmission:
             print(user_data)
             ip = IP(user_data)
             ip.display()
+        elif self.header.data.sap_identifier == DmrDataHeader.SapIdentifiers.short_data:
+            if self.header.data.defined_data == DmrDataHeader.DefinedDataFormats.bcd:
+                print("bcd", user_data.hex())
         self.new_transmission(TransmissionType.Idle)
 
     def fix_voice_burst_type(self, burst: BurstInfo) -> BurstInfo:

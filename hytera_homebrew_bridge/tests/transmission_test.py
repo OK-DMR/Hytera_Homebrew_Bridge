@@ -43,6 +43,7 @@ def feed_from_file(filepath: str, _watcher: TransmissionWatcher):
             print(line.strip())
             if packetdata:
                 _watcher.process_packet(packetdata)
+    _watcher.end_all_transmissions()
 
 
 def feed_from_pcapng(filepath: str, _watcher: TransmissionWatcher):

@@ -77,6 +77,7 @@ class TransmissionWatcher:
             )
 
     def end_all_transmissions(self):
+        print("end all transmissions")
         for terminal in self.terminals.values():
             for timeslot in terminal.timeslots.values():
                 timeslot.transmission.end_transmissions()
