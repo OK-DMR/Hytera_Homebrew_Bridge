@@ -105,7 +105,6 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         self.connection_lost_callback()
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
-        self.log_debug(f"MMDVM->HHB {data.hex()}")
         packet = Mmdvm.from_bytes(data)
         is_handled: bool = False
         if isinstance(packet.command_data, Mmdvm.TypeMasterNotAccept):
@@ -136,7 +135,6 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                 self.log_info("Master accepted our configuration")
                 is_handled = True
         elif isinstance(packet.command_data, Mmdvm.TypeMasterPong):
-            self.log_debug("Master PONG received")
             is_handled = True
             pass
         elif isinstance(packet.command_data, Mmdvm.TypeMasterClosing):
@@ -208,7 +206,6 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         log_mmdvm_configuration(logger=self.get_logger(), packet=config)
 
     def send_ping(self) -> None:
-        self.log_debug("Sending PING")
         packet = struct.pack(">7sI", b"RPTPING", self.settings.get_repeater_dmrid())
         self.queue_outgoing.put_nowait(packet)
 

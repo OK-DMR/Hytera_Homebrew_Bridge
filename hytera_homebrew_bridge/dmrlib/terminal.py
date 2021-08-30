@@ -19,6 +19,7 @@ from hytera_homebrew_bridge.kaitai.dmr_data import DmrData
 from hytera_homebrew_bridge.kaitai.dmr_data_header import DmrDataHeader
 from hytera_homebrew_bridge.kaitai.dmr_ip_udp import DmrIpUdp
 from hytera_homebrew_bridge.kaitai.link_control import LinkControl
+from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
 
 
@@ -65,15 +66,7 @@ class DataType(Enum):
     UnknownDataType = 19
 
 
-class DataBlock:
-    def __init__(self):
-        self.is_confirmed = False
-        self.data_block_serial_number: int = 0
-        self.crc9: int = 0
-        self.ok: bool = False
-
-
-class BurstInfo:
+class BurstInfo(LoggingTrait):
     def __init__(self, data: bytes):
         self.data_bits: bitarray = to_bits(data)
         self.payload_bits: bitarray = self.data_bits[:108] + self.data_bits[156:]
@@ -158,12 +151,11 @@ class BurstInfo:
         self.emb_parity = ba2int(emb_bits[8:])
 
     def debug(self, printout: bool = True) -> str:
-        status: str = f"[{self.sync_type.name}] [CC {self.color_code}]"
+        status: str = f"[{self.sync_type.name}] [CC {self.color_code}] [DATA TYPE {self.data_type.name}]"
         if self.is_data_or_control:
             status += (
                 f" [FEC {self.fec_parity.to_bytes(2, byteorder='big').hex()}"
                 f"{' VERIFIED' if self.fec_parity_ok else ''}]"
-                f" [DATA TYPE {DataType(self.data_type)}]"
             )
         if self.has_emb:
             status += (
@@ -358,6 +350,7 @@ class Transmission:
         elif self.header.data.sap_identifier == DmrDataHeader.SapIdentifiers.short_data:
             if self.header.data.defined_data == DmrDataHeader.DefinedDataFormats.bcd:
                 print("bcd", user_data.hex())
+                print("bcd latin", user_data.decode("latin1"))
         self.new_transmission(TransmissionType.Idle)
 
     def fix_voice_burst_type(self, burst: BurstInfo) -> BurstInfo:
@@ -384,10 +377,12 @@ class Transmission:
         ):
             burst.data_type = DataType(self.last_burst_data_type.value + 1)
             self.last_burst_data_type = burst.data_type
+        else:
+            self.last_burst_data_type = burst.data_type
 
         return burst
 
-    def process_packet(self, burst: BurstInfo):
+    def process_packet(self, burst: BurstInfo) -> BurstInfo:
         burst = self.fix_voice_burst_type(burst)
         print(burst.data_type)
 
@@ -475,6 +470,8 @@ class Transmission:
         if self.is_last_block():
             self.end_transmissions()
 
+        return burst
+
     def end_transmissions(self):
         if self.type == TransmissionType.DataTransmission:
             self.end_data_transmission()
@@ -490,11 +487,11 @@ class Timeslot:
         self.transmission: Transmission = Transmission()
         self.color_code: int = 1
 
-    def process_burst(self, dmrdata: BurstInfo):
+    def process_burst(self, dmrdata: BurstInfo) -> BurstInfo:
         self.last_packet_received = time.time()
         if dmrdata.color_code != 0:
             self.color_code = dmrdata.color_code
-        self.transmission.process_packet(dmrdata)
+        return self.transmission.process_packet(dmrdata)
 
     def debug(self, printout: bool = True) -> str:
         status: str = (
@@ -520,9 +517,9 @@ class Terminal:
     def set_callsign_alias(self, newalias: str):
         self.call = newalias
 
-    def process_dmr_data(self, dmrdata: bytes, timeslot: int):
+    def process_dmr_data(self, dmrdata: bytes, timeslot: int) -> BurstInfo:
         burst = BurstInfo(data=dmrdata)
-        self.timeslots[timeslot].process_burst(burst)
+        return self.timeslots[timeslot].process_burst(burst)
 
     def get_status(self) -> TransmissionType:
         for tsdata in self.timeslots.values():

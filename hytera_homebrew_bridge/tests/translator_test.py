@@ -52,11 +52,8 @@ async def test_mmdv_to_hytera():
 
     await hytera_incoming.put(hytera_parsed)
     mmdvm_translated: bytes = await mmdvm_outgoing.get()
+    print(mmdvm_translated.hex())
     # Null out StreamID for sake of this testcase
     mmdvm_translated = mmdvm_translated[0:16] + bytes(4) + mmdvm_translated[20:]
 
     assert mmdvm_output == mmdvm_translated
-
-
-if __name__ == "__main__":
-    asyncio.run(test_mmdv_to_hytera())
