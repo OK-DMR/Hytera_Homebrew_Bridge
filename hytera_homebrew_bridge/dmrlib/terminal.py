@@ -12,7 +12,6 @@ from dmr_utils3.qr import ENCODE_1676
 from kaitaistruct import KaitaiStruct
 from kamene.layers.inet import IP
 
-from hytera_homebrew_bridge.dmrlib.bcd import bcdDigits
 from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
 from hytera_homebrew_bridge.dmrlib.trellis import trellis_34_decode_as_bytes
 from hytera_homebrew_bridge.kaitai.dmr_csbk import DmrCsbk
