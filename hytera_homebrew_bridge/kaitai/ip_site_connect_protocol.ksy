@@ -16,7 +16,7 @@ enums:
     0x8888: slot_type_data_d
     0x9999: slot_type_data_e
     0xAAAA: slot_type_data_f
-    0xBBBB: slot_type_data_a_or_privacy
+    0xBBBB: slot_type_data_a
     0xCCCC: slot_type_data_b
     0xDDDD: slot_type_wakeup_request
     # migh be data or voice sync as well
@@ -26,8 +26,8 @@ enums:
     0x3333: frame_type_data_sync_or_csbk
     0xEEEE: frame_type_sync
     0x6666: frame_type_data_header
-    0x0000: frame_type_data
     0xBBBB: frame_type_voice
+    0x0000: frame_type_data
   packet_types:
     0x41: a
     0x42: b

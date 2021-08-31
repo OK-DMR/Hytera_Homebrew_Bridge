@@ -117,7 +117,7 @@ class HyteraHomebrewBridge:
             self.settings.hb_local_port = hb_local_socket.getsockname()[1]
 
     def homebrew_connection_lost(self) -> None:
-        self.homebrew_connect()
+        asyncio.run(self.homebrew_connect())
 
     def stop_running(self) -> None:
         self.homebrew_protocol.disconnect()

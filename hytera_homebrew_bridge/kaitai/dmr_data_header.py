@@ -406,7 +406,9 @@ class DmrDataHeader(KaitaiStruct):
             self._m_data = DmrDataHeader.DataHeaderUdt(
                 _io__raw__m_data, self, self._root
             )
-        elif _on == DmrDataHeader.DataPacketFormats.short_data_raw_or_status_precoded:
+        elif (
+            _on == DmrDataHeader.DataPacketFormats.short_data_raw_or_status_or_precoded
+        ):
             self._raw__m_data = io.read_bytes(12)
             _io__raw__m_data = KaitaiStream(BytesIO(self._raw__m_data))
             self._m_data = DmrDataHeader.DataHeaderShortStatusPrecoded(

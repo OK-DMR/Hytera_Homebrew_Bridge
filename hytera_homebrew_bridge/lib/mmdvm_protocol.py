@@ -85,6 +85,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                     self.log_info(
                         f"Not sending packet due to MMDVM socket closing/being closed"
                     )
+                    self.transport = None
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.log_debug("MMDVM socket connected")

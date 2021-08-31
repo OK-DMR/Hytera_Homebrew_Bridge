@@ -348,7 +348,11 @@ class Transmission:
             ip = IP(user_data)
             ip.display()
         elif self.header.data.sap_identifier == DmrDataHeader.SapIdentifiers.short_data:
-            if self.header.data.defined_data == DmrDataHeader.DefinedDataFormats.bcd:
+            if (
+                hasattr(self.header.data, "defined_data")
+                and self.header.data.defined_data
+                == DmrDataHeader.DefinedDataFormats.bcd
+            ):
                 print("bcd", user_data.hex())
                 print("bcd latin", user_data.decode("latin1"))
         self.new_transmission(TransmissionType.Idle)

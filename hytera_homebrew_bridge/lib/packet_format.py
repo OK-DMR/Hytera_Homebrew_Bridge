@@ -135,7 +135,12 @@ def format_mmdvm_data(mmdvm: Mmdvm.TypeDmrData) -> str:
     )
     return (
         format_brackets(text=f"TS" + ("2" if mmdvm.slot_no else "1"), width=3)
-        + format_brackets(text="PRIVATE" if mmdvm.call_type else "GROUP", width=7)
+        + format_brackets(
+            text="PRIVATE"
+            if mmdvm.call_type == Mmdvm.CallTypes.private_call
+            else "GROUP",
+            width=7,
+        )
         + format_brackets(text=mmdvm_frame_types.get(mmdvm.frame_type, "N/A"), width=13)
         + data_type
         + format_brackets(text=dmr_data_type, width=14)

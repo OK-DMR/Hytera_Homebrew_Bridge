@@ -394,6 +394,6 @@ instances:
         'data_packet_formats::data_packet_unconfirmed': data_header_unconfirmed
         'data_packet_formats::data_packet_confirmed': data_header_confirmed
         'data_packet_formats::short_data_defined': data_header_short_defined
-        'data_packet_formats::short_data_raw_or_status_precoded': data_header_short_status_precoded
+        'data_packet_formats::short_data_raw_or_status_or_precoded': data_header_short_status_precoded
         'data_packet_formats::proprietary': data_header_proprietary
         _: data_header_undefined
