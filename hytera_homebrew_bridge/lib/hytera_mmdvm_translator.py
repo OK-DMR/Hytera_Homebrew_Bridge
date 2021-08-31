@@ -35,18 +35,6 @@ class HyteraMmdvmTranslator(LoggingTrait):
         self.queue_hytera_output = hytera_outgoing
         self.queue_mmdvm_to_translate = mmdvm_incoming
         self.queue_mmdvm_output = mmdvm_outgoing
-        self.mmdvm_sequence_out = 0
-        self.hytera_sequence_out = 0
-
-    def get_mmdvm_sequence(self, increment: bool = True):
-        if increment:
-            self.mmdvm_sequence_out = (self.mmdvm_sequence_out + 1) & 255
-        return self.mmdvm_sequence_out
-
-    def get_hytera_sequence(self, increment: bool = True):
-        if increment:
-            self.hytera_sequence_out = (self.hytera_sequence_out + 1) & 255
-        return self.hytera_sequence_out
 
     async def translate_from_hytera(self):
         loop = asyncio.get_running_loop()
@@ -78,7 +66,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     )
                     mmdvm_out = (
                         b"DMRD"
-                        + self.get_mmdvm_sequence().to_bytes(1, byteorder="big")
+                        + burst.sequence_no.to_bytes(1, byteorder="big")
                         + packet.source_radio_id.to_bytes(3, byteorder="big")
                         + packet.destination_radio_id.to_bytes(3, byteorder="big")
                         + self.settings.get_repeater_dmrid().to_bytes(
@@ -132,7 +120,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         target_id=packet.command_data.target_id,
                         source_id=packet.command_data.source_id,
                         color_code=self.settings.hb_color_code,
-                        sequence_number=self.get_hytera_sequence(),
+                        sequence_number=burst.sequence_no,
                         udp_port=self.settings.dmr_port,
                         dmr_payload=byteswap_bytes(packet.command_data.dmr_data),
                         frame_type=get_ipsc_frame_type(burst),

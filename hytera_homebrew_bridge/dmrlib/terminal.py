@@ -78,6 +78,7 @@ class BurstInfo(LoggingTrait):
         self.is_data_or_control: bool = False
         self.is_valid: bool = False
         self.color_code: int = 0
+        self.sequence_no: int = 0
         self.data_type: DataType = DataType.UnknownDataType
         """
         Parity for slot_type information
@@ -102,6 +103,10 @@ class BurstInfo(LoggingTrait):
         self.detect_sync_type()
         self.parse_slot_type()
         self.parse_emb()
+
+    def set_sequence_no(self, sequence_no: int) -> "BurstInfo":
+        self.sequence_no = sequence_no
+        return self
 
     def detect_sync_type(self):
         try:
@@ -491,11 +496,18 @@ class Timeslot:
         self.transmission: Transmission = Transmission()
         self.color_code: int = 1
 
+    def get_rx_sequence(self, increment: bool = True) -> int:
+        if increment:
+            self.rx_sequence = (self.rx_sequence + 1) & 255
+        return self.rx_sequence
+
     def process_burst(self, dmrdata: BurstInfo) -> BurstInfo:
         self.last_packet_received = time.time()
         if dmrdata.color_code != 0:
             self.color_code = dmrdata.color_code
-        return self.transmission.process_packet(dmrdata)
+        return self.transmission.process_packet(dmrdata).set_sequence_no(
+            self.get_rx_sequence()
+        )
 
     def debug(self, printout: bool = True) -> str:
         status: str = (
