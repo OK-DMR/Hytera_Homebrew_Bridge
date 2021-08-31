@@ -74,7 +74,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     def handle_rdac_request(self, data: bytes, address: tuple) -> None:
         if not self.settings.hytera_is_registered:
             self.log_debug("Rejecting RDAC request for not-registered repeater")
-            self.transport.sendto(bytes([0x00]), address)
+            self.transport.sendto(bytes([0x42]), address)
             return
 
         response_address = (address[0], self.settings.p2p_port)
@@ -110,7 +110,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     def handle_dmr_request(self, data: bytes, address: tuple) -> None:
         if not self.settings.hytera_is_registered:
             self.log_debug("Rejecting DMR request for not-registered repeater")
-            self.transport.sendto(bytes([0x00]), address)
+            self.transport.sendto(bytes([0x42]), address)
             return
 
         response_address = (address[0], self.settings.p2p_port)
@@ -129,7 +129,8 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
 
     def handle_ping(self, data: bytes, address: tuple) -> None:
         if not self.settings.hytera_is_registered:
-            self.transport.sendto(bytes(0x00), address)
+            self.log_debug("Rejecting ping request for not-registered repeater")
+            self.transport.sendto(bytes(0x42), address)
             return
         data = bytearray(data)
         data[12] = 0xFF

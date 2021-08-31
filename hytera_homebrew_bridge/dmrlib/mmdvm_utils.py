@@ -16,8 +16,8 @@ def get_ipsc_timeslot(ipscdata: IpSiteConnectProtocol) -> int:
     )
 
 
-def int_to_bitstring(val: int) -> str:
-    return "{0:b}".format(val)
+def int_to_bitstring(val: int, minlength: int = 4) -> str:
+    return "{1:0{0}b}".format(minlength, val)
 
 
 def get_mmdvm_bitflags(burst: BurstInfo, packet: IpSiteConnectProtocol) -> bytes:

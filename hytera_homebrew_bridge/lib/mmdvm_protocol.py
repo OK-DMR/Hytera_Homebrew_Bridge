@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 import struct
+import traceback
 from asyncio import transports, Queue
 from binascii import hexlify, a2b_hex
 from hashlib import sha256
@@ -59,19 +60,22 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
             packet: bytes = await self.queue_outgoing.get()
             if self.transport and not self.transport.is_closing():
                 self.transport.sendto(packet)
-                mmdvm: Mmdvm = Mmdvm.from_bytes(packet)
-                self.log_debug(
-                    common_log_format(
-                        proto="HHB->MMDVM",
-                        from_ip_port=(),
-                        to_ip_port=(),
-                        use_color=True,
-                        packet_data=mmdvm,
-                        dmrdata_hash=get_dmr_data_hash(mmdvm.command_data.dmr_data)
-                        if isinstance(mmdvm.command_data, Mmdvm.TypeDmrData)
-                        else "",
+                try:
+                    mmdvm: Mmdvm = Mmdvm.from_bytes(packet)
+                    self.log_debug(
+                        common_log_format(
+                            proto="HHB->MMDVM",
+                            from_ip_port=(),
+                            to_ip_port=(),
+                            use_color=True,
+                            packet_data=mmdvm,
+                            dmrdata_hash=get_dmr_data_hash(mmdvm.command_data.dmr_data)
+                            if isinstance(mmdvm.command_data, Mmdvm.TypeDmrData)
+                            else "",
+                        )
                     )
-                )
+                except:
+                    traceback.print_exc()
             else:
                 if not self.transport:
                     self.log_info(
