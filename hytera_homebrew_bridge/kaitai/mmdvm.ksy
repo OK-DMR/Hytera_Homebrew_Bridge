@@ -209,3 +209,4 @@ seq:
         '"RPTA"': type_master_repeater_ack
         '"RPTK"': type_repeater_login_response
         '"RPTC"': type_repeater_configuration_or_closing
+        _: type_unknown

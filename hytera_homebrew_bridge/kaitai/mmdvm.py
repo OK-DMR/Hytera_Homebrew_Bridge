@@ -61,6 +61,8 @@ class Mmdvm(KaitaiStruct):
             self.command_data = Mmdvm.TypeMasterNotAccept(self._io, self, self._root)
         elif _on == u"DMRA":
             self.command_data = Mmdvm.TypeTalkerAlias(self._io, self, self._root)
+        else:
+            self.command_data = Mmdvm.TypeUnknown(self._io, self, self._root)
 
     class TypeMasterPong(KaitaiStruct):
         def __init__(self, _io, _parent=None, _root=None):

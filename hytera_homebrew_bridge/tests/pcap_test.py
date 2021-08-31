@@ -33,6 +33,8 @@ def arguments() -> ArgumentParser:
 
 def debug_udp_packet(packet: Ether, hide_unknown: bool = False) -> None:
     udp: UDP = packet.getlayer(UDP.name)
+    if not hasattr(udp, "load"):
+        return
     known_packet: KaitaiStruct = try_parse_packet(udpdata=udp.load)
     if not known_packet and not hide_unknown:
         print("Unknown UDP packet")

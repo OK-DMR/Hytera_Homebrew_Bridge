@@ -8,6 +8,9 @@ from dmr_utils3.decode import voice_head_term
 from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
     HyteraRadioNetworkProtocol,
 )
+from hytera_homebrew_bridge.kaitai.hytera_simple_transport_reliability_protocol import (
+    HyteraSimpleTransportReliabilityProtocol,
+)
 from hytera_homebrew_bridge.kaitai.ip_site_connect_heartbeat import (
     IpSiteConnectHeartbeat,
 )
@@ -121,9 +124,9 @@ def get_dmr_data_hash(dmrdata: bytes) -> str:
 def format_mmdvm_data(mmdvm: Mmdvm.TypeDmrData) -> str:
     data_type: str = format_brackets(
         text=(
-            mmdvm_data_types_data.get(mmdvm.data_type)
+            mmdvm_data_types_data.get(mmdvm.data_type, "unknown mmdvm")
             if mmdvm.frame_type == 2
-            else mmdvm_data_types_voice.get(mmdvm.data_type)
+            else mmdvm_data_types_voice.get(mmdvm.data_type, "unknown mmdvm voice")
         ),
         width=14,
     )
@@ -207,6 +210,8 @@ def common_log_format(
     prefix_mmdvm: str = "MMDVM"
     prefix_ipsc: str = "IPSC"
     prefix_hrnp: str = "HRNP"
+    prefix_hstrp: str = "HSTRP"
+    prefix_unknown: str = "UNDEF"
     if not packet_data:
         return ""
     elif isinstance(packet_data, IpSiteConnectProtocol):
@@ -218,15 +223,25 @@ def common_log_format(
         color = color_default
         proto = prefix_ipsc
     elif isinstance(packet_data, HyteraRadioNetworkProtocol):
-        packet_data_formatted = _prettyprint(packet_data).__str__()
+        packet_data_formatted = str(_prettyprint(packet_data))
         color = color_ipsc
         proto = prefix_hrnp
+    elif isinstance(packet_data, HyteraSimpleTransportReliabilityProtocol):
+        packet_data_formatted = str(_prettyprint(packet_data))
+        color = color_ipsc
+        proto = prefix_hstrp
     elif isinstance(packet_data, Mmdvm):
         proto = prefix_mmdvm
         if hasattr(packet_data, "command_data"):
             if isinstance(packet_data.command_data, Mmdvm.TypeDmrData):
                 packet_data_formatted = format_mmdvm_data(packet_data.command_data)
                 color = color_mmdvm
+            elif isinstance(packet_data.command_data, Mmdvm.TypeUnknown):
+                color = color_default
+                packet_data_formatted = (
+                    f"[ UNKNOWN UDP DATA ] [ {packet_data.command_data.unknown_data} ]"
+                )
+                proto = prefix_unknown
             else:
                 packet_data_formatted = (
                     f"[ {packet_data.command_data.__class__.__name__} ]"
