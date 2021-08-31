@@ -41,13 +41,12 @@ async def test_mmdv_to_hytera():
 
     # testcase 1
     hytera_input: bytes = unhexlify(
-        "5a5a5a5a072c000041000501010000001111cccc111100004013fc9655e07d83c44095585"
-        "adee19ae61e8abd2d8e93ce71a5daf4340322cfaf5600f955e001006f00000009382300"
+        "5a5a5a5a4d2600004100050102000000222233335555000040f95d41430ca0bf743"
+        "5d904d028fd9457ff5dd7dcf502ad501259a9e1361a22182c0069430c00003c38230063382300"
     )
     hytera_parsed: KaitaiStruct = parse_hytera_data(hytera_input)
     mmdvm_output: bytes = unhexlify(
-        "444d52440123380900006f00000000010000000096fce055837d40c45895de5a9ae11ee6bd"
-        "8a8e2dce93a571f4da0334cf2256aff9"
+        "444d52440123386323383c00000000e300000000415d0c43bfa0357404d928d094fdff57d75df5dcad021250a95936e1221a2c1869"
     )
 
     await hytera_incoming.put(hytera_parsed)
