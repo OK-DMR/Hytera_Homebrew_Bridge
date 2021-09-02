@@ -6,6 +6,7 @@ from turtle import Terminator
 
 from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
 from hytera_homebrew_bridge.dmrlib.terminal import BurstInfo, DataType
+from hytera_homebrew_bridge.kaitai.dmr_data_header import DmrDataHeader
 from hytera_homebrew_bridge.kaitai.link_control import LinkControl
 from hytera_homebrew_bridge.lib.packet_format import format_ipsc_data
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes
@@ -51,3 +52,6 @@ if __name__ == "__main__":
     if burst.data_type == DataType.TerminatorWithLC:
         info_bytes = decode_complete_lc(burst.info_bits)
         print(_prettyprint(LinkControl.from_bytes(info_bytes)))
+    elif burst.data_type == DataType.DataHeader:
+        info_bytes = decode_complete_lc(burst.info_bits)
+        print(_prettyprint(DmrDataHeader.from_bytes(info_bytes)))
