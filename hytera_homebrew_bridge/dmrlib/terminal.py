@@ -79,6 +79,7 @@ class BurstInfo(LoggingTrait):
         self.is_valid: bool = False
         self.color_code: int = 0
         self.sequence_no: int = 0
+        self.stream_no: bytes = bytes(4)
         self.data_type: DataType = DataType.UnknownDataType
         """
         Parity for slot_type information
@@ -106,6 +107,10 @@ class BurstInfo(LoggingTrait):
 
     def set_sequence_no(self, sequence_no: int) -> "BurstInfo":
         self.sequence_no = sequence_no
+        return self
+
+    def set_stream_no(self, stream_no: bytes) -> "BurstInfo":
+        self.stream_no = stream_no
         return self
 
     def detect_sync_type(self):
@@ -186,6 +191,12 @@ class Transmission:
         self.header: Optional[KaitaiStruct] = None
 
     def new_transmission(self, newtype: TransmissionType):
+        if (
+            newtype != TransmissionType.Idle
+            and self.type == TransmissionType.DataTransmission
+        ):
+            print("New Transmission when old was not yet finished")
+            self.end_data_transmission()
         self.type = newtype
         self.blocks_expected = 0
         self.blocks_received = 0
@@ -222,14 +233,18 @@ class Transmission:
         self.confirmed = data_header.data.response_requested
 
     def process_csbk(self, csbk: DmrCsbk):
-        # if not self.type == TransmissionType.DataTransmission:
-        #    self.new_transmission(TransmissionType.DataTransmission)
-        # if csbk.csbk_opcode == DmrCsbk.CsbkoTypes.preamble:
-        #    if self.blocks_expected == 0:
-        #        self.blocks_expected = csbk.preamble_csbk_blocks_to_follow + 1
+        if not self.type == TransmissionType.DataTransmission:
+            self.new_transmission(TransmissionType.DataTransmission)
+        if csbk.csbk_opcode == DmrCsbk.CsbkoTypes.preamble:
+            if self.blocks_expected == 0:
+                self.blocks_expected = csbk.preamble_csbk_blocks_to_follow + 1
+            else:
+                print(
+                    f"CSBK not setting expected to {csbk.preamble_csbk_blocks_to_follow}"
+                )
 
-        # self.blocks_received += 1
-        # self.blocks.append(csbk)
+        self.blocks_received += 1
+        self.blocks.append(csbk)
         print(_prettyprint(csbk))
 
     def process_rate_12_confirmed(
@@ -338,13 +353,17 @@ class Transmission:
             self.header.data.sap_identifier
             == DmrDataHeader.SapIdentifiers.udp_ip_header_compression
         ):
-            udp_header_with_data = DmrIpUdp.UdpIpv4CompressedHeader.from_bytes(
-                user_data
-            )
-            print(_prettyprint(udp_header_with_data))
-            print(
-                "UDP DATA: " + bytes(udp_header_with_data.user_data).decode("latin-1")
-            )
+            if len(user_data) == 0:
+                print("No user data to parse as UDP Header with data")
+            else:
+                udp_header_with_data = DmrIpUdp.UdpIpv4CompressedHeader.from_bytes(
+                    user_data
+                )
+                print(_prettyprint(udp_header_with_data))
+                print(
+                    "UDP DATA: "
+                    + bytes(udp_header_with_data.user_data).decode("latin-1")
+                )
         elif (
             self.header.data.sap_identifier
             == DmrDataHeader.SapIdentifiers.ip_based_packet_data
@@ -393,7 +412,6 @@ class Transmission:
 
     def process_packet(self, burst: BurstInfo) -> BurstInfo:
         burst = self.fix_voice_burst_type(burst)
-        print(burst.data_type)
 
         lc_info_bits = decode_complete_lc(burst.data_bits[:98] + burst.data_bits[166:])
         if burst.data_type == DataType.VoiceLCHeader:
@@ -405,7 +423,6 @@ class Transmission:
         elif burst.data_type == DataType.TerminatorWithLC:
             self.blocks_received += 1
             self.end_voice_transmission()
-            print(_prettyprint(LinkControl.from_bytes(lc_info_bits)))
         elif burst.data_type in [
             DataType.VoiceBurstA,
             DataType.VoiceBurstB,

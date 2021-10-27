@@ -73,7 +73,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                             4, byteorder="big"
                         )
                         + get_mmdvm_bitflags(burst, packet)
-                        + b"\x00\x00\x00\x01"  # timeslot_info.mmdvm_stream_id[0:4]
+                        + burst.stream_id[0:4]
                         + byteswap_bytes(packet.ipsc_payload)
                     )
 
