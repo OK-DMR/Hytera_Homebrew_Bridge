@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 from bitarray import bitarray
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 from hytera_homebrew_bridge.dmrlib.terminal import BurstInfo, DataType
-from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
-from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
 
 
-def get_mmdvm_timeslot(mmdvmdata: Mmdvm.TypeDmrData) -> int:
-    return 1 if mmdvmdata.slot_no == Mmdvm.Timeslots.timeslot_1 else 2
+def get_mmdvm_timeslot(mmdvmdata: Mmdvm2020.TypeDmrData) -> int:
+    return 1 if mmdvmdata.slot_no == Mmdvm2020.Timeslots.timeslot_1 else 2
 
 
 def get_ipsc_timeslot(ipscdata: IpSiteConnectProtocol) -> int:

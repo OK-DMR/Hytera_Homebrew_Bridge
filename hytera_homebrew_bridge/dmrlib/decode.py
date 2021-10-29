@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 from bitarray import bitarray
-from dmr_utils3.bptc import decode_full_lc
 from dmr_utils3.decode import to_bits, to_bytes
+from okdmr.kaitai.etsi.dmr_csbk import DmrCsbk
+from okdmr.kaitai.etsi.dmr_data import DmrData
+from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
+from okdmr.kaitai.etsi.dmr_ip_udp import DmrIpUdp
 
-from hytera_homebrew_bridge.kaitai.dmr_csbk import DmrCsbk
-from hytera_homebrew_bridge.kaitai.dmr_data import DmrData
-from hytera_homebrew_bridge.kaitai.dmr_data_header import DmrDataHeader
-from hytera_homebrew_bridge.kaitai.dmr_ip_udp import DmrIpUdp
 from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
 
 SYNC_PATTERNS: dict = {

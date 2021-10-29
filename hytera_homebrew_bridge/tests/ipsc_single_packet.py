@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import os
 import sys
-from binascii import b2a_hex as ahex, hexlify
-from turtle import Terminator
+
+from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
+from okdmr.kaitai.etsi.link_control import LinkControl
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
 from hytera_homebrew_bridge.dmrlib.terminal import BurstInfo, DataType
-from hytera_homebrew_bridge.kaitai.dmr_data_header import DmrDataHeader
-from hytera_homebrew_bridge.kaitai.link_control import LinkControl
 from hytera_homebrew_bridge.lib.packet_format import format_ipsc_data
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes
 
@@ -18,9 +18,7 @@ except ImportError:
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     )
 
-from dmr_utils3.decode import voice_head_term, voice_sync
 from hytera_homebrew_bridge.tests.prettyprint import prettyprint, _prettyprint
-from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

@@ -5,8 +5,8 @@ from binascii import hexlify
 from typing import Optional, Tuple, Coroutine
 
 from kaitaistruct import ValidationNotEqualError
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
-from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
 from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
     CustomBridgeDatagramProtocol,
 )

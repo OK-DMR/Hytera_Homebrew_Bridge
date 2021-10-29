@@ -3,24 +3,17 @@ import traceback
 from typing import Optional
 
 from kaitaistruct import KaitaiStruct, ValidationNotEqualError
-
-from hytera_homebrew_bridge.kaitai.hytera_dmr_application_protocol import (
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.hytera_dmr_application_protocol import (
     HyteraDmrApplicationProtocol,
 )
-from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
-    HyteraRadioNetworkProtocol,
-)
-from hytera_homebrew_bridge.kaitai.hytera_simple_transport_reliability_protocol import (
+from okdmr.kaitai.hytera.hytera_radio_network_protocol import HyteraRadioNetworkProtocol
+from okdmr.kaitai.hytera.hytera_simple_transport_reliability_protocol import (
     HyteraSimpleTransportReliabilityProtocol,
 )
-from hytera_homebrew_bridge.kaitai.ip_site_connect_heartbeat import (
-    IpSiteConnectHeartbeat,
-)
-from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
-from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
-from hytera_homebrew_bridge.kaitai.real_time_transport_protocol import (
-    RealTimeTransportProtocol,
-)
+from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+from okdmr.kaitai.hytera.real_time_transport_protocol import RealTimeTransportProtocol
 
 
 def parse_hytera_data(bytedata):
@@ -65,7 +58,7 @@ def try_parse_packet(udpdata: bytes) -> Optional[KaitaiStruct]:
 
     # Try MMDVM/Homebrew packets
     try:
-        return Mmdvm.from_bytes(udpdata)
+        return Mmdvm2020.from_bytes(udpdata)
     except BaseException as e:
         if (
             not isinstance(e, EOFError)

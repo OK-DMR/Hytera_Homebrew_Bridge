@@ -2,6 +2,8 @@
 import os
 import sys
 
+from okdmr.kaitai.homebrew.homebrew2015 import Homebrew2015
+
 try:
     import hytera_homebrew_bridge
 except ImportError:
@@ -10,7 +12,6 @@ except ImportError:
     )
 
 from hytera_homebrew_bridge.tests.prettyprint import prettyprint
-from hytera_homebrew_bridge.kaitai.homebrew import Homebrew
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -19,5 +20,5 @@ if __name__ == "__main__":
 
     print("HOMEBREW (2015) packet")
 
-    packet = Homebrew.from_bytes(bytes.fromhex(sys.argv[1]))
+    packet = Homebrew2015.from_bytes(bytes.fromhex(sys.argv[1]))
     prettyprint(packet)

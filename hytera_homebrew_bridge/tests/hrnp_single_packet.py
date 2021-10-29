@@ -2,6 +2,8 @@
 import os
 import sys
 
+from okdmr.kaitai.hytera.hytera_radio_network_protocol import HyteraRadioNetworkProtocol
+
 try:
     import hytera_homebrew_bridge
 except ImportError:
@@ -10,9 +12,6 @@ except ImportError:
     )
 
 from hytera_homebrew_bridge.tests.prettyprint import prettyprint
-from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
-    HyteraRadioNetworkProtocol,
-)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

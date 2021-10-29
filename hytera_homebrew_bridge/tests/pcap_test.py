@@ -7,7 +7,7 @@ from kamene.layers.inet import UDP, IP
 from kamene.layers.inet6 import IPv6
 
 from hytera_homebrew_bridge.dmrlib.packet_utils import try_parse_packet
-from hytera_homebrew_bridge.lib.packet_format import common_log_format, _terminal_col256
+from hytera_homebrew_bridge.lib.packet_format import common_log_format
 
 try:
     import hytera_homebrew_bridge

@@ -4,18 +4,14 @@ import zlib
 from binascii import hexlify
 
 from dmr_utils3.decode import voice_head_term
-
-from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
-    HyteraRadioNetworkProtocol,
-)
-from hytera_homebrew_bridge.kaitai.hytera_simple_transport_reliability_protocol import (
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.hytera_radio_network_protocol import HyteraRadioNetworkProtocol
+from okdmr.kaitai.hytera.hytera_simple_transport_reliability_protocol import (
     HyteraSimpleTransportReliabilityProtocol,
 )
-from hytera_homebrew_bridge.kaitai.ip_site_connect_heartbeat import (
-    IpSiteConnectHeartbeat,
-)
-from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
-from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
+from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes
 from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
 
@@ -121,7 +117,7 @@ def get_dmr_data_hash(dmrdata: bytes) -> str:
     ).decode("UTF-8")
 
 
-def format_mmdvm_data(mmdvm: Mmdvm.TypeDmrData) -> str:
+def format_mmdvm_data(mmdvm: Mmdvm2020.TypeDmrData) -> str:
     data_type: str = format_brackets(
         text=(
             mmdvm_data_types_data.get(mmdvm.data_type, "unknown mmdvm")
@@ -137,7 +133,7 @@ def format_mmdvm_data(mmdvm: Mmdvm.TypeDmrData) -> str:
         format_brackets(text=f"TS" + ("2" if mmdvm.slot_no else "1"), width=3)
         + format_brackets(
             text="PRIVATE"
-            if mmdvm.call_type == Mmdvm.CallTypes.private_call
+            if mmdvm.call_type == Mmdvm2020.CallTypes.private_call
             else "GROUP",
             width=7,
         )
@@ -235,13 +231,13 @@ def common_log_format(
         packet_data_formatted = str(_prettyprint(packet_data))
         color = color_ipsc
         proto = prefix_hstrp
-    elif isinstance(packet_data, Mmdvm):
+    elif isinstance(packet_data, Mmdvm2020):
         proto = prefix_mmdvm
         if hasattr(packet_data, "command_data"):
-            if isinstance(packet_data.command_data, Mmdvm.TypeDmrData):
+            if isinstance(packet_data.command_data, Mmdvm2020.TypeDmrData):
                 packet_data_formatted = format_mmdvm_data(packet_data.command_data)
                 color = color_mmdvm
-            elif isinstance(packet_data.command_data, Mmdvm.TypeUnknown):
+            elif isinstance(packet_data.command_data, Mmdvm2020.TypeUnknown):
                 color = color_default
                 packet_data_formatted = (
                     f"[ UNKNOWN UDP DATA ] [ {packet_data.command_data.unknown_data} ]"
@@ -256,7 +252,7 @@ def common_log_format(
         if not packet_data_formatted:
             packet_data_formatted += f"[ {packet_data.command_prefix} ]"
             color = color_default
-    elif isinstance(packet_data, Mmdvm.TypeDmrData):
+    elif isinstance(packet_data, Mmdvm2020.TypeDmrData):
         proto = prefix_mmdvm
         packet_data_formatted = format_mmdvm_data(packet_data)
         color = color_mmdvm

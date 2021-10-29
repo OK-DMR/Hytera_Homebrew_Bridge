@@ -2,6 +2,8 @@
 import os
 import sys
 
+from okdmr.kaitai.hytera.location_protocol import LocationProtocol
+
 try:
     import hytera_homebrew_bridge
 except ImportError:
@@ -10,7 +12,6 @@ except ImportError:
     )
 
 from hytera_homebrew_bridge.tests.prettyprint import prettyprint
-from hytera_homebrew_bridge.kaitai.location_protocol import LocationProtocol
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

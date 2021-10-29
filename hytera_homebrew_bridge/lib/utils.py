@@ -3,24 +3,17 @@ import logging
 import string
 
 from kaitaistruct import KaitaiStruct
-
-from hytera_homebrew_bridge.kaitai.hytera_dmr_application_protocol import (
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.hytera_dmr_application_protocol import (
     HyteraDmrApplicationProtocol,
 )
-from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
-    HyteraRadioNetworkProtocol,
-)
-from hytera_homebrew_bridge.kaitai.hytera_simple_transport_reliability_protocol import (
+from okdmr.kaitai.hytera.hytera_radio_network_protocol import HyteraRadioNetworkProtocol
+from okdmr.kaitai.hytera.hytera_simple_transport_reliability_protocol import (
     HyteraSimpleTransportReliabilityProtocol,
 )
-from hytera_homebrew_bridge.kaitai.ip_site_connect_heartbeat import (
-    IpSiteConnectHeartbeat,
-)
-from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
-from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
-from hytera_homebrew_bridge.kaitai.real_time_transport_protocol import (
-    RealTimeTransportProtocol,
-)
+from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+from okdmr.kaitai.hytera.real_time_transport_protocol import RealTimeTransportProtocol
 
 
 def byteswap_bytes(data: bytes) -> bytes:
@@ -295,13 +288,15 @@ def assemble_hytera_ipsc_packet(
     )
 
 
-def log_mmdvm_configuration(logger: logging.Logger, packet: Mmdvm) -> None:
-    if not isinstance(packet.command_data, Mmdvm.TypeRepeaterConfigurationOrClosing):
+def log_mmdvm_configuration(logger: logging.Logger, packet: Mmdvm2020) -> None:
+    if not isinstance(
+        packet.command_data, Mmdvm2020.TypeRepeaterConfigurationOrClosing
+    ):
         return
-    if not isinstance(packet.command_data.data, Mmdvm.TypeRepeaterConfiguration):
+    if not isinstance(packet.command_data.data, Mmdvm2020.TypeRepeaterConfiguration):
         return
 
-    c: Mmdvm.TypeRepeaterConfiguration = packet.command_data.data
+    c: Mmdvm2020.TypeRepeaterConfiguration = packet.command_data.data
     log = (
         "-------- MMDVM CONFIGURATION PACKET --------\n"
         f"Repeater ID\t| {c.repeater_id}\n"

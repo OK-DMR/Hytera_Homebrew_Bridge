@@ -2,6 +2,8 @@
 import os
 import sys
 
+from okdmr.kaitai.hytera.location_protocol import LocationProtocol
+
 try:
     import hytera_homebrew_bridge
 except ImportError:
@@ -9,7 +11,6 @@ except ImportError:
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     )
 
-from hytera_homebrew_bridge.kaitai.location_protocol import LocationProtocol
 from hytera_homebrew_bridge.tests.common import parse_test_data
 
 

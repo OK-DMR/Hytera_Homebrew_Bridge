@@ -4,6 +4,8 @@ from asyncio import Queue
 from typing import Optional
 
 from kaitaistruct import KaitaiStruct
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 from hytera_homebrew_bridge.dmrlib.mmdvm_utils import (
     get_mmdvm_bitflags,
@@ -12,8 +14,6 @@ from hytera_homebrew_bridge.dmrlib.mmdvm_utils import (
 )
 from hytera_homebrew_bridge.dmrlib.terminal import BurstInfo
 from hytera_homebrew_bridge.dmrlib.transmission_watcher import TransmissionWatcher
-from hytera_homebrew_bridge.kaitai.ip_site_connect_protocol import IpSiteConnectProtocol
-from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
 from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes, assemble_hytera_ipsc_packet
@@ -103,8 +103,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
         loop = asyncio.get_running_loop()
         while loop.is_running():
             try:
-                packet: Mmdvm = await self.queue_mmdvm_to_translate.get()
-                if not isinstance(packet.command_data, Mmdvm.TypeDmrData):
+                packet: Mmdvm2020 = await self.queue_mmdvm_to_translate.get()
+                if not isinstance(packet.command_data, Mmdvm2020.TypeDmrData):
                     continue
 
                 burst: Optional[BurstInfo] = self.transmission_watcher.process_packet(

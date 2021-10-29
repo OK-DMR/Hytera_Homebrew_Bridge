@@ -2,6 +2,10 @@
 import os
 import sys
 
+from okdmr.kaitai.hytera.hytera_simple_transport_reliability_protocol import (
+    HyteraSimpleTransportReliabilityProtocol,
+)
+
 try:
     import hytera_homebrew_bridge
 except ImportError:
@@ -9,9 +13,6 @@ except ImportError:
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     )
 
-from hytera_homebrew_bridge.kaitai.hytera_simple_transport_reliability_protocol import (
-    HyteraSimpleTransportReliabilityProtocol,
-)
 from hytera_homebrew_bridge.tests.common import parse_test_data
 
 if __name__ == "__main__":

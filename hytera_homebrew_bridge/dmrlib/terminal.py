@@ -11,14 +11,14 @@ from dmr_utils3.golay import encode_2087
 from dmr_utils3.qr import ENCODE_1676
 from kaitaistruct import KaitaiStruct
 from kamene.layers.inet import IP
+from okdmr.kaitai.etsi.dmr_csbk import DmrCsbk
+from okdmr.kaitai.etsi.dmr_data import DmrData
+from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
+from okdmr.kaitai.etsi.dmr_ip_udp import DmrIpUdp
+from okdmr.kaitai.etsi.link_control import LinkControl
 
 from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
 from hytera_homebrew_bridge.dmrlib.trellis import trellis_34_decode_as_bytes
-from hytera_homebrew_bridge.kaitai.dmr_csbk import DmrCsbk
-from hytera_homebrew_bridge.kaitai.dmr_data import DmrData
-from hytera_homebrew_bridge.kaitai.dmr_data_header import DmrDataHeader
-from hytera_homebrew_bridge.kaitai.dmr_ip_udp import DmrIpUdp
-from hytera_homebrew_bridge.kaitai.link_control import LinkControl
 from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
 

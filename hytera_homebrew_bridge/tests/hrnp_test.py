@@ -10,7 +10,7 @@ except ImportError:
     )
 
 if __name__ == "__main__":
-    from hytera_homebrew_bridge.kaitai.hytera_radio_network_protocol import (
+    from okdmr.kaitai.hytera.hytera_radio_network_protocol import (
         HyteraRadioNetworkProtocol,
     )
     from hytera_homebrew_bridge.tests.common import parse_test_data

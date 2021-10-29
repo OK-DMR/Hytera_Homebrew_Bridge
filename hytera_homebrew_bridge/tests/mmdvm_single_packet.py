@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import os
 import sys
-from binascii import hexlify, b2a_hex
 
-from dmr_utils3.ambe_utils import deinterleave
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
-from hytera_homebrew_bridge.dmrlib.decode import decode_data_burst, decode_complete_lc
-from hytera_homebrew_bridge.dmrlib.terminal import BurstInfo, DataType
-from hytera_homebrew_bridge.kaitai.dmr_data import DmrData
+from hytera_homebrew_bridge.dmrlib.decode import decode_data_burst
+from hytera_homebrew_bridge.dmrlib.terminal import BurstInfo
 from hytera_homebrew_bridge.lib.packet_format import format_mmdvm_data
 
 try:
@@ -17,8 +15,7 @@ except ImportError:
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
     )
 
-from hytera_homebrew_bridge.tests.prettyprint import prettyprint, _prettyprint
-from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
+from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 if __name__ == "__main__":
 
@@ -27,8 +24,8 @@ if __name__ == "__main__":
         exit(0)
 
     print(sys.argv[1])
-    packet = Mmdvm.from_bytes(bytes.fromhex(sys.argv[1]))
-    if isinstance(packet.command_data, Mmdvm.TypeDmrData):
+    packet = Mmdvm2020.from_bytes(bytes.fromhex(sys.argv[1]))
+    if isinstance(packet.command_data, Mmdvm2020.TypeDmrData):
         print(format_mmdvm_data(packet.command_data))
         decode_data_burst(packet.command_data.dmr_data)
 

@@ -10,7 +10,7 @@ except ImportError:
     )
 
 from hytera_homebrew_bridge.tests.prettyprint import prettyprint
-from hytera_homebrew_bridge.kaitai.hytera_simple_transport_reliability_protocol import (
+from okdmr.kaitai.hytera.hytera_simple_transport_reliability_protocol import (
     HyteraSimpleTransportReliabilityProtocol,
 )
 

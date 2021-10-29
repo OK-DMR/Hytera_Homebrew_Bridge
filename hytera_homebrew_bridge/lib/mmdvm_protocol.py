@@ -8,7 +8,8 @@ from hashlib import sha256
 from socket import socket
 from typing import Optional, Callable, Tuple
 
-from hytera_homebrew_bridge.kaitai.mmdvm import Mmdvm
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+
 from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
     CustomBridgeDatagramProtocol,
 )
@@ -61,7 +62,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
             if self.transport and not self.transport.is_closing():
                 self.transport.sendto(packet)
                 try:
-                    mmdvm: Mmdvm = Mmdvm.from_bytes(packet)
+                    mmdvm: Mmdvm2020 = Mmdvm2020.from_bytes(packet)
                     self.log_debug(
                         common_log_format(
                             proto="HHB->MMDVM",
@@ -70,7 +71,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                             use_color=True,
                             packet_data=mmdvm,
                             dmrdata_hash=get_dmr_data_hash(mmdvm.command_data.dmr_data)
-                            if isinstance(mmdvm.command_data, Mmdvm.TypeDmrData)
+                            if isinstance(mmdvm.command_data, Mmdvm2020.TypeDmrData)
                             else "",
                         )
                     )
@@ -110,9 +111,9 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         self.connection_lost_callback()
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
-        packet = Mmdvm.from_bytes(data)
+        packet = Mmdvm2020.from_bytes(data)
         is_handled: bool = False
-        if isinstance(packet.command_data, Mmdvm.TypeMasterNotAccept):
+        if isinstance(packet.command_data, Mmdvm2020.TypeMasterNotAccept):
             if self.connection_status == self.CON_LOGIN_REQUEST_SENT:
                 self.connection_status = self.CON_NEW
                 self.log_error("Master did not accept our login request")
@@ -126,7 +127,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                 self.log_info("Connection timed-out or was interrupted, do login again")
                 self.send_login_request()
                 is_handled = True
-        elif isinstance(packet.command_data, Mmdvm.TypeMasterRepeaterAck):
+        elif isinstance(packet.command_data, Mmdvm2020.TypeMasterRepeaterAck):
             if self.connection_status == self.CON_LOGIN_REQUEST_SENT:
                 self.log_info("Sending Login Response")
                 self.send_login_response(packet.command_data.repeater_id_or_challenge)
@@ -139,14 +140,14 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
             elif self.connection_status == self.CON_LOGIN_SUCCESSFULL:
                 self.log_info("Master accepted our configuration")
                 is_handled = True
-        elif isinstance(packet.command_data, Mmdvm.TypeMasterPong):
+        elif isinstance(packet.command_data, Mmdvm2020.TypeMasterPong):
             is_handled = True
             pass
-        elif isinstance(packet.command_data, Mmdvm.TypeMasterClosing):
+        elif isinstance(packet.command_data, Mmdvm2020.TypeMasterClosing):
             self.log_info("Master Closing connection")
             self.connection_status = self.CON_NEW
             is_handled = True
-        elif isinstance(packet.command_data, Mmdvm.TypeDmrData):
+        elif isinstance(packet.command_data, Mmdvm2020.TypeDmrData):
             self.queue_incoming.put_nowait(packet)
             is_handled = True
         if not is_handled:
@@ -207,7 +208,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
 
         self.queue_outgoing.put_nowait(packet)
 
-        config: Mmdvm = Mmdvm.from_bytes(packet)
+        config: Mmdvm2020 = Mmdvm2020.from_bytes(packet)
         log_mmdvm_configuration(logger=self.get_logger(), packet=config)
 
     def send_ping(self) -> None:
