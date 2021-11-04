@@ -22,8 +22,10 @@ class Timeslot:
         self.last_packet_received = time()
         if dmrdata.color_code != 0:
             self.color_code = dmrdata.color_code
-        return self.transmission.process_packet(dmrdata).set_sequence_no(
-            self.get_rx_sequence()
+        return (
+            self.transmission.process_packet(dmrdata)
+            .set_sequence_no(self.get_rx_sequence())
+            .set_stream_no(self.transmission.stream_no)
         )
 
     def debug(self, printout: bool = True) -> str:

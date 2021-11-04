@@ -1,3 +1,4 @@
+import secrets
 from typing import List, Optional, Union
 
 from kaitaistruct import KaitaiStruct
@@ -26,6 +27,7 @@ class Transmission:
         self.finished: bool = False
         self.blocks: List[KaitaiStruct] = list()
         self.header: Optional[KaitaiStruct] = None
+        self.stream_no: bytes = secrets.token_bytes(4)
 
     def new_transmission(self, newtype: TransmissionType):
         if (
@@ -41,6 +43,7 @@ class Transmission:
         self.finished = False
         self.blocks = list()
         self.header = None
+        self.stream_no = secrets.token_bytes(4)
 
     def process_voice_header(self, voice_header: LinkControl):
         self.new_transmission(TransmissionType.VoiceTransmission)
@@ -57,19 +60,19 @@ class Transmission:
             if self.blocks_expected == 0:
                 self.blocks_expected = data_header.data.blocks_to_follow + 1
             elif self.blocks_expected != (
-                self.blocks_received + data_header.data.blocks_to_follow
+                self.blocks_received + data_header.data.blocks_to_follow + 1
             ):
                 print(
-                    f"Header block count mismatch {self.blocks_expected}-{self.blocks_received} != {data_header.data.blocks_to_follow}"
+                    f"[Blocks To Follow] Header block count mismatch {self.blocks_expected}-{self.blocks_received} != {data_header.data.blocks_to_follow}"
                 )
         elif hasattr(data_header.data, "appended_blocks"):
             if self.blocks_expected == 0:
                 self.blocks_expected = data_header.data.appended_blocks + 1
             elif self.blocks_expected != (
-                self.blocks_expected + data_header.data.appended_blocks
+                self.blocks_expected + data_header.data.appended_blocks + 1
             ):
                 print(
-                    f"Header block count mismatch {self.blocks_expected}-{self.blocks_received} != {data_header.data.appended_blocks}"
+                    f"[Appended Blocks] Header block count mismatch {self.blocks_expected}-{self.blocks_received} != {data_header.data.appended_blocks}"
                 )
 
         print(prettyprint(data_header.data))

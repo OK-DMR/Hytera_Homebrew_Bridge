@@ -37,8 +37,8 @@ async def test_mmdv_to_hytera():
         mmdvm_incoming=mmdvm_incoming,
     )
 
-    asyncio.create_task(translator.translate_from_mmdvm())
-    asyncio.create_task(translator.translate_from_hytera())
+    t1 = asyncio.create_task(translator.translate_from_mmdvm())
+    t2 = asyncio.create_task(translator.translate_from_hytera())
 
     # testcase 1
     hytera_input: bytes = unhexlify(
@@ -52,8 +52,14 @@ async def test_mmdv_to_hytera():
 
     await hytera_incoming.put(hytera_parsed)
     mmdvm_translated: bytes = await mmdvm_outgoing.get()
-    print(mmdvm_translated.hex())
     # Null out StreamID for sake of this testcase
     mmdvm_translated = mmdvm_translated[0:16] + bytes(4) + mmdvm_translated[20:]
 
     assert mmdvm_output == mmdvm_translated
+    t1.cancel()
+    t2.cancel()
+
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(test_mmdv_to_hytera())

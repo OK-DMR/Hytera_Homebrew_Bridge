@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
-from asyncio import Queue
+from asyncio import Queue, CancelledError
 from typing import Optional
 
 from kaitaistruct import KaitaiStruct
@@ -73,7 +73,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                             4, byteorder="big"
                         )
                         + get_mmdvm_bitflags(burst, packet)
-                        + burst.stream_id[0:4]
+                        + burst.stream_no[:4]
                         + byteswap_bytes(packet.ipsc_payload)
                     )
 
@@ -87,6 +87,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         packet.__class__.__name__,
                         prettyprint(packet),
                     )
+            except CancelledError:
+                return
             except RuntimeError as e:
                 self.log_error("HYTER->HHB Could not get Hytera packet from queue")
                 self.log_exception(e)
@@ -133,6 +135,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         "packet",
                         type(packet),
                     )
+            except CancelledError:
+                return
             except RuntimeError as e:
                 self.log_error("MMDVM->HHB Could not get MMDVM packet from queue")
                 self.log_exception(e)
@@ -142,4 +146,5 @@ class HyteraMmdvmTranslator(LoggingTrait):
                 self.log_exception(e)
                 continue
 
+            # Notify queue about finished task
             self.queue_mmdvm_to_translate.task_done()

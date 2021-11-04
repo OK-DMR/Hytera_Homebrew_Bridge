@@ -34,7 +34,9 @@ def parse_hytera_data(bytedata: bytes) -> KaitaiStruct:
     elif (
         int.from_bytes(bytedata[0:8], byteorder="little") == 0
         or bytedata[0:4] == b"ZZZZ"
-        or bytedata[20] == bytedata[21]  # color code shall be same in both bytes
+        or (
+            len(bytedata) >= 21 and bytedata[20] == bytedata[21]
+        )  # color code shall be same in both bytes
     ):
         if bytedata[5:9] == bytes([0x00, 0x00, 0x00, 0x14]):
             return IpSiteConnectHeartbeat.from_bytes(bytedata)
