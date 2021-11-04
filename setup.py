@@ -20,8 +20,8 @@ setup(
     version="2021.2",
     packages=[
         "hytera_homebrew_bridge",
-        "hytera_homebrew_bridge.kaitai",
         "hytera_homebrew_bridge.lib",
+        "hytera_homebrew_bridge.dmrlib",
         "hytera_homebrew_bridge.tests",
     ],
     zip_safe=False,
