@@ -13,7 +13,7 @@ from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes
-from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
+from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 mmdvm_frame_types: dict = {0: "VOICE", 1: "VOICE SYNC", 2: "DATA SYNC", 3: "UNUSED"}
 
@@ -224,11 +224,11 @@ def common_log_format(
         color = color_default
         proto = prefix_ipsc
     elif isinstance(packet_data, HyteraRadioNetworkProtocol):
-        packet_data_formatted = str(_prettyprint(packet_data))
+        packet_data_formatted = str(prettyprint(packet_data))
         color = color_ipsc
         proto = prefix_hrnp
     elif isinstance(packet_data, HyteraSimpleTransportReliabilityProtocol):
-        packet_data_formatted = str(_prettyprint(packet_data))
+        packet_data_formatted = str(prettyprint(packet_data))
         color = color_ipsc
         proto = prefix_hstrp
     elif isinstance(packet_data, Mmdvm2020):

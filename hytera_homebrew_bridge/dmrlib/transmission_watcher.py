@@ -14,7 +14,7 @@ from hytera_homebrew_bridge.dmrlib.mmdvm_utils import (
 from hytera_homebrew_bridge.dmrlib.terminal import Terminal, BurstInfo
 from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes
-from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
+from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 
 class TransmissionWatcher(LoggingTrait):
@@ -33,7 +33,7 @@ class TransmissionWatcher(LoggingTrait):
 
         if not hasattr(parsed, "command_data"):
             self.log_debug("MMDVM unknown packet")
-            self.log_debug(str(_prettyprint(parsed)))
+            self.log_debug(str(prettyprint(parsed)))
         elif isinstance(parsed.command_data, Mmdvm2020.TypeUnknown):
             self.log_debug(
                 "MMDVM unknown command data {parsed.command_data.__class__.__name__}"
@@ -83,7 +83,7 @@ class TransmissionWatcher(LoggingTrait):
             pass
         elif isinstance(parsed, HyteraRadioNetworkProtocol):
             self.log_debug("HRNP Packet received")
-            self.log_debug(str(_prettyprint(parsed)))
+            self.log_debug(str(prettyprint(parsed)))
         else:
             self.log_error(
                 f"Did not process packet of class {parsed.__class__.__name__}"

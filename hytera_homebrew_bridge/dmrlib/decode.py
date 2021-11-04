@@ -7,7 +7,7 @@ from okdmr.kaitai.etsi.dmr_data import DmrData
 from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
 from okdmr.kaitai.etsi.dmr_ip_udp import DmrIpUdp
 
-from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
+from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 SYNC_PATTERNS: dict = {
     0x755FD7DF75F7: "bs sourced voice",
@@ -134,12 +134,12 @@ def decode_complete_lc(_data):
 
 def decode_csbk(csbk: bytes):
     csbk_kaitai = DmrCsbk.from_bytes(csbk)
-    print(_prettyprint(csbk_kaitai))
+    print(prettyprint(csbk_kaitai))
 
 
 def decode_data_header(hdr: bytes):
     as_struct = DmrDataHeader.from_bytes(hdr)
-    print(_prettyprint(as_struct.data))
+    print(prettyprint(as_struct.data))
 
 
 def decode_data_burst(dmr_data: bytes):
@@ -163,5 +163,5 @@ def decode_data_burst(dmr_data: bytes):
     elif data_type == 6:
         decode_data_header(link_control)
     elif data_type == 7:
-        print(_prettyprint(DmrIpUdp.UdpIpv4CompressedHeader.from_bytes(link_control)))
-        print(_prettyprint(DmrData.Rate12Unconfirmed.from_bytes(link_control)))
+        print(prettyprint(DmrIpUdp.UdpIpv4CompressedHeader.from_bytes(link_control)))
+        print(prettyprint(DmrData.Rate12Unconfirmed.from_bytes(link_control)))

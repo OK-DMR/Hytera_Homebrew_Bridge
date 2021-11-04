@@ -3,7 +3,8 @@ from bitarray import bitarray
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
-from hytera_homebrew_bridge.dmrlib.terminal import BurstInfo, DataType
+from hytera_homebrew_bridge.dmrlib.burst_info import BurstInfo
+from hytera_homebrew_bridge.dmrlib.data_type import DataType
 
 
 def get_mmdvm_timeslot(mmdvmdata: Mmdvm2020.TypeDmrData) -> int:

@@ -2,6 +2,8 @@
 import os
 import sys
 
+from hytera_homebrew_bridge.dmrlib.packet_utils import parse_hytera_data
+
 try:
     import hytera_homebrew_bridge
 except ImportError:
@@ -10,7 +12,6 @@ except ImportError:
     )
 
 from hytera_homebrew_bridge.tests.prettyprint import prettyprint
-from hytera_homebrew_bridge.lib.utils import parse_hytera_data
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

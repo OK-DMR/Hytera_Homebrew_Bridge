@@ -16,7 +16,7 @@ from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 from okdmr.kaitai.hytera.real_time_transport_protocol import RealTimeTransportProtocol
 
 
-def parse_hytera_data(bytedata):
+def parse_hytera_data(bytedata: bytes) -> KaitaiStruct:
     if len(bytedata) < 2:
         # probably just heartbeat response
         return IpSiteConnectHeartbeat.from_bytes(bytedata)
@@ -29,11 +29,12 @@ def parse_hytera_data(bytedata):
     elif (int.from_bytes(bytedata[0:1], byteorder="big") & 0x80) == 0x80 and (
         int.from_bytes(bytedata[0:1], byteorder="big") & 0xC0
     ) == 2:
-        return RealTimeTransportProtocol.from_bytes(bytedata)
+        rtsp = RealTimeTransportProtocol.from_bytes(bytedata)
+        return rtsp
     elif (
         int.from_bytes(bytedata[0:8], byteorder="little") == 0
         or bytedata[0:4] == b"ZZZZ"
-        or bytedata[20:22] == bytes([0x11, 0x11])
+        or bytedata[20] == bytedata[21]  # color code shall be same in both bytes
     ):
         if bytedata[5:9] == bytes([0x00, 0x00, 0x00, 0x14]):
             return IpSiteConnectHeartbeat.from_bytes(bytedata)

@@ -17,7 +17,7 @@ from hytera_homebrew_bridge.dmrlib.transmission_watcher import TransmissionWatch
 from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes, assemble_hytera_ipsc_packet
-from hytera_homebrew_bridge.tests.prettyprint import _prettyprint
+from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 
 class HyteraMmdvmTranslator(LoggingTrait):
@@ -85,7 +85,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         "packet",
                         type(packet),
                         packet.__class__.__name__,
-                        _prettyprint(packet),
+                        prettyprint(packet),
                     )
             except RuntimeError as e:
                 self.log_error("HYTER->HHB Could not get Hytera packet from queue")
@@ -121,7 +121,6 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         source_id=packet.command_data.source_id,
                         color_code=self.settings.hb_color_code,
                         sequence_number=burst.sequence_no,
-                        udp_port=self.settings.dmr_port,
                         dmr_payload=byteswap_bytes(packet.command_data.dmr_data),
                         frame_type=get_ipsc_frame_type(burst),
                         hytera_slot_type=get_ipsc_slot_type(burst),

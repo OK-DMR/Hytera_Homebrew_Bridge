@@ -8,6 +8,8 @@ from binascii import unhexlify
 import pytest
 from kaitaistruct import KaitaiStruct
 
+from hytera_homebrew_bridge.dmrlib.packet_utils import parse_hytera_data
+
 try:
     import hytera_homebrew_bridge
 except ImportError:
@@ -17,7 +19,6 @@ except ImportError:
 
 from hytera_homebrew_bridge.lib.hytera_mmdvm_translator import HyteraMmdvmTranslator
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
-from hytera_homebrew_bridge.lib.utils import parse_hytera_data
 
 
 @pytest.mark.asyncio

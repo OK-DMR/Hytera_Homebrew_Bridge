@@ -7,6 +7,7 @@ from typing import Optional, Tuple, Coroutine
 from kaitaistruct import ValidationNotEqualError
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
+from hytera_homebrew_bridge.dmrlib.packet_utils import parse_hytera_data
 from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
     CustomBridgeDatagramProtocol,
 )
@@ -15,7 +16,7 @@ from hytera_homebrew_bridge.lib.packet_format import (
     get_dmr_data_hash,
 )
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
-from hytera_homebrew_bridge.lib.utils import parse_hytera_data, byteswap_bytes
+from hytera_homebrew_bridge.lib.utils import byteswap_bytes
 
 
 class HyteraP2PProtocol(CustomBridgeDatagramProtocol):

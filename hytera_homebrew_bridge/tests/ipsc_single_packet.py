@@ -6,8 +6,9 @@ from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
 from okdmr.kaitai.etsi.link_control import LinkControl
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
+from hytera_homebrew_bridge.dmrlib.burst_info import BurstInfo
+from hytera_homebrew_bridge.dmrlib.data_type import DataType
 from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
-from hytera_homebrew_bridge.dmrlib.terminal import BurstInfo, DataType
 from hytera_homebrew_bridge.lib.packet_format import format_ipsc_data
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes
 

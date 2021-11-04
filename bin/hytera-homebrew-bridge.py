@@ -185,7 +185,7 @@ if __name__ == "__main__":
         uvloop.install()
 
     loop = asyncio.get_event_loop()
-    # order is necessary, various asyncio object are create at bridge init
+    # order is necessary, various asyncio object are created at bridge init
     # and those must be created after the main loop is created
     bridge: HyteraHomebrewBridge = HyteraHomebrewBridge(sys.argv[1])
     if os.name != "nt":
