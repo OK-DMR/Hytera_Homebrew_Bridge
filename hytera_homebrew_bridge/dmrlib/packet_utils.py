@@ -27,7 +27,7 @@ def parse_hytera_data(bytedata: bytes) -> KaitaiStruct:
         # HRNP
         return HyteraRadioNetworkProtocol.from_bytes(bytedata)
     elif (int.from_bytes(bytedata[0:1], byteorder="big") & 0x80) == 0x80 and (
-        int.from_bytes(bytedata[0:1], byteorder="big") & 0xC0
+        (int.from_bytes(bytedata[0:1], byteorder="big") & 0xC0) >> 6
     ) == 2:
         rtsp = RealTimeTransportProtocol.from_bytes(bytedata)
         return rtsp

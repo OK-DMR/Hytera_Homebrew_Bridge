@@ -72,14 +72,16 @@ class Transmission:
                 self.blocks_expected + data_header.data.appended_blocks + 1
             ):
                 print(
-                    f"[Appended Blocks] Header block count mismatch {self.blocks_expected}-{self.blocks_received} != {data_header.data.appended_blocks}"
+                    f"[Appended Blocks] Header block count mismatch {self.blocks_expected}+{self.blocks_received}+1 != {data_header.data.appended_blocks}"
                 )
 
-        print(prettyprint(data_header.data))
         self.header = data_header
         self.blocks_received += 1
         self.blocks.append(data_header)
         self.confirmed = data_header.data.response_requested
+        print(
+            f"[DATA HDR] received {self.blocks_received} / {self.blocks_expected} expected, {data_header.data.__class__.__name__}"
+        )
 
     def process_csbk(self, csbk: DmrCsbk):
         if not self.type == TransmissionType.DataTransmission:
@@ -87,14 +89,19 @@ class Transmission:
         if csbk.csbk_opcode == DmrCsbk.CsbkoTypes.preamble:
             if self.blocks_expected == 0:
                 self.blocks_expected = csbk.preamble_csbk_blocks_to_follow + 1
-            else:
+            elif (
+                self.blocks_expected - self.blocks_received
+                != csbk.preamble_csbk_blocks_to_follow + 1
+            ):
                 print(
-                    f"CSBK not setting expected to {csbk.preamble_csbk_blocks_to_follow}"
+                    f"CSBK not setting expected to {self.blocks_expected} - {self.blocks_received} != {csbk.preamble_csbk_blocks_to_follow}"
                 )
 
         self.blocks_received += 1
         self.blocks.append(csbk)
-        print(prettyprint(csbk))
+        print(
+            f"[CSBK] received {self.blocks_received} / {self.blocks_expected} expected"
+        )
 
     def process_rate_12_confirmed(
         self, data: Union[DmrData.Rate12Confirmed, DmrData.Rate12LastBlockConfirmed]
@@ -177,7 +184,7 @@ class Transmission:
             print(f"Unexpected header type {self.header.__class__.__name__}")
             return
         print(
-            f"[DATA CALL END] [CONFIRMED: {self.confirmed}] "
+            f"\n[DATA CALL END] [CONFIRMED: {self.confirmed}] "
             f"[Packets {self.blocks_received}/{self.blocks_expected} ({len(self.blocks)})] "
         )
         user_data: bytes = bytes()
@@ -186,15 +193,12 @@ class Transmission:
                 print(
                     f"[CSBK] [{packet.preamble_source_address} -> {packet.preamble_target_address}] [{packet.preamble_group_or_individual}]"
                 )
-                print(prettyprint(packet))
             elif isinstance(packet, DmrDataHeader):
                 print(
                     f"[DATA HDR] [{packet.data_packet_format}] [{packet.data.__class__.__name__}]"
                 )
-                print(prettyprint(packet.data))
             elif hasattr(packet, "user_data"):
                 print(f"[DATA] [{packet.__class__.__name__}] [{packet.user_data}]")
-                print(prettyprint(packet))
                 user_data += packet.user_data
             else:
                 print(f"[UNUSED] [{packet.__class__.__name__}]")
@@ -208,7 +212,7 @@ class Transmission:
                 udp_header_with_data = DmrIpUdp.UdpIpv4CompressedHeader.from_bytes(
                     user_data
                 )
-                print(prettyprint(udp_header_with_data))
+                prettyprint(udp_header_with_data)
                 print(
                     "UDP DATA: "
                     + bytes(udp_header_with_data.user_data).decode("latin-1")
@@ -232,9 +236,15 @@ class Transmission:
                 == DmrDataHeader.DefinedDataFormats.bcd
             ):
                 print("bcd", user_data.hex())
+            else:
+                prettyprint(self.header.data)
+                print("user_data", user_data.hex())
+                print(user_data)
         else:
             print("unhandled data", user_data.hex())
+
         self.new_transmission(TransmissionType.Idle)
+        print("\n\n")
 
     def fix_voice_burst_type(self, burst: BurstInfo) -> BurstInfo:
         if not self.type == TransmissionType.VoiceTransmission:

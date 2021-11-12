@@ -11,6 +11,7 @@ from okdmr.kaitai.hytera.hytera_simple_transport_reliability_protocol import (
 )
 from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+from okdmr.kaitai.hytera.real_time_transport_protocol import RealTimeTransportProtocol
 
 from hytera_homebrew_bridge.lib.utils import byteswap_bytes
 from hytera_homebrew_bridge.tests.prettyprint import prettyprint
@@ -212,6 +213,7 @@ def common_log_format(
     prefix_ipsc: str = "IPSC"
     prefix_hrnp: str = "HRNP"
     prefix_hstrp: str = "HSTRP"
+    prefix_rttp: str = "RTTP"
     prefix_unknown: str = "UNDEF"
     if not packet_data:
         return ""
@@ -256,6 +258,13 @@ def common_log_format(
         proto = prefix_mmdvm
         packet_data_formatted = format_mmdvm_data(packet_data)
         color = color_mmdvm
+    elif isinstance(packet_data, RealTimeTransportProtocol):
+        proto = prefix_rttp
+        color = color_ipsc
+        packet_data_formatted = (
+            f"[SEQUENCE: {packet_data.fixed_header.sequence_number}] "
+            f"[timestamp: {packet_data.fixed_header.timestamp}]"
+        )
     else:
         packet_data_formatted = (
             f"Unsupported common_log_format for data {type(packet_data).__name__}"
