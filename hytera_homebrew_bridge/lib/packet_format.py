@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import base64
 import io
 import zlib
 from binascii import hexlify
@@ -130,8 +131,14 @@ def format_mmdvm_data(mmdvm: Mmdvm2020.TypeDmrData) -> str:
     dmr_data_type: str = dmr_data_types.get(
         mmdvm.data_type, "DMR DT %d" % int(mmdvm.data_type)
     )
+    dmr_data_hash: str = base64.urlsafe_b64encode(mmdvm.dmr_data).decode("ascii")
     return (
-        format_brackets(text=f"TS" + ("2" if mmdvm.slot_no else "1"), width=3)
+        f"[{dmr_data_hash}] "
+        + format_brackets(
+            text=f"TS"
+            + ("2" if mmdvm.slot_no == Mmdvm2020.Timeslots.timeslot_2 else "1"),
+            width=3,
+        )
         + format_brackets(
             text="PRIVATE"
             if mmdvm.call_type == Mmdvm2020.CallTypes.private_call
@@ -160,8 +167,12 @@ def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
     else:
         dmr_data_type: str = "DMR DT ?"
 
+    dmr_data_hash: str = base64.urlsafe_b64encode(
+        byteswap_bytes(ipsc.ipsc_payload)
+    ).decode("ascii")
     return (
-        format_brackets(
+        f"[{dmr_data_hash}] "
+        + format_brackets(
             text=f"TS"
             + (
                 "1"

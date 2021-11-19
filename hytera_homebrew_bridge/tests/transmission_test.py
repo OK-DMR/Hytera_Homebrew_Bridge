@@ -9,6 +9,8 @@ from kaitaistruct import KaitaiStruct
 from kamene.layers.inet import UDP
 from kamene.layers.l2 import Ether
 from kamene.utils import PcapReader
+from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
+from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 from hytera_homebrew_bridge.dmrlib.packet_utils import try_parse_packet
 from hytera_homebrew_bridge.dmrlib.transmission_watcher import TransmissionWatcher
@@ -17,6 +19,19 @@ from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 def arguments() -> ArgumentParser:
     parser = ArgumentParser(description="Read transmission file(s) and debug")
+    parser.add_argument(
+        "--hytera",
+        dest="hytera",
+        action="store_true",
+        help="Use only Hytera IPSC packets",
+    )
+    parser.add_argument(
+        "--mmdvm",
+        "--homebrew",
+        dest="mmdvm",
+        action="store_true",
+        help="Use only MMDVM/Homebrew packets",
+    )
     parser.add_argument(
         "files",
         metavar="file",
@@ -62,7 +77,18 @@ def process_packet_bytes(
         _args.skipped += 1
         return
 
+    # try parse, might be NoneType
     packetdata: Optional[KaitaiStruct] = try_parse_packet(packet)
+
+    if _args.hytera and not isinstance(packetdata, IpSiteConnectProtocol):
+        return
+
+    if _args.mmdvm and not isinstance(packetdata, Mmdvm2020):
+        return
+
+    # log raw hex only if packet is not filtered
+    print(packet.hex())
+
     if packetdata:
         _watcher.process_packet(packetdata, do_debug=_args.verbose)
 
