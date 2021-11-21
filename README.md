@@ -1,8 +1,10 @@
 # Hytera Homebrew Bridge
 
-![.github/workflows/sanity.yml](https://github.com/smarek/Hytera_Homebrew_Bridge/workflows/Sanity/badge.svg?branch=master)
+![.github/workflows/sanity.yml](https://img.shields.io/github/workflow/status/OK-DMR/Hytera_Homebrew_Bridge/Sanity?style=flat-square)
 ![Code Style: Python Black](https://img.shields.io/badge/code%20style-black-000000.svg)
 ![License](https://img.shields.io/github/license/smarek/Hytera_Homebrew_Bridge)
+![Last released version](https://img.shields.io/pypi/v/hytera-homebrew-bridge?style=flat-square)
+![PyPI downloads](https://img.shields.io/pypi/dm/hytera-homebrew-bridge?style=flat-square)
 
 
 **21.12.2020: We've entered alpha testing phase, see instructions below, on how to install and test**
