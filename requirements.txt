@@ -6,3 +6,4 @@ dmr_utils3>=0.1.29
 setuptools>=51.0.0
 bitarray>=1.6.1
 dmr-kaitai>=0.5
+git+git://github.com/OK-DMR/ok-dmrlib@master#egg=ok-dmrlib

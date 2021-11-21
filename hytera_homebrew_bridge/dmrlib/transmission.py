@@ -3,17 +3,18 @@ from typing import List, Optional, Union
 
 from kaitaistruct import KaitaiStruct
 from kamene.layers.inet import IP
+from okdmr.dmrlib.coding.trellis import Trellis34
 from okdmr.kaitai.etsi.dmr_csbk import DmrCsbk
 from okdmr.kaitai.etsi.dmr_data import DmrData
 from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
 from okdmr.kaitai.etsi.dmr_ip_udp import DmrIpUdp
 from okdmr.kaitai.etsi.link_control import LinkControl
 
+
 from hytera_homebrew_bridge.dmrlib.burst_info import BurstInfo
 from hytera_homebrew_bridge.dmrlib.data_type import DataType
 from hytera_homebrew_bridge.dmrlib.decode import decode_complete_lc
 from hytera_homebrew_bridge.dmrlib.transmission_type import TransmissionType
-from hytera_homebrew_bridge.dmrlib.trellis import trellis_34_decode_as_bytes
 from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 
@@ -325,7 +326,7 @@ class Transmission:
                         DmrData.Rate12Unconfirmed.from_bytes(lc_info_bits)
                     )
         elif burst.data_type == DataType.Rate34DataContinuation:
-            lc_info_bits = trellis_34_decode_as_bytes(burst.info_bits)
+            lc_info_bits = Trellis34.decode(burst.info_bits, as_bytes=True)
             if self.confirmed:
                 if self.is_last_block(True):
                     self.process_rate_34_confirmed(
