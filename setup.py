@@ -17,7 +17,7 @@ setup(
     author="Marek Sebera",
     author_email="marek.sebera@gmail.com",
     license="AGPL-3.0",
-    version="2021.2",
+    version="2021.3rc1",
     packages=[
         "hytera_homebrew_bridge",
         "hytera_homebrew_bridge.lib",
