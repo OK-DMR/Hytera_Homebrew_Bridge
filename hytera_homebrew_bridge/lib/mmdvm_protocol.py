@@ -45,7 +45,9 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
 
     async def periodic_maintenance(self) -> None:
         while not asyncio.get_running_loop().is_closed():
+            print("before sleep")
             await asyncio.sleep(5)
+            print("after sleep")
             if self.connection_status == self.CON_NEW:
                 self.send_login_request()
             elif self.connection_status == self.CON_LOGIN_REQUEST_SENT:

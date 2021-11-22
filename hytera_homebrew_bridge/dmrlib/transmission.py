@@ -252,12 +252,6 @@ class Transmission:
             self.last_burst_data_type = burst.data_type
             return burst
 
-        print(
-            ("voice superframe " if burst.is_voice_superframe_start else "")
-            + f"data type: {burst.data_type} "
-            + f"last burst data type: {self.last_burst_data_type} "
-        )
-
         if burst.is_voice_superframe_start or (
             self.last_burst_data_type == DataType.VoiceBurstF
             and burst.data_type == DataType.UnknownDataType

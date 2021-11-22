@@ -61,9 +61,6 @@ class HyteraMmdvmTranslator(LoggingTrait):
                 )
                 if burst:
                     burst.debug()
-                    print(
-                        "Slot Type", packet.slot_type, "Frame Type", packet.frame_type
-                    )
                     mmdvm_out = (
                         b"DMRD"
                         + burst.sequence_no.to_bytes(1, byteorder="big")

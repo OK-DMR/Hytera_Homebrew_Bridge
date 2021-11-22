@@ -133,8 +133,7 @@ def format_mmdvm_data(mmdvm: Mmdvm2020.TypeDmrData) -> str:
     )
     dmr_data_hash: str = base64.urlsafe_b64encode(mmdvm.dmr_data).decode("ascii")
     return (
-        f"[{dmr_data_hash}] "
-        + format_brackets(
+        format_brackets(
             text=f"TS"
             + ("2" if mmdvm.slot_no == Mmdvm2020.Timeslots.timeslot_2 else "1"),
             width=3,
@@ -151,6 +150,7 @@ def format_mmdvm_data(mmdvm: Mmdvm2020.TypeDmrData) -> str:
         + f"[SEQ {mmdvm.sequence_no: <3}] "
         + f"[{mmdvm.source_id} -> {mmdvm.target_id}] "
         + f"[STREAM {mmdvm.stream_id}] "
+        + f"[{dmr_data_hash}] "
     )
 
 
@@ -168,11 +168,11 @@ def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
         dmr_data_type: str = "DMR DT ?"
 
     dmr_data_hash: str = base64.urlsafe_b64encode(
-        byteswap_bytes(ipsc.ipsc_payload)
+        # comparable is only first 33 bytes of dmr payload, 34th byte is endianness leftover
+        byteswap_bytes(ipsc.ipsc_payload)[0:-1]
     ).decode("ascii")
     return (
-        f"[{dmr_data_hash}] "
-        + format_brackets(
+        format_brackets(
             text=f"TS"
             + (
                 "1"
@@ -204,6 +204,7 @@ def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
         + format_brackets(text=dmr_data_type, width=14)
         + f"[SEQ {ipsc.sequence_number: <3}] "
         + f"[{ipsc.source_radio_id} -> {ipsc.destination_radio_id}] "
+        + f"[{dmr_data_hash}] "
     )
 
 

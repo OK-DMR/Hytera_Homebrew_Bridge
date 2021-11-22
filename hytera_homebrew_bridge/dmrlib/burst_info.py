@@ -1,3 +1,5 @@
+import datetime
+
 from bitarray import bitarray
 from bitarray.util import ba2int
 from dmr_utils3.decode import to_bits
@@ -104,7 +106,7 @@ class BurstInfo(LoggingTrait):
         self.emb_parity = ba2int(emb_bits[8:])
 
     def debug(self, printout: bool = True) -> str:
-        status: str = f"[{self.sync_type.name}] [CC {self.color_code}] [DATA TYPE {self.data_type.name}]"
+        status: str = f"{str(datetime.datetime.now())} [{self.sync_type.name}] [CC {self.color_code}] [DATA TYPE {self.data_type.name}]"
         if self.is_data_or_control:
             status += (
                 f" [FEC {self.fec_parity.to_bytes(2, byteorder='big').hex()}"

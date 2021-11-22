@@ -62,7 +62,7 @@ class TransmissionWatcher(LoggingTrait):
     ) -> BurstInfo:
         terminal_id = parsed.source_radio_id
         timeslot = get_ipsc_timeslot(parsed)
-        payload_swap = byteswap_bytes(parsed.ipsc_payload)
+        payload_swap = byteswap_bytes(parsed.ipsc_payload)[0:-1]
         self.ensure_terminal(terminal_id)
         burst = self.terminals[terminal_id].process_dmr_data(
             payload_swap, timeslot=timeslot
