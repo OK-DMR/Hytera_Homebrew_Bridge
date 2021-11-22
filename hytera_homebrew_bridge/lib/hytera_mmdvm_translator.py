@@ -74,7 +74,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         )
                         + get_mmdvm_bitflags(burst, packet)
                         + burst.stream_no[:4]
-                        + byteswap_bytes(packet.ipsc_payload)
+                        # ipsc payload is 34 bytes (little endian), expected mmdvm payload is 33 bytes (big endian)
+                        + byteswap_bytes(packet.ipsc_payload)[0:-1]
                     )
 
                     await self.queue_mmdvm_output.put(mmdvm_out)
@@ -113,7 +114,6 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     packet, do_debug=False
                 )
                 if burst:
-                    print("translate from mmdvm")
                     burst.debug()
 
                     hytera_out_packet: bytes = assemble_hytera_ipsc_packet(

@@ -524,9 +524,7 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
                         to_ip_port=(),
                         use_color=True,
                         packet_data=ipsc,
-                        dmrdata_hash=get_dmr_data_hash(
-                            byteswap_bytes(ipsc.ipsc_payload)
-                        ),
+                        dmrdata_hash="",
                     )
                 )
                 self.transport.sendto(

@@ -14,12 +14,14 @@ def half_byte_to_bytes(half_byte: int, output_bytes: int = 2) -> bytes:
 
 
 def byteswap_bytearray(data: bytearray) -> bytes:
-    trim = len(data) - 1
+    trim = len(data)
+    last: bytes = bytes()
     # add padding, that will get removed, to have odd number of bytes
     if len(data) % 2 != 0:
-        data.append(0x00)
+        last = bytes([data[-1]])
+        data = data[0:-1]
     data[0::2], data[1::2] = data[1::2], data[0::2]
-    return bytes(data[:trim])
+    return bytes(data[:trim]) + last
 
 
 def hytpatcher_byte_swap(pl: bytes) -> bytes:
