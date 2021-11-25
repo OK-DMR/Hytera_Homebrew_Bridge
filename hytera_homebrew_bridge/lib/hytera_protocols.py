@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import asyncio
+import time
 from asyncio import transports, Queue
 from binascii import hexlify
 from typing import Optional, Tuple, Coroutine
 
-from kaitaistruct import ValidationNotEqualError
+from kaitaistruct import ValidationNotEqualError, KaitaiStruct
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 from hytera_homebrew_bridge.dmrlib.packet_utils import parse_hytera_data
@@ -13,10 +14,8 @@ from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
 )
 from hytera_homebrew_bridge.lib.packet_format import (
     common_log_format,
-    get_dmr_data_hash,
 )
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
-from hytera_homebrew_bridge.lib.utils import byteswap_bytes
 
 
 class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
@@ -515,6 +514,7 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
     async def send_hytera_from_queue(self) -> None:
         while asyncio.get_running_loop().is_running():
             packet: bytes = await self.queue_outgoing.get()
+            start = time.time()
             if self.transport and not self.transport.is_closing():
                 ipsc = IpSiteConnectProtocol.from_bytes(packet)
                 self.log_debug(
@@ -531,6 +531,10 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
                     packet, (self.settings.hytera_repeater_ip, self.settings.dmr_port)
                 )
 
+            # notify about outbound done
+            self.queue_outgoing.task_done()
+            print(f"HHB->HYTER %.2g TIMEIT" % (100 * (time.time() - start)))
+
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.log_info("connection lost")
         if exc:
@@ -543,7 +547,19 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         self.log_debug(f"HYTER->HHB {data.hex()}")
         try:
-            self.queue_incoming.put_nowait(parse_hytera_data(data))
+            hytera_data: KaitaiStruct = parse_hytera_data(data)
+            self.queue_incoming.put_nowait(hytera_data)
+
+            self.log_debug(
+                common_log_format(
+                    proto="HYTER->HHB",
+                    from_ip_port=(),
+                    to_ip_port=(),
+                    use_color=True,
+                    packet_data=hytera_data,
+                    dmrdata_hash="",
+                )
+            )
         except EOFError as e:
             self.log_error(f"Cannot parse IPSC DMR packet {hexlify(data)} from {addr}")
             self.log_exception(e)

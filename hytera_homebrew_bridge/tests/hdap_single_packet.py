@@ -21,6 +21,6 @@ if __name__ == "__main__":
         exit(0)
 
     packet = HyteraDmrApplicationProtocol.from_bytes(bytes.fromhex(sys.argv[1]))
-    print(packet)
-    print(packet.message_type)
     prettyprint(packet)
+    # print(packet)
+    # print(packet.message_type)

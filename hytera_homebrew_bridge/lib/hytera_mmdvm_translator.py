@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
+import time
 from asyncio import Queue, CancelledError
 from typing import Optional
 
@@ -42,6 +43,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
             try:
                 packet: KaitaiStruct = await self.queue_hytera_to_translate.get()
                 if not isinstance(packet, IpSiteConnectProtocol):
+                    self.queue_hytera_to_translate.task_done()
                     continue
                 elif isinstance(packet, IpSiteConnectProtocol) and packet.slot_type in [
                     IpSiteConnectProtocol.SlotTypes.slot_type_wakeup_request,
@@ -54,8 +56,10 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         data=byteswap_bytes(packet.ipsc_payload)
                     )
                     burst.debug()
+                    self.queue_hytera_to_translate.task_done()
                     continue
 
+                start = time.time()
                 burst: Optional[BurstInfo] = self.transmission_watcher.process_packet(
                     packet, do_debug=False
                 )
@@ -75,7 +79,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         + byteswap_bytes(packet.ipsc_payload)[0:-1]
                     )
 
-                    await self.queue_mmdvm_output.put(mmdvm_out)
+                    self.queue_mmdvm_output.put_nowait(mmdvm_out)
                 else:
                     print(
                         "Hytera BurstInfo not available",
@@ -98,6 +102,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
 
             # Notify queue about finished task
             self.queue_hytera_to_translate.task_done()
+            print(f"HYTER->HHB %.2g TIMEIT" % (100 * (time.time() - start)))
 
     async def translate_from_mmdvm(self):
         loop = asyncio.get_running_loop()
@@ -105,8 +110,10 @@ class HyteraMmdvmTranslator(LoggingTrait):
             try:
                 packet: Mmdvm2020 = await self.queue_mmdvm_to_translate.get()
                 if not isinstance(packet.command_data, Mmdvm2020.TypeDmrData):
+                    self.queue_mmdvm_to_translate.task_done()
                     continue
 
+                start = time.time()
                 burst: Optional[BurstInfo] = self.transmission_watcher.process_packet(
                     packet, do_debug=False
                 )
@@ -124,7 +131,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         frame_type=get_ipsc_frame_type(burst),
                         hytera_slot_type=get_ipsc_slot_type(burst),
                     )
-                    await self.queue_hytera_output.put(hytera_out_packet)
+                    self.queue_hytera_output.put_nowait(hytera_out_packet)
                 else:
                     print(
                         f"MMDVM BurstInfo not available",
@@ -145,3 +152,4 @@ class HyteraMmdvmTranslator(LoggingTrait):
 
             # Notify queue about finished task
             self.queue_mmdvm_to_translate.task_done()
+            print(f"MMDVM->HHB %.2g TIMEIT" % (100 * (time.time() - start)))

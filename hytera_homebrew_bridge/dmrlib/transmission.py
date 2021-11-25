@@ -1,4 +1,5 @@
 import secrets
+import traceback
 from typing import List, Optional, Union
 
 from kaitaistruct import KaitaiStruct
@@ -18,8 +19,43 @@ from hytera_homebrew_bridge.dmrlib.transmission_type import TransmissionType
 from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 
+class TransmissionObserverInterface:
+    def transmission_started(self, transmission_type: TransmissionType):
+        """
+        Get notified about new transmission (data or voice) being started with voice/data header
+
+        @param transmission_type:
+        @return:
+        """
+        pass
+
+    def data_transmission_ended(
+        self, transmission_header: DmrDataHeader, blocks: List[KaitaiStruct]
+    ):
+        """
+        Get notified about completed (or ended) data transmission and get all blocks that made up that transmission,
+        including CSBKs and all the raw DMR packets
+
+        @param transmission_header:
+        @param blocks:
+        @return:
+        """
+        pass
+
+    def voice_transmission_ended(
+        self, voice_header: LinkControl, blocks: List[KaitaiStruct]
+    ):
+        """
+        Get notified about ended voice transmission
+        @param voice_header:
+        @param blocks:
+        @return:
+        """
+        pass
+
+
 class Transmission:
-    def __init__(self):
+    def __init__(self, observer: TransmissionObserverInterface = None):
         self.type = TransmissionType.Idle
         self.blocks_expected: int = 0
         self.blocks_received: int = 0
@@ -29,6 +65,12 @@ class Transmission:
         self.blocks: List[KaitaiStruct] = list()
         self.header: Optional[KaitaiStruct] = None
         self.stream_no: bytes = secrets.token_bytes(4)
+        self.observers: List[TransmissionObserverInterface] = (
+            [] if observer is None else [observer]
+        )
+
+    def add_transmission_observer(self, observer: TransmissionObserverInterface):
+        self.observers.append(observer)
 
     def new_transmission(self, newtype: TransmissionType):
         if (
@@ -163,6 +205,14 @@ class Transmission:
             return
         print(f"[VOICE CALL END]")
         if isinstance(self.header, LinkControl):
+
+            for observer in self.observers:
+                # noinspection PyBroadException
+                try:
+                    observer.voice_transmission_ended(self.header, [])
+                except:
+                    traceback.print_exc()
+
             if isinstance(self.header.specific_data, LinkControl.GroupVoiceChannelUser):
                 print(
                     f"[GROUP] [{self.header.specific_data.source_address} -> "
@@ -175,7 +225,10 @@ class Transmission:
                     f"[PRIVATE] [{self.header.specific_data.source_address} ->"
                     f" {self.header.specific_data.target_address}]"
                 )
-
+        else:
+            print(
+                f"end voice transmission unknown header type {self.header.__class__.__name__}"
+            )
         self.new_transmission(TransmissionType.Idle)
 
     def end_data_transmission(self):
@@ -188,6 +241,14 @@ class Transmission:
             f"\n[DATA CALL END] [CONFIRMED: {self.confirmed}] "
             f"[Packets {self.blocks_received}/{self.blocks_expected} ({len(self.blocks)})] "
         )
+
+        for observer in self.observers:
+            # noinspection PyBroadException
+            try:
+                observer.data_transmission_ended(self.header, self.blocks)
+            except:
+                traceback.print_exc()
+
         user_data: bytes = bytes()
         for packet in self.blocks:
             if isinstance(packet, DmrCsbk):

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 import struct
+import time
 import traceback
 from asyncio import transports, Queue
 from binascii import hexlify, a2b_hex
@@ -61,6 +62,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
     async def send_mmdvm_from_queue(self) -> None:
         while not asyncio.get_running_loop().is_closed():
             packet: bytes = await self.queue_outgoing.get()
+            start = time.time()
             if self.transport and not self.transport.is_closing():
                 self.transport.sendto(packet)
                 try:
@@ -89,6 +91,9 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                         f"Not sending packet due to MMDVM socket closing/being closed"
                     )
                     self.transport = None
+
+            self.queue_outgoing.task_done()
+            print(f"HHB->MMDVM %.2g TIMEIT" % (100 * (time.time() - start)))
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.log_debug("MMDVM socket connected")
@@ -152,6 +157,18 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         elif isinstance(packet.command_data, Mmdvm2020.TypeDmrData):
             self.queue_incoming.put_nowait(packet)
             is_handled = True
+
+            self.log_debug(
+                common_log_format(
+                    proto="MMDVM->HHB",
+                    from_ip_port=(),
+                    to_ip_port=(),
+                    use_color=True,
+                    packet_data=packet,
+                    dmrdata_hash="",
+                )
+            )
+
         if not is_handled:
             self.log_error(
                 f"UNHANDLED {packet.__class__.__name__} {packet.command_data.__class__.__name__} {hexlify(data)} status {self.connection_status}"
