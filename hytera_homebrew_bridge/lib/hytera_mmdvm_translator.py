@@ -121,8 +121,14 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     burst.debug()
 
                     hytera_out_packet: bytes = assemble_hytera_ipsc_packet(
-                        timeslot_is_ts1=(packet.command_data.slot_no == 0),
-                        is_private_call=(packet.command_data.call_type == 1),
+                        timeslot_is_ts1=(
+                            packet.command_data.slot_no
+                            == Mmdvm2020.Timeslots.timeslot_1
+                        ),
+                        is_private_call=(
+                            packet.command_data.call_type
+                            == Mmdvm2020.CallTypes.private_call
+                        ),
                         target_id=packet.command_data.target_id,
                         source_id=packet.command_data.source_id,
                         color_code=self.settings.hb_color_code,
