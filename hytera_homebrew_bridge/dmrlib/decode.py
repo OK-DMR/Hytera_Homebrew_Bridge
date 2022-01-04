@@ -151,7 +151,9 @@ def decode_data_burst(dmr_data: bytes):
         as_int(to_bytes(burst_sync), "big"),
         f"Embedded Signalling {to_bytes(burst_sync).hex().upper()}",
     )
-    link_control = decode_complete_lc(burst_info).tobytes()
+    link_control = decode_complete_lc(burst_info)
+    print(link_control)
+    link_control = link_control.tobytes()
     color_code = as_int(to_bytes(burst_slot_type[0:4]))
     data_type = as_int(to_bytes(burst_slot_type[4:8]))
     fec_parity = to_bytes(burst_slot_type[8:20])

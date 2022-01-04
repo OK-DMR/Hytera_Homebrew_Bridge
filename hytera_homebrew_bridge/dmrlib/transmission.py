@@ -4,13 +4,12 @@ from typing import List, Optional, Union
 
 from kaitaistruct import KaitaiStruct
 from kamene.layers.inet import IP
-from okdmr.dmrlib.coding.trellis import Trellis34
+from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.kaitai.etsi.dmr_csbk import DmrCsbk
 from okdmr.kaitai.etsi.dmr_data import DmrData
 from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
 from okdmr.kaitai.etsi.dmr_ip_udp import DmrIpUdp
-from okdmr.kaitai.etsi.link_control import LinkControl
-
+from okdmr.kaitai.etsi.full_link_control import FullLinkControl
 
 from hytera_homebrew_bridge.dmrlib.burst_info import BurstInfo
 from hytera_homebrew_bridge.dmrlib.data_type import DataType
@@ -43,7 +42,7 @@ class TransmissionObserverInterface:
         pass
 
     def voice_transmission_ended(
-        self, voice_header: LinkControl, blocks: List[KaitaiStruct]
+        self, voice_header: FullLinkControl, blocks: List[KaitaiStruct]
     ):
         """
         Get notified about ended voice transmission
@@ -88,7 +87,7 @@ class Transmission:
         self.header = None
         self.stream_no = secrets.token_bytes(4)
 
-    def process_voice_header(self, voice_header: LinkControl):
+    def process_voice_header(self, voice_header: FullLinkControl):
         self.new_transmission(TransmissionType.VoiceTransmission)
         self.header = voice_header
 
@@ -152,6 +151,7 @@ class Transmission:
         self.blocks_received += 1
         self.blocks.append(data)
         if isinstance(data, DmrData.Rate12LastBlockConfirmed):
+            print("rate1/2 last block confirmed", data)
             self.end_data_transmission()
 
     def process_rate_12_unconfirmed(
@@ -160,6 +160,7 @@ class Transmission:
         self.blocks_received += 1
         self.blocks.append(data)
         if isinstance(data, DmrData.Rate12LastBlockUnconfirmed):
+            print("rate1/2 last block unconfirmed", data.message_crc32.hex())
             self.end_data_transmission()
 
     def process_rate_34_confirmed(
@@ -168,6 +169,16 @@ class Transmission:
         self.blocks_received += 1
         self.blocks.append(data)
         if isinstance(data, DmrData.Rate34LastBlockConfirmed):
+            print(
+                "3/4 last block dbsn:",
+                data.data_block_serial_number,
+                "data",
+                data.user_data,
+                "crc9",
+                data.crc9,
+                "crc32",
+                data.message_crc32.hex(),
+            )
             self.end_data_transmission()
 
     def process_rate_34_unconfirmed(
@@ -204,7 +215,7 @@ class Transmission:
         if self.finished or self.type == TransmissionType.Idle:
             return
         print(f"[VOICE CALL END]")
-        if isinstance(self.header, LinkControl):
+        if isinstance(self.header, FullLinkControl):
 
             for observer in self.observers:
                 # noinspection PyBroadException
@@ -213,13 +224,15 @@ class Transmission:
                 except:
                     traceback.print_exc()
 
-            if isinstance(self.header.specific_data, LinkControl.GroupVoiceChannelUser):
+            if isinstance(
+                self.header.specific_data, FullLinkControl.GroupVoiceChannelUser
+            ):
                 print(
                     f"[GROUP] [{self.header.specific_data.source_address} -> "
                     f"{self.header.specific_data.group_address}]"
                 )
             elif isinstance(
-                self.header.specific_data, LinkControl.UnitToUnitVoiceChannelUser
+                self.header.specific_data, FullLinkControl.UnitToUnitVoiceChannelUser
             ):
                 print(
                     f"[PRIVATE] [{self.header.specific_data.source_address} ->"
@@ -342,12 +355,14 @@ class Transmission:
 
         lc_info_bits = decode_complete_lc(burst.data_bits[:98] + burst.data_bits[166:])
         if burst.data_type == DataType.VoiceLCHeader:
-            self.process_voice_header(LinkControl.from_bytes(lc_info_bits))
+            print("voice header", lc_info_bits.tobytes().hex())
+            self.process_voice_header(FullLinkControl.from_bytes(lc_info_bits))
         elif burst.data_type == DataType.DataHeader:
             self.process_data_header(DmrDataHeader.from_bytes(lc_info_bits))
         elif burst.data_type == DataType.CSBK:
             self.process_csbk(DmrCsbk.from_bytes(lc_info_bits))
         elif burst.data_type == DataType.TerminatorWithLC:
+            print("voice terminator", lc_info_bits.tobytes().hex())
             self.blocks_received += 1
             self.end_voice_transmission()
         elif burst.data_type in [

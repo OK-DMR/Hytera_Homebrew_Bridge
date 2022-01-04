@@ -14,7 +14,6 @@ from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 from hytera_homebrew_bridge.dmrlib.packet_utils import try_parse_packet
 from hytera_homebrew_bridge.dmrlib.transmission_watcher import TransmissionWatcher
-from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 
 def arguments() -> ArgumentParser:

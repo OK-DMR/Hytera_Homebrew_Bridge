@@ -3,7 +3,7 @@ import os
 import sys
 
 from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
-from okdmr.kaitai.etsi.link_control import LinkControl
+from okdmr.kaitai.etsi.full_link_control import FullLinkControl
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 from hytera_homebrew_bridge.dmrlib.burst_info import BurstInfo
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     burst.debug()
     if burst.data_type == DataType.TerminatorWithLC:
         info_bytes = decode_complete_lc(burst.info_bits)
-        print(_prettyprint(LinkControl.from_bytes(info_bytes)))
+        print(_prettyprint(FullLinkControl.from_bytes(info_bytes)))
     elif burst.data_type == DataType.DataHeader:
         info_bytes = decode_complete_lc(burst.info_bits)
         print(_prettyprint(DmrDataHeader.from_bytes(info_bytes)))

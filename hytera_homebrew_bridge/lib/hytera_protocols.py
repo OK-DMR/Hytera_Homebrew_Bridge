@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import asyncio
-import time
 from asyncio import transports, Queue
 from binascii import hexlify
 from typing import Optional, Tuple, Coroutine
@@ -514,7 +513,6 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
     async def send_hytera_from_queue(self) -> None:
         while asyncio.get_running_loop().is_running():
             packet: bytes = await self.queue_outgoing.get()
-            start = time.time()
             if self.transport and not self.transport.is_closing():
                 ipsc = IpSiteConnectProtocol.from_bytes(packet)
                 self.log_debug(
@@ -533,7 +531,6 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
 
             # notify about outbound done
             self.queue_outgoing.task_done()
-            print(f"HHB->HYTER %.2g TIMEIT" % (100 * (time.time() - start)))
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
         self.log_info("connection lost")

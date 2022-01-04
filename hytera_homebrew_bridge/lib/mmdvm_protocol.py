@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
 import struct
-import time
 import traceback
 from asyncio import transports, Queue
 from binascii import hexlify, a2b_hex
@@ -46,9 +45,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
 
     async def periodic_maintenance(self) -> None:
         while not asyncio.get_running_loop().is_closed():
-            print("before sleep")
             await asyncio.sleep(5)
-            print("after sleep")
             if self.connection_status == self.CON_NEW:
                 self.send_login_request()
             elif self.connection_status == self.CON_LOGIN_REQUEST_SENT:
@@ -62,7 +59,6 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
     async def send_mmdvm_from_queue(self) -> None:
         while not asyncio.get_running_loop().is_closed():
             packet: bytes = await self.queue_outgoing.get()
-            start = time.time()
             if self.transport and not self.transport.is_closing():
                 self.transport.sendto(packet)
                 try:
@@ -93,7 +89,6 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                     self.transport = None
 
             self.queue_outgoing.task_done()
-            print(f"HHB->MMDVM %.2g TIMEIT" % (100 * (time.time() - start)))
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.log_debug("MMDVM socket connected")

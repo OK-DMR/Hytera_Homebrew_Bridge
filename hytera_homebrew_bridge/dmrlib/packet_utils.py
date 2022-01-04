@@ -17,6 +17,7 @@ from okdmr.kaitai.hytera.real_time_transport_protocol import RealTimeTransportPr
 
 
 def parse_hytera_data(bytedata: bytes) -> KaitaiStruct:
+
     if len(bytedata) < 2:
         # probably just heartbeat response
         return IpSiteConnectHeartbeat.from_bytes(bytedata)

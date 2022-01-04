@@ -4,7 +4,7 @@ from typing import List
 
 from kaitaistruct import KaitaiStruct
 from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
-from okdmr.kaitai.etsi.link_control import LinkControl
+from okdmr.kaitai.etsi.full_link_control import FullLinkControl
 
 from hytera_homebrew_bridge.dmrlib.burst_info import BurstInfo
 from hytera_homebrew_bridge.dmrlib.transmission import (
@@ -23,7 +23,7 @@ class Timeslot(TransmissionObserverInterface):
         self.color_code: int = 1
 
     def voice_transmission_ended(
-        self, voice_header: LinkControl, blocks: List[KaitaiStruct]
+        self, voice_header: FullLinkControl, blocks: List[KaitaiStruct]
     ):
         self.reset_rx_sequence = True
         print(f"[TS {self.timeslot}] voice ended notification")

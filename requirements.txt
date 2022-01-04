@@ -1,9 +1,15 @@
 configparser>=5.0.1
-kaitaistruct>=0.9
 puresnmp>=1.10.2
 asyncio>=3.4.3
-dmr_utils3>=0.1.29
-setuptools>=51.0.0
-bitarray>=1.6.1
-dmr-kaitai>=0.5
-git+git://github.com/OK-DMR/ok-dmrlib@master#egg=ok-dmrlib
+dmr-utils3>=0.1.29
+setuptools==60.7.1
+bitarray>=2.3.5
+dmr-kaitai==0.8
+ok-dmrlib==0.2
+
+# developers / contributors
+kamene>=0.32
+uvloop>=0.15.2
+pytest
+pytest-cov
+pytest-asyncio==0.17.2

@@ -33,8 +33,9 @@ setup(
         "kaitaistruct>=0.9",
         "puresnmp>=1.10.2",
         "asyncio>=3.4.3",
-        "dmr_utils3>=0.1.29",
-        "bitarray>=1.6.1",
+        "dmr-utils3>=0.1.29",
+        "bitarray>=2.3.5",
+        "ok-dmrlib>=0.1",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",

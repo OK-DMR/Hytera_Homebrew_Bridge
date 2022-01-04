@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import asyncio
-import time
 from asyncio import Queue, CancelledError
 from typing import Optional
 
@@ -59,7 +58,6 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     self.queue_hytera_to_translate.task_done()
                     continue
 
-                start = time.time()
                 burst: Optional[BurstInfo] = self.transmission_watcher.process_packet(
                     packet, do_debug=False
                 )
@@ -102,7 +100,6 @@ class HyteraMmdvmTranslator(LoggingTrait):
 
             # Notify queue about finished task
             self.queue_hytera_to_translate.task_done()
-            print(f"HYTER->HHB %.2g TIMEIT" % (100 * (time.time() - start)))
 
     async def translate_from_mmdvm(self):
         loop = asyncio.get_running_loop()
@@ -113,7 +110,6 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     self.queue_mmdvm_to_translate.task_done()
                     continue
 
-                start = time.time()
                 burst: Optional[BurstInfo] = self.transmission_watcher.process_packet(
                     packet, do_debug=False
                 )
@@ -158,4 +154,3 @@ class HyteraMmdvmTranslator(LoggingTrait):
 
             # Notify queue about finished task
             self.queue_mmdvm_to_translate.task_done()
-            print(f"MMDVM->HHB %.2g TIMEIT" % (100 * (time.time() - start)))

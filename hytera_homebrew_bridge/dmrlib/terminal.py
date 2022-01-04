@@ -20,6 +20,8 @@ class Terminal:
 
     def process_dmr_data(self, dmrdata: bytes, timeslot: int) -> BurstInfo:
         burst = BurstInfo(data=dmrdata)
+        if burst.has_emb:
+            print("EMB", burst.emb_parity_ok)
         return self.timeslots[timeslot].process_burst(burst)
 
     def get_status(self) -> TransmissionType:
