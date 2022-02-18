@@ -130,13 +130,13 @@ class Transmission:
             self.new_transmission(TransmissionType.DataTransmission)
         if csbk.csbk_opcode == DmrCsbk.CsbkoTypes.preamble:
             if self.blocks_expected == 0:
-                self.blocks_expected = csbk.preamble_csbk_blocks_to_follow + 1
+                self.blocks_expected = csbk.csbk_data.preamble_csbk_blocks_to_follow + 1
             elif (
                 self.blocks_expected - self.blocks_received
-                != csbk.preamble_csbk_blocks_to_follow + 1
+                != csbk.csbk_data.preamble_csbk_blocks_to_follow + 1
             ):
                 print(
-                    f"CSBK not setting expected to {self.blocks_expected} - {self.blocks_received} != {csbk.preamble_csbk_blocks_to_follow}"
+                    f"CSBK not setting expected to {self.blocks_expected} - {self.blocks_received} != {csbk.csbk_data.preamble_csbk_blocks_to_follow}"
                 )
 
         self.blocks_received += 1
@@ -266,7 +266,7 @@ class Transmission:
         for packet in self.blocks:
             if isinstance(packet, DmrCsbk):
                 print(
-                    f"[CSBK] [{packet.preamble_source_address} -> {packet.preamble_target_address}] [{packet.preamble_group_or_individual}]"
+                    f"[CSBK] [{packet.csbk_data.source_address} -> {packet.csbk_data.target_address}]"
                 )
             elif isinstance(packet, DmrDataHeader):
                 print(
@@ -355,14 +355,12 @@ class Transmission:
 
         lc_info_bits = decode_complete_lc(burst.data_bits[:98] + burst.data_bits[166:])
         if burst.data_type == DataType.VoiceLCHeader:
-            print("voice header", lc_info_bits.tobytes().hex())
             self.process_voice_header(FullLinkControl.from_bytes(lc_info_bits))
         elif burst.data_type == DataType.DataHeader:
             self.process_data_header(DmrDataHeader.from_bytes(lc_info_bits))
         elif burst.data_type == DataType.CSBK:
             self.process_csbk(DmrCsbk.from_bytes(lc_info_bits))
         elif burst.data_type == DataType.TerminatorWithLC:
-            print("voice terminator", lc_info_bits.tobytes().hex())
             self.blocks_received += 1
             self.end_voice_transmission()
         elif burst.data_type in [

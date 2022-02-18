@@ -123,6 +123,10 @@ class SNMP(LoggingTrait):
     ) -> dict:
         ip, port = address
         is_success: bool = False
+
+        if not settings_storage.hytera_snmp_data.get(address[0]):
+            settings_storage.hytera_snmp_data[address[0]] = {}
+
         other_family: str = (
             "public" if settings_storage.snmp_family == "hytera" else "hytera"
         )
@@ -139,7 +143,7 @@ class SNMP(LoggingTrait):
                     snmp_result = octet_string_to_utf8(str(snmp_result, "utf8"))
                 elif oid in SNMP.ALL_FLOATS:
                     snmp_result = int.from_bytes(snmp_result, byteorder="big")
-                settings_storage.hytera_snmp_data[oid] = snmp_result
+                settings_storage.hytera_snmp_data[address[0]][oid] = snmp_result
             is_success = True
         except SystemError:
             self.log_error("SNMP failed to obtain repeater info")
@@ -163,11 +167,11 @@ class SNMP(LoggingTrait):
             self.log_exception(e)
 
         if is_success:
-            self.print_snmp_data(settings_storage=settings_storage)
+            self.print_snmp_data(settings_storage=settings_storage, address=address)
 
-        return settings_storage.hytera_snmp_data
+        return settings_storage.hytera_snmp_data[address[0]]
 
-    def print_snmp_data(self, settings_storage: BridgeSettings):
+    def print_snmp_data(self, settings_storage: BridgeSettings, address: tuple):
         self.log_debug(
             "-------------- REPEATER SNMP CONFIGURATION ----------------------------"
         )
@@ -177,10 +181,10 @@ class SNMP(LoggingTrait):
             if label_len > longest_label:
                 longest_label = label_len
 
-        for key in settings_storage.hytera_snmp_data:
+        for key in settings_storage.hytera_snmp_data[address[0]]:
             print_settings = SNMP.READABLE_LABELS.get(key)
             if print_settings:
-                value = settings_storage.hytera_snmp_data.get(key)
+                value = settings_storage.hytera_snmp_data[address[0]].get(key)
                 self.log_debug(
                     "%s| %s"
                     % (

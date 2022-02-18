@@ -2,12 +2,13 @@
 import asyncio
 from asyncio import transports, Queue
 from binascii import hexlify
-from typing import Optional, Tuple, Coroutine
+from typing import Optional, Tuple, Dict
 
 from kaitaistruct import ValidationNotEqualError, KaitaiStruct
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 from hytera_homebrew_bridge.dmrlib.packet_utils import parse_hytera_data
+from hytera_homebrew_bridge.lib.callback_interface import CallbackInterface
 from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
     CustomBridgeDatagramProtocol,
 )
@@ -31,10 +32,11 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         PACKET_TYPE_REQUEST_REGISTRATION,
     ]
 
-    def __init__(self, settings: BridgeSettings, repeater_accepted_callback: Coroutine):
+    def __init__(
+        self, settings: BridgeSettings, repeater_accepted_callback: CallbackInterface
+    ):
         super().__init__(settings)
         self.transport: Optional[transports.DatagramTransport] = None
-        self.settings.hytera_is_registered = False
         self.repeater_accepted_callback = repeater_accepted_callback
 
     @staticmethod
@@ -53,7 +55,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     def command_get_type(data: bytes) -> int:
         return data[20] if len(data) > 20 else 0
 
-    def handle_registration(self, data: bytes, address: tuple) -> None:
+    def handle_registration(self, data: bytes, address: Tuple[str, int]) -> None:
         data = bytearray(data)
         data[3] = 0x50
         # set repeater ID
@@ -67,12 +69,16 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         self.transport.sendto(data, address)
 
         self.hytera_repeater_obtain_snmp(address)
-        self.settings.hytera_is_registered = True
-        asyncio.get_running_loop().create_task(self.repeater_accepted_callback)
+        self.settings.hytera_is_registered[address[0]] = True
+        asyncio.get_running_loop().create_task(
+            self.repeater_accepted_callback.homebrew_connect(address[0])
+        )
 
-    def handle_rdac_request(self, data: bytes, address: tuple) -> None:
-        if not self.settings.hytera_is_registered:
-            self.log_debug("Rejecting RDAC request for not-registered repeater")
+    def handle_rdac_request(self, data: bytes, address: Tuple[str, int]) -> None:
+        if not self.settings.hytera_is_registered.get(address[0]):
+            self.log_debug(
+                f"Rejecting RDAC request for not-registered repeater {address[0]}"
+            )
             self.transport.sendto(bytes([0x00]), address)
             return
 
@@ -85,7 +91,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         data[13] = 0x01
         data.append(0x01)
 
-        self.settings.hytera_repeater_ip = address[0]
+        self.settings.hytera_repeater_data[address[0]].hytera_repeater_ip = address[0]
 
         self.transport.sendto(data, response_address)
         self.log_debug("RDAC Accept for %s.%s" % address)
@@ -106,9 +112,11 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         data += target_port.to_bytes(2, "little")
         return data
 
-    def handle_dmr_request(self, data: bytes, address: tuple) -> None:
-        if not self.settings.hytera_is_registered:
-            self.log_debug("Rejecting DMR request for not-registered repeater")
+    def handle_dmr_request(self, data: bytes, address: Tuple[str, int]) -> None:
+        if not self.settings.hytera_is_registered.get(address[0]):
+            self.log_debug(
+                f"Rejecting DMR request for not-registered repeater {address[0]}"
+            )
             self.transport.sendto(bytes([0x00]), address)
             return
 
@@ -126,9 +134,11 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         data = self.get_redirect_packet(data, self.settings.dmr_port)
         self.transport.sendto(data, response_address)
 
-    def handle_ping(self, data: bytes, address: tuple) -> None:
-        if not self.settings.hytera_is_registered:
-            self.log_debug("Rejecting ping request for not-registered repeater")
+    def handle_ping(self, data: bytes, address: Tuple[str, int]) -> None:
+        if not self.settings.hytera_is_registered.get(address[0]):
+            self.log_debug(
+                f"Rejecting ping request for not-registered repeater {address[0]}"
+            )
             self.transport.sendto(bytes([0x00]), address)
             return
         data = bytearray(data)
@@ -148,6 +158,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
     def datagram_received(self, data: bytes, address: Tuple[str, int]) -> None:
         packet_type = self.command_get_type(data)
         is_command = self.packet_is_command(data)
+        self.settings.ensure_repeater_data(address)
         if is_command:
             if packet_type not in self.KNOWN_PACKET_TYPES:
                 if not self.packet_is_ack(data):
@@ -353,118 +364,125 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
     )
     STEP12_RESPONSE = bytes([0x7E, 0x04, 0x00, 0xFA])
 
-    def __init__(self, settings: BridgeSettings, rdac_completed_callback: Coroutine):
+    def __init__(
+        self, settings: BridgeSettings, rdac_completed_callback: CallbackInterface
+    ):
         super().__init__(settings)
         self.transport: Optional[transports.DatagramTransport] = None
         self.rdac_completed_callback = rdac_completed_callback
-        self.step = 0
+        self.step: Dict[str, int] = dict()
 
-    def step0(self, _: bytes, address: tuple) -> None:
+    def step0(self, _: bytes, address: Tuple[str, int]) -> None:
         self.log_debug("RDAC identification started")
-        self.step = 1
+        self.step[address[0]] = 1
         self.transport.sendto(self.STEP0_REQUEST, address)
 
-    def step1(self, data: bytes, address: tuple) -> None:
+    def step1(self, data: bytes, address: Tuple[str, int]) -> None:
         if data[: len(self.STEP0_RESPONSE)] == self.STEP0_RESPONSE:
-            self.step = 2
+            self.step[address[0]] = 2
             self.transport.sendto(self.STEP1_REQUEST, address)
 
-    def step2(self, data: bytes, _: tuple) -> None:
+    def step2(self, data: bytes, address: Tuple[str, int]) -> None:
         if data[: len(self.STEP1_RESPONSE)] == self.STEP1_RESPONSE:
-            self.step = 3
+            self.step[address[0]] = 3
 
-    def step3(self, data: bytes, address: tuple) -> None:
+    def step3(self, data: bytes, address: Tuple[str, int]) -> None:
         if data[: len(self.STEP2_RESPONSE)] == self.STEP2_RESPONSE:
             self.settings.hytera_repeater_id = int.from_bytes(
                 data[18:21], byteorder="little"
             )
-            self.step = 4
+            self.step[address[0]] = 4
             self.transport.sendto(self.STEP3_REQUEST, address)
 
-    def step4(self, data: bytes, address: tuple) -> None:
+    def step4(self, data: bytes, address: Tuple[str, int]) -> None:
         if data[: len(self.STEP3_RESPONSE)] == self.STEP3_RESPONSE:
-            self.step = 5
+            self.step[address[0]] = 5
             self.transport.sendto(self.STEP4_REQUEST_1, address)
             self.transport.sendto(self.STEP4_REQUEST_2, address)
 
-    def step5(self, data: bytes, _: tuple) -> None:
+    def step5(self, data: bytes, address: Tuple[str, int]) -> None:
         if data[: len(self.STEP4_RESPONSE_1)] == self.STEP4_RESPONSE_1:
-            self.step = 6
+            self.step[address[0]] = 6
 
-    def step6(self, data: bytes, address: tuple) -> None:
+    def step6(self, data: bytes, address: Tuple[str, int]) -> None:
+        ip: str = address[0]
         if data[: len(self.STEP4_RESPONSE_2)] == self.STEP4_RESPONSE_2:
-            self.settings.hytera_callsign = (
+            self.settings.hytera_repeater_data[ip].hytera_callsign = (
                 data[88:108]
                 .decode("utf_16_le")
                 .encode("utf-8")
                 .strip(b"\x00")
                 .decode("utf-8")
             )
-            self.settings.hytera_hardware = (
+            self.settings.hytera_repeater_data[ip].hytera_hardware = (
                 data[120:184]
                 .decode("utf_16_le")
                 .encode("utf-8")
                 .strip(b"\x00")
                 .decode("utf-8")
             )
-            self.settings.hytera_firmware = (
+            self.settings.hytera_repeater_data[ip].hytera_firmware = (
                 data[56:88]
                 .decode("utf_16_le")
                 .encode("utf-8")
                 .strip(b"\x00")
                 .decode("utf-8")
             )
-            self.settings.hytera_serial_number = (
+            self.settings.hytera_repeater_data[ip].hytera_serial_number = (
                 data[184:216]
                 .decode("utf_16_le")
                 .encode("utf-8")
                 .strip(b"\x00")
                 .decode("utf-8")
             )
-            self.step = 7
+            self.step[address[0]] = 7
             self.transport.sendto(self.STEP6_REQUEST_1, address)
             self.transport.sendto(self.STEP6_REQUEST_2, address)
 
-    def step7(self, data: bytes, address: tuple) -> None:
+    def step7(self, data: bytes, address: Tuple[str, int]) -> None:
         if data[: len(self.STEP6_RESPONSE)] == self.STEP6_RESPONSE:
-            self.step = 8
+            self.step[address[0]] = 8
             self.transport.sendto(self.STEP7_REQUEST, address)
 
-    def step8(self, data: bytes, _: tuple) -> None:
+    def step8(self, data: bytes, address: Tuple[str, int]) -> None:
         if data[: len(self.STEP7_RESPONSE_1)] == self.STEP7_RESPONSE_1:
-            self.step = 10
+            self.step[address[0]] = 10
 
-    def step10(self, data: bytes, address: tuple) -> None:
+    def step10(self, data: bytes, address: Tuple[str, int]) -> None:
         if data[: len(self.STEP7_RESPONSE_2)] == self.STEP7_RESPONSE_2:
-            self.settings.hytera_repeater_mode = data[26]
-            self.settings.hytera_tx_freq = int.from_bytes(
-                data[29:33], byteorder="little"
-            )
-            self.settings.hytera_rx_freq = int.from_bytes(
-                data[33:37], byteorder="little"
-            )
-            self.step = 11
+            self.settings.hytera_repeater_data[address[0]].hytera_repeater_mode = data[
+                26
+            ]
+            self.settings.hytera_repeater_data[
+                address[0]
+            ].hytera_tx_freq = int.from_bytes(data[29:33], byteorder="little")
+            self.settings.hytera_repeater_data[
+                address[0]
+            ].hytera_rx_freq = int.from_bytes(data[33:37], byteorder="little")
+            self.step[address[0]] = 11
             self.transport.sendto(self.STEP10_REQUEST, address)
 
-    def step11(self, data: bytes, _: tuple) -> None:
+    def step11(self, data: bytes, address: Tuple[str, int]) -> None:
         if data[: len(self.STEP10_RESPONSE_1)] == self.STEP10_RESPONSE_1:
-            self.step = 12
+            self.step[address[0]] = 12
 
-    def step12(self, data: bytes, address: tuple) -> None:
+    def step12(self, data: bytes, address: Tuple[str, int]) -> None:
         if data[: len(self.STEP10_RESPONSE_2)] == self.STEP10_RESPONSE_2:
-            self.step = 13
+            self.step[address[0]] = 13
             self.transport.sendto(self.STEP12_REQUEST_1, address)
             self.transport.sendto(self.STEP12_REQUEST_2, address)
 
-    def step13(self, data: bytes, address: tuple) -> None:
+    def step13(self, data: bytes, address: Tuple[str, int]) -> None:
         if data[: len(self.STEP12_RESPONSE)] == self.STEP12_RESPONSE:
-            self.step = 14
+            self.step[address[0]] = 14
             self.log_debug("rdac completed identification")
             self.settings.print_repeater_configuration()
             self.hytera_repeater_obtain_snmp(address)
-            asyncio.get_running_loop().create_task(self.rdac_completed_callback)
+            asyncio.get_running_loop().create_task(
+                self.rdac_completed_callback.homebrew_connect(address[0])
+            )
 
-    def step14(self, data: bytes, address: tuple) -> None:
+    def step14(self, data: bytes, address: Tuple[str, int]) -> None:
         pass
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
@@ -477,8 +495,13 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
         self.log_debug("connection prepared")
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
-        if len(data) == 1 and self.step != 14:
-            if self.step == 4:
+        self.settings.ensure_repeater_data(addr)
+
+        if not self.step.get(addr[0]):
+            self.step[addr[0]] = 0
+
+        if len(data) == 1 and self.step[addr[0]] != 14:
+            if self.step[addr[0]] == 4:
                 self.log_warning(
                     "check repeater zone programming, if Digital IP"
                     "Multi-Site Connect mode allows data pass from timeslots"
@@ -486,16 +509,16 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
             self.log_warning(
                 "restart process if response is protocol reset and current step is not 14"
             )
-            self.step = 0
+            self.step[addr[0]] = 0
             self.step0(data, addr)
-        elif len(data) != 1 and self.step == 14:
+        elif len(data) != 1 and self.step[addr[0]] == 14:
             self.log_error("RDAC finished, received extra data %s" % hexlify(data))
-        elif len(data) == 1 and self.step == 14:
+        elif len(data) == 1 and self.step[addr[0]] == 14:
             if data[0] == 0x00:
                 # no data available response
                 self.transport.sendto(bytes(0x41), addr)
         else:
-            getattr(self, "step%d" % self.step)(data, addr)
+            getattr(self, "step%d" % self.step[addr[0]])(data, addr)
 
 
 class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
@@ -504,15 +527,19 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
         settings: BridgeSettings,
         queue_incoming: Queue,
         queue_outgoing: Queue,
+        hytera_repeater_ip: str,
     ) -> None:
         super().__init__(settings)
         self.transport: Optional[transports.DatagramTransport] = None
         self.queue_incoming = queue_incoming
         self.queue_outgoing = queue_outgoing
+        self.ip: str = hytera_repeater_ip
 
     async def send_hytera_from_queue(self) -> None:
         while asyncio.get_running_loop().is_running():
-            packet: bytes = await self.queue_outgoing.get()
+            ip, packet = await self.queue_outgoing.get()
+            assert isinstance(ip, str)
+            assert isinstance(packet, bytes)
             if self.transport and not self.transport.is_closing():
                 ipsc = IpSiteConnectProtocol.from_bytes(packet)
                 self.log_debug(
@@ -525,9 +552,7 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
                         dmrdata_hash="",
                     )
                 )
-                self.transport.sendto(
-                    packet, (self.settings.hytera_repeater_ip, self.settings.dmr_port)
-                )
+                self.transport.sendto(packet, (ip, self.settings.dmr_port))
 
             # notify about outbound done
             self.queue_outgoing.task_done()
@@ -542,10 +567,16 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
         self.log_debug("connection prepared")
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
+        if self.ip != addr[0]:
+            print(f"HyteraDMRProtocol ignore from {addr[0]} expected {self.ip}")
+            return
+
+        self.settings.ensure_repeater_data(addr)
+
         self.log_debug(f"HYTER->HHB {data.hex()}")
         try:
             hytera_data: KaitaiStruct = parse_hytera_data(data)
-            self.queue_incoming.put_nowait(hytera_data)
+            self.queue_incoming.put_nowait((addr[0], hytera_data))
 
             self.log_debug(
                 common_log_format(

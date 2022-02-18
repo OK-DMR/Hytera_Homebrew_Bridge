@@ -28,6 +28,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
         hytera_outgoing: Queue,
         mmdvm_incoming: Queue,
         mmdvm_outgoing: Queue,
+        hytera_repeater_ip: str,
     ):
         self.transmission_watcher: TransmissionWatcher = TransmissionWatcher()
         self.settings = settings
@@ -35,12 +36,15 @@ class HyteraMmdvmTranslator(LoggingTrait):
         self.queue_hytera_output = hytera_outgoing
         self.queue_mmdvm_to_translate = mmdvm_incoming
         self.queue_mmdvm_output = mmdvm_outgoing
+        self.hytera_ip: str = hytera_repeater_ip
 
     async def translate_from_hytera(self):
         loop = asyncio.get_running_loop()
         while loop.is_running():
             try:
-                packet: KaitaiStruct = await self.queue_hytera_to_translate.get()
+                ip, packet = await self.queue_hytera_to_translate.get()
+                assert isinstance(packet, KaitaiStruct)
+                assert isinstance(ip, str)
                 if not isinstance(packet, IpSiteConnectProtocol):
                     self.queue_hytera_to_translate.task_done()
                     continue
@@ -68,7 +72,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         + burst.sequence_no.to_bytes(1, byteorder="big")
                         + packet.source_radio_id.to_bytes(3, byteorder="big")
                         + packet.destination_radio_id.to_bytes(3, byteorder="big")
-                        + self.settings.get_repeater_dmrid().to_bytes(
+                        + self.settings.get_repeater_dmrid(ip).to_bytes(
                             4, byteorder="big"
                         )
                         + get_mmdvm_bitflags(burst, packet)
@@ -77,7 +81,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         + byteswap_bytes(packet.ipsc_payload)[0:-1]
                     )
 
-                    self.queue_mmdvm_output.put_nowait(mmdvm_out)
+                    self.queue_mmdvm_output.put_nowait((self.hytera_ip, mmdvm_out))
                 else:
                     print(
                         "Hytera BurstInfo not available",
@@ -105,7 +109,9 @@ class HyteraMmdvmTranslator(LoggingTrait):
         loop = asyncio.get_running_loop()
         while loop.is_running():
             try:
-                packet: Mmdvm2020 = await self.queue_mmdvm_to_translate.get()
+                ip, packet = await self.queue_mmdvm_to_translate.get()
+                assert isinstance(packet, Mmdvm2020)
+                assert isinstance(ip, str)
                 if not isinstance(packet.command_data, Mmdvm2020.TypeDmrData):
                     self.queue_mmdvm_to_translate.task_done()
                     continue
@@ -133,7 +139,9 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         frame_type=get_ipsc_frame_type(burst),
                         hytera_slot_type=get_ipsc_slot_type(burst),
                     )
-                    self.queue_hytera_output.put_nowait(hytera_out_packet)
+                    self.queue_hytera_output.put_nowait(
+                        (self.hytera_ip, hytera_out_packet)
+                    )
                 else:
                     print(
                         f"MMDVM BurstInfo not available",

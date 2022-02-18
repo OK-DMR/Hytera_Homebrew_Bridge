@@ -1,10 +1,27 @@
 #!/usr/bin/env python3
 
 import configparser
+from typing import Dict, Tuple
 
 from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 
 _UNSET = object()
+
+
+class HyteraRepeaterData:
+    def __init__(self):
+        self.hytera_repeater_id: int = 0
+        self.hytera_callsign: str = ""
+        self.hytera_hardware: str = ""
+        self.hytera_firmware: str = ""
+        self.hytera_serial_number: str = ""
+        self.hytera_repeater_mode: int = 0
+        self.hytera_tx_freq: int = 0
+        self.hytera_rx_freq: int = 0
+        self.hytera_repeater_ip: str = ""
+
+    def __repr__(self) -> str:
+        return f"[DMRID: {self.hytera_repeater_id}] [IP: {self.hytera_repeater_ip}] [CALL: {self.hytera_callsign}]"
 
 
 class BridgeSettings(LoggingTrait):
@@ -144,19 +161,11 @@ class BridgeSettings(LoggingTrait):
             )
 
         # hytera_protocols variables
-        self.hytera_is_registered: bool = False
-        self.hytera_snmp_data: dict = dict()
+        self.hytera_is_registered: Dict[str, bool] = dict()
+        self.hytera_snmp_data: Dict[str, dict] = dict()
 
         # hytera repeater data
-        self.hytera_repeater_id: int = 0
-        self.hytera_callsign: str = ""
-        self.hytera_hardware: str = ""
-        self.hytera_firmware: str = ""
-        self.hytera_serial_number: str = ""
-        self.hytera_repeater_mode: int = 0
-        self.hytera_tx_freq: int = 0
-        self.hytera_rx_freq: int = 0
-        self.hytera_repeater_ip: str = ""
+        self.hytera_repeater_data: Dict[str, HyteraRepeaterData] = dict()
 
     @staticmethod
     def getint_safe(
@@ -179,44 +188,50 @@ class BridgeSettings(LoggingTrait):
                 raise
             return fallback
 
-    def get_repeater_rx_freq(self) -> str:
+    def get_repeater_rx_freq(self, ip: str) -> str:
         from hytera_homebrew_bridge.lib import snmp
 
         return (
             self.hb_rx_freq
-            or str(self.hytera_rx_freq)
-            or str(self.hytera_snmp_data.get(snmp.SNMP.OID_RX_FREQUENCE))
+            or str(
+                self.hytera_repeater_data.get(ip, HyteraRepeaterData()).hytera_rx_freq
+            )
+            or str(self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_RX_FREQUENCE))
         )
 
-    def get_repeater_tx_freq(self) -> str:
+    def get_repeater_tx_freq(self, ip: str) -> str:
         from hytera_homebrew_bridge.lib import snmp
 
         return (
             self.hb_tx_freq
-            or str(self.hytera_tx_freq)
-            or str(self.hytera_snmp_data.get(snmp.SNMP.OID_TX_FREQUENCE))
+            or str(
+                self.hytera_repeater_data.get(ip, HyteraRepeaterData()).hytera_tx_freq
+            )
+            or str(self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_TX_FREQUENCE))
         )
 
-    def get_repeater_callsign(self) -> str:
+    def get_repeater_callsign(self, ip: str) -> str:
         from hytera_homebrew_bridge.lib import snmp
 
         return (
             self.hb_callsign
-            or self.hytera_callsign
-            or self.hytera_snmp_data.get(snmp.SNMP.OID_RADIO_ALIAS)
+            or self.hytera_repeater_data.get(ip, HyteraRepeaterData()).hytera_callsign
+            or self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_RADIO_ALIAS)
         )
 
-    def get_repeater_dmrid(self) -> int:
+    def get_repeater_dmrid(self, ip: str) -> int:
         from hytera_homebrew_bridge.lib import snmp
 
         return int(
             self.hb_repeater_dmr_id
-            or self.hytera_repeater_id
-            or self.hytera_snmp_data.get(snmp.SNMP.OID_RADIO_ID)
+            or self.hytera_repeater_data.get(
+                ip, HyteraRepeaterData()
+            ).hytera_repeater_id
+            or self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_RADIO_ID)
             or 0
         )
 
-    def get_incorrect_configurations(self) -> list:
+    def get_incorrect_configurations(self, ip: str) -> list:
         rtn: list = list()
 
         generic_error_message: str = (
@@ -224,11 +239,11 @@ class BridgeSettings(LoggingTrait):
             "configuration process (either P2P, RDAC or SNMP) "
         )
 
-        repeater_id = self.get_repeater_dmrid()
+        repeater_id = self.get_repeater_dmrid(ip=ip)
         if repeater_id < 1:
             rtn.append(("homebrew.repeater_dmr_id", repeater_id, generic_error_message))
 
-        repeater_callsign = self.get_repeater_callsign()
+        repeater_callsign = self.get_repeater_callsign(ip=ip)
         if not repeater_callsign:
             rtn.append(("homebrew.callsign", repeater_callsign, generic_error_message))
 
@@ -246,3 +261,7 @@ class BridgeSettings(LoggingTrait):
 
     def print_repeater_configuration(self):
         pass
+
+    def ensure_repeater_data(self, address: Tuple[str, int]):
+        if not self.hytera_repeater_data.get(address[0]):
+            self.hytera_repeater_data[address[0]] = HyteraRepeaterData()
