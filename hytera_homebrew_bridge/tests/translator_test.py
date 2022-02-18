@@ -38,6 +38,7 @@ async def test_mmdv_to_hytera():
         hytera_incoming=hytera_incoming,
         mmdvm_outgoing=mmdvm_outgoing,
         mmdvm_incoming=mmdvm_incoming,
+        hytera_repeater_ip="",
     )
 
     t1 = asyncio.create_task(translator.translate_from_mmdvm())
@@ -53,8 +54,8 @@ async def test_mmdv_to_hytera():
         "444d52440123386323383c00000000e300000000415d0c43bfa0357404d928d094fdff57d75df5dcad021250a95936e1221a2c1869"
     )
 
-    await hytera_incoming.put(hytera_parsed)
-    mmdvm_translated: bytes = await mmdvm_outgoing.get()
+    hytera_incoming.put_nowait(("", hytera_parsed))
+    ip, mmdvm_translated = await mmdvm_outgoing.get()
     # Null out StreamID for sake of this testcase
     mmdvm_translated = mmdvm_translated[0:16] + bytes(4) + mmdvm_translated[20:]
 
@@ -78,6 +79,7 @@ async def test_byteswap():
         hytera_incoming=hytera_incoming,
         mmdvm_outgoing=mmdvm_outgoing,
         mmdvm_incoming=mmdvm_incoming,
+        hytera_repeater_ip="",
     )
 
     t1 = asyncio.create_task(translator.translate_from_mmdvm())
@@ -99,8 +101,8 @@ async def test_byteswap():
             dmrdata_hash="",
         )
     )
-    await mmdvm_incoming.put(mmdvm_in_parsed)
-    hytera_out: bytes = await hytera_outgoing.get()
+    mmdvm_incoming.put_nowait(("", mmdvm_in_parsed))
+    ip, hytera_out = await hytera_outgoing.get()
     hytera_out_parsed: IpSiteConnectProtocol = IpSiteConnectProtocol.from_bytes(
         hytera_out
     )
