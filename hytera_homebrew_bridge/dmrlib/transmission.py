@@ -3,13 +3,13 @@ import traceback
 from typing import List, Optional, Union
 
 from kaitaistruct import KaitaiStruct
-from kamene.layers.inet import IP
 from okdmr.dmrlib.etsi.fec.trellis import Trellis34
 from okdmr.kaitai.etsi.dmr_csbk import DmrCsbk
 from okdmr.kaitai.etsi.dmr_data import DmrData
 from okdmr.kaitai.etsi.dmr_data_header import DmrDataHeader
 from okdmr.kaitai.etsi.dmr_ip_udp import DmrIpUdp
 from okdmr.kaitai.etsi.full_link_control import FullLinkControl
+from scapy.layers.inet import IP
 
 from hytera_homebrew_bridge.dmrlib.burst_info import BurstInfo
 from hytera_homebrew_bridge.dmrlib.data_type import DataType

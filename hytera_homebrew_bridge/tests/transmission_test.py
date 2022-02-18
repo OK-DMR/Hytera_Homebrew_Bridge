@@ -6,11 +6,11 @@ from binascii import unhexlify
 from typing import Optional
 
 from kaitaistruct import KaitaiStruct
-from kamene.layers.inet import UDP
-from kamene.layers.l2 import Ether
-from kamene.utils import PcapReader
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
+from scapy.layers.inet import UDP
+from scapy.layers.l2 import Ether
+from scapy.utils import PcapReader
 
 from hytera_homebrew_bridge.dmrlib.packet_utils import try_parse_packet
 from hytera_homebrew_bridge.dmrlib.transmission_watcher import TransmissionWatcher
@@ -108,7 +108,7 @@ def feed_from_file(filepath: str, _watcher: TransmissionWatcher, _args: Namespac
 def feed_from_pcapng(filepath: str, _watcher: TransmissionWatcher, _args: Namespace):
     with PcapReader(filepath) as pcap_reader:
         for block in pcap_reader:
-            if isinstance(block, Ether) and block.haslayer(UDP.name):
+            if isinstance(block, Ether) and block.haslayer(UDP):
                 udp = block.getlayer(UDP)
                 if not udp:
                     continue

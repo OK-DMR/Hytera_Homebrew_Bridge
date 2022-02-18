@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
+import os
+import sys
 from argparse import ArgumentParser, Namespace
 
 from kaitaistruct import KaitaiStruct
-from kamene.all import *
-from kamene.layers.inet import UDP, IP
-from kamene.layers.inet6 import IPv6
+from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
 from okdmr.kaitai.hytera.real_time_transport_protocol import RealTimeTransportProtocol
+from scapy.layers.inet import UDP, IP
+from scapy.layers.inet6 import IPv6
+from scapy.layers.l2 import Ether
+from scapy.utils import PcapReader
 
 from hytera_homebrew_bridge.dmrlib.packet_utils import try_parse_packet
 from hytera_homebrew_bridge.lib.packet_format import common_log_format
+from hytera_homebrew_bridge.tests.prettyprint import prettyprint
 
 try:
     import hytera_homebrew_bridge
@@ -62,14 +67,17 @@ def debug_udp_packet(
     known_packet: KaitaiStruct = try_parse_packet(udpdata=udp.load)
     if _args.no_rttp and isinstance(known_packet, RealTimeTransportProtocol):
         return
-    print(udp.load.hex())
-    if not known_packet and not hide_unknown:
-        print("Unknown UDP packet")
-        packet.display()
+    if isinstance(known_packet, IpSiteConnectHeartbeat):
+        return
+    if not known_packet:
+        if not hide_unknown:
+            print("Unknown UDP packet")
+            packet.display()
     else:
-        ip: IP = packet.getlayer(IP.name)
+        print(udp.load.hex())
+        ip: IP = packet.getlayer(IP)
         if not ip:
-            ip: IPv6 = packet.getlayer(IPv6.name)
+            ip: IPv6 = packet.getlayer(IPv6)
         logline = common_log_format(
             proto=known_packet.__class__.__name__,
             from_ip_port=(ip.src, udp.sport),
@@ -85,11 +93,12 @@ def debug_udp_packet(
 def read_pcap(filepath: str, _args: Namespace, hide_unknown: bool = False):
     with PcapReader(filepath) as pcap_reader:
         for pkt in pcap_reader:
-            if isinstance(pkt, Ether) and pkt.haslayer(UDP.name):
+            if isinstance(pkt, Ether) and pkt.haslayer(UDP):
                 debug_udp_packet(packet=pkt, _args=_args, hide_unknown=hide_unknown)
+            else:
+                print("not Ether / ", isinstance(pkt, Ether), pkt.haslayer(UDP))
 
 
 if __name__ == "__main__":
     args = arguments().parse_args(sys.argv[1:])
-    print(args)
     read_pcap(args.file, hide_unknown=args.hide_unknown, _args=args)
