@@ -25,7 +25,9 @@ if __name__ == "__main__":
 
     print(sys.argv[1])
     packet = Mmdvm2020.from_bytes(bytes.fromhex(sys.argv[1]))
-    if isinstance(packet.command_data, Mmdvm2020.TypeDmrData):
+    if hasattr(packet, "command_data") and isinstance(
+        packet.command_data, Mmdvm2020.TypeDmrData
+    ):
         print(format_mmdvm_data(packet.command_data))
         decode_data_burst(packet.command_data.dmr_data)
 

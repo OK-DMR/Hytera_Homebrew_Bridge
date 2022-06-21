@@ -191,23 +191,19 @@ class BridgeSettings(LoggingTrait):
     def get_repeater_rx_freq(self, ip: str) -> str:
         from hytera_homebrew_bridge.lib import snmp
 
-        return (
+        return str(
             self.hb_rx_freq
-            or str(
-                self.hytera_repeater_data.get(ip, HyteraRepeaterData()).hytera_rx_freq
-            )
-            or str(self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_RX_FREQUENCE))
+            or self.hytera_repeater_data.get(ip, HyteraRepeaterData()).hytera_rx_freq
+            or self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_RX_FREQUENCE)
         )
 
     def get_repeater_tx_freq(self, ip: str) -> str:
         from hytera_homebrew_bridge.lib import snmp
 
-        return (
+        return str(
             self.hb_tx_freq
-            or str(
-                self.hytera_repeater_data.get(ip, HyteraRepeaterData()).hytera_tx_freq
-            )
-            or str(self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_TX_FREQUENCE))
+            or self.hytera_repeater_data.get(ip, HyteraRepeaterData()).hytera_tx_freq
+            or self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_TX_FREQUENCE)
         )
 
     def get_repeater_callsign(self, ip: str) -> str:
@@ -263,5 +259,5 @@ class BridgeSettings(LoggingTrait):
         pass
 
     def ensure_repeater_data(self, address: Tuple[str, int]):
-        if not self.hytera_repeater_data.get(address[0]):
+        if not self.hytera_repeater_data.get(address[0], None):
             self.hytera_repeater_data[address[0]] = HyteraRepeaterData()

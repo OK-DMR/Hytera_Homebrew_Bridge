@@ -570,6 +570,7 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
         if self.ip != addr[0]:
             print(f"HyteraDMRProtocol ignore from {addr[0]} expected {self.ip}")
             return
+        print(f"HyteraDMRProtocol accept from {addr[0]}")
 
         self.settings.ensure_repeater_data(addr)
 
