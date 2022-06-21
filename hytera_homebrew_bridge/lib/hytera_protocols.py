@@ -94,7 +94,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         self.settings.hytera_repeater_data[address[0]].hytera_repeater_ip = address[0]
 
         self.transport.sendto(data, response_address)
-        self.log_debug("RDAC Accept for %s.%s" % address)
+        self.log_debug("RDAC Accept for %s:%s" % address)
 
         # redirect repeater to correct RDAC port
         data = self.get_redirect_packet(data, self.settings.rdac_port)
@@ -102,6 +102,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
 
     @staticmethod
     def get_redirect_packet(data: bytearray, target_port: int):
+        print(f"Providing redirect packet to port {target_port}")
         data = data[: len(data) - 1]
         data[4] = 0x0B
         data[12] = 0xFF
@@ -129,9 +130,11 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         data.append(0x01)
 
         self.transport.sendto(data, response_address)
-        self.log_debug("DMR Accept for %s.%s" % address)
+        self.log_debug("DMR Accept for %s:%s" % address)
 
-        data = self.get_redirect_packet(data, self.settings.dmr_port)
+        data = self.get_redirect_packet(
+            data, self.settings.get_repeater_dmr_port(address[0])
+        )
         self.transport.sendto(data, response_address)
 
     def handle_ping(self, data: bytes, address: Tuple[str, int]) -> None:
@@ -534,6 +537,9 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
         self.queue_incoming = queue_incoming
         self.queue_outgoing = queue_outgoing
         self.ip: str = hytera_repeater_ip
+        print(
+            f"HyteraDMRProtocol on creation expecting ip {self.ip} and port {self.settings.get_repeater_dmr_port(self.ip)}"
+        )
 
     async def send_hytera_from_queue(self) -> None:
         while asyncio.get_running_loop().is_running():
@@ -568,13 +574,15 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
 
     def datagram_received(self, data: bytes, addr: Tuple[str, int]) -> None:
         if self.ip != addr[0]:
-            print(f"HyteraDMRProtocol ignore from {addr[0]} expected {self.ip}")
+            self.log_debug(
+                f"HyteraDMRProtocol ignore from {addr[0]} expected {self.ip} data {data.hex()}"
+            )
             return
-        print(f"HyteraDMRProtocol accept from {addr[0]}")
+        else:
+            self.log_debug(f"HyteraDMRProtocol accept from {addr[0]} data {data.hex()}")
 
         self.settings.ensure_repeater_data(addr)
 
-        self.log_debug(f"HYTER->HHB {data.hex()}")
         try:
             hytera_data: KaitaiStruct = parse_hytera_data(data)
             self.queue_incoming.put_nowait((addr[0], hytera_data))

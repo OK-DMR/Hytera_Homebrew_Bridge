@@ -122,9 +122,13 @@ def get_dmr_data_hash(dmrdata: bytes) -> str:
 def format_mmdvm_data(mmdvm: Mmdvm2020.TypeDmrData) -> str:
     data_type: str = format_brackets(
         text=(
-            mmdvm_data_types_data.get(mmdvm.data_type, "unknown mmdvm")
+            mmdvm_data_types_data.get(
+                mmdvm.data_type, f"unknown mmdvm (data type: {mmdvm.data_type})"
+            )
             if mmdvm.frame_type == 2
-            else mmdvm_data_types_voice.get(mmdvm.data_type, "unknown mmdvm voice")
+            else mmdvm_data_types_voice.get(
+                mmdvm.data_type, f"unknown mmdvm voice (data type: {mmdvm.data_type})"
+            )
         ),
         width=14,
     )

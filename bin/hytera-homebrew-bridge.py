@@ -7,7 +7,10 @@ import socket
 import sys
 from asyncio import AbstractEventLoop, Queue
 from signal import SIGINT, SIGTERM
+from socket import SocketKind
 from typing import Optional, Dict
+
+from uvloop.loop import UDPTransport
 
 self_name: str = "hytera_homebrew_bridge"
 self_spec = importlib.util.find_spec(self_name)
@@ -33,6 +36,7 @@ class HyteraRepeater(CallbackInterface):
     def __init__(self, ip: str, settings: BridgeSettings, asyncloop: AbstractEventLoop):
         # ip of hytera repeater
         self.ip: str = ip
+        self.dmr_port: int = 0
         self.settings: BridgeSettings = settings
         self.loop: AbstractEventLoop = asyncloop
         # message queues for translator
@@ -67,10 +71,9 @@ class HyteraRepeater(CallbackInterface):
         asyncio.run(self.homebrew_connect(ip=ip))
 
     async def hytera_dmr_connect(self) -> None:
-        await self.loop.create_datagram_endpoint(
+        (transport, _) = await self.loop.create_datagram_endpoint(
             lambda: self.hytera_dmr_protocol,
-            local_addr=(self.settings.ipsc_ip, self.settings.dmr_port),
-            reuse_port=True,
+            sock=self.settings.hytera_repeater_data[self.ip].dmr_socket,
         )
 
     async def homebrew_connect(self, ip: str) -> None:
