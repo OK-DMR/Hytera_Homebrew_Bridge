@@ -18,19 +18,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install libsnmp-dev snmp-mibs-downloader gcc python-dev
           python -m pip install --upgrade pip
-          pip install flake8 pytest
+          pip install pytest
           pip install -r requirements.txt
           pip install -r requirements.development.txt
-      - name: run tests with embedded data
-        run: |
-          python -m hytera_homebrew_bridge.tests.lp_test
-          python -m hytera_homebrew_bridge.tests.hrnp_test
-          python -m hytera_homebrew_bridge.tests.hstrp_test
-          python -m hytera_homebrew_bridge.tests.ipsc_test
-      - name: Lint with flake8
-        run: |
-          flake8 hytera_homebrew_bridge --count --exclude kaitai,tests --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-          flake8 hytera_homebrew_bridge --count --ignore E402 --exclude kaitai --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Test with pytest
         run: |
           pytest
