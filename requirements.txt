@@ -4,7 +4,8 @@ asyncio>=3.4.3
 dmr-utils3>=0.1.29
 setuptools>=60.9.1
 bitarray>=2.3.5
-ok-dmrlib>=1.0
+ok-dmrlib>=0.5
+dmr-kaitai>=1.0
 
 # developers / contributors
 scapy>=2.4.5
