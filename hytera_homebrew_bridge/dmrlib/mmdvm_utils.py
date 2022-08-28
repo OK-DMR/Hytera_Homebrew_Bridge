@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from typing import Dict
+
 from bitarray import bitarray
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
@@ -58,7 +60,7 @@ def get_mmdvm_bitflags(burst: BurstInfo, packet: IpSiteConnectProtocol) -> bytes
     return flags.tobytes()
 
 
-DMR_DATA_TYPE_TO_IPSC_SLOT_TYPE: dict = {
+DMR_DATA_TYPE_TO_IPSC_SLOT_TYPE: Dict[DataType, IpSiteConnectProtocol.SlotTypes] = {
     DataType.VoiceBurstA: IpSiteConnectProtocol.SlotTypes.slot_type_data_c,
     DataType.VoiceBurstB: IpSiteConnectProtocol.SlotTypes.slot_type_data_d,
     DataType.VoiceBurstC: IpSiteConnectProtocol.SlotTypes.slot_type_data_e,
@@ -70,11 +72,11 @@ DMR_DATA_TYPE_TO_IPSC_SLOT_TYPE: dict = {
     DataType.Rate12DataContinuation: IpSiteConnectProtocol.SlotTypes.slot_type_rate_12_data,
     DataType.CSBK: IpSiteConnectProtocol.SlotTypes.slot_type_csbk,
     DataType.DataHeader: IpSiteConnectProtocol.SlotTypes.slot_type_data_header,
-    DataType.PrivacyIndicatorHeader: IpSiteConnectProtocol.SlotTypes.slot_type_privacy_indicator,
+    DataType.PrivacyIndicatorHeader: IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc,
     DataType.TerminatorWithLC: IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc,
 }
 
-DMR_DATA_TYPE_TO_IPSC_FRAME_TYPE: dict = {
+DMR_DATA_TYPE_TO_IPSC_FRAME_TYPE: Dict[DataType, IpSiteConnectProtocol.FrameTypes] = {
     DataType.VoiceBurstA: IpSiteConnectProtocol.FrameTypes.frame_type_voice,
     DataType.VoiceBurstB: IpSiteConnectProtocol.FrameTypes.frame_type_voice,
     DataType.VoiceBurstC: IpSiteConnectProtocol.FrameTypes.frame_type_voice_sync,
