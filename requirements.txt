@@ -1,8 +1,8 @@
-configparser>=5.0.1
-puresnmp~=1.11.0.post1
+configparser>=5.3.0
+puresnmp~=1.10.2.post1
 asyncio>=3.4.3
 dmr-utils3>=0.1.29
-setuptools>=60.9.1
+setuptools>=65.3.0
 bitarray>=2.3.5
-ok-dmrlib>=0.5
+ok-dmrlib>=0.6.1
 dmr-kaitai>=1.0

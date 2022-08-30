@@ -5,9 +5,9 @@ from binascii import hexlify
 from typing import Optional, Tuple, Dict
 
 from kaitaistruct import ValidationNotEqualError, KaitaiStruct
+from okdmr.dmrlib.utils.parsing import parse_hytera_data
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
-from hytera_homebrew_bridge.dmrlib.packet_utils import parse_hytera_data
 from hytera_homebrew_bridge.lib.callback_interface import CallbackInterface
 from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
     CustomBridgeDatagramProtocol,

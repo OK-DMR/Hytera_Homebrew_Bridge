@@ -5,70 +5,8 @@ import string
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
 
-def byteswap_bytes(data: bytes) -> bytes:
-    return byteswap_bytearray(bytearray(data))
-
-
 def half_byte_to_bytes(half_byte: int, output_bytes: int = 2) -> bytes:
     return bytes([half_byte | half_byte << 4]) * output_bytes
-
-
-def byteswap_bytearray(data: bytearray) -> bytes:
-    trim = len(data)
-    last: bytes = bytes()
-    # add padding, that will get removed, to have odd number of bytes
-    if len(data) % 2 != 0:
-        last = bytes([data[-1]])
-        data = data[0:-1]
-    data[0::2], data[1::2] = data[1::2], data[0::2]
-    return bytes(data[:trim]) + last
-
-
-def hytpatcher_byte_swap(pl: bytes) -> bytes:
-    """
-    static slice/join function for swapping the bytes in ambe payload between MMDVM and Hytera
-    :rtype: bytes
-    :param pl:
-    :return: bytes
-    """
-    return b"".join(
-        [
-            pl[2:4],
-            pl[0:2],
-            pl[6:8],
-            pl[4:6],
-            pl[10:12],
-            pl[8:10],
-            pl[14:16],
-            pl[12:14],
-            pl[18:20],
-            pl[16:18],
-            pl[22:24],
-            pl[20:22],
-            pl[26:28],
-            pl[24:26],
-            pl[30:32],
-            pl[28:30],
-            pl[34:36],
-            pl[32:34],
-            pl[38:40],
-            pl[36:38],
-            pl[42:44],
-            pl[40:42],
-            pl[46:48],
-            pl[44:46],
-            pl[50:52],
-            pl[48:50],
-            pl[54:56],
-            pl[52:54],
-            pl[58:60],
-            pl[56:58],
-            pl[62:64],
-            pl[60:62],
-            pl[66:68],
-            pl[64:66],
-        ]
-    )
 
 
 def octet_string_to_utf8(octets: str) -> str:

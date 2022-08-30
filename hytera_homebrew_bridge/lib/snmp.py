@@ -2,11 +2,11 @@
 import logging
 import sys
 
+from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 from puresnmp import get
 from puresnmp.const import Version
 from puresnmp.exc import Timeout
 
-from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 from hytera_homebrew_bridge.lib.utils import octet_string_to_utf8
 

@@ -4,20 +4,21 @@ from asyncio import Queue, CancelledError
 from typing import Optional
 
 from kaitaistruct import KaitaiStruct
+from okdmr.dmrlib.etsi.layer2.burst import Burst
+from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
+from okdmr.dmrlib.utils.bits_bytes import byteswap_bytes
+from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
-from hytera_homebrew_bridge.dmrlib.mmdvm_utils import (
+from hytera_homebrew_bridge.lib.mmdvm_utils import (
     get_mmdvm_bitflags,
     get_ipsc_frame_type,
     get_ipsc_slot_type,
 )
-from hytera_homebrew_bridge.dmrlib.terminal import BurstInfo
-from hytera_homebrew_bridge.dmrlib.transmission_watcher import TransmissionWatcher
-from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
-from hytera_homebrew_bridge.lib.utils import byteswap_bytes, assemble_hytera_ipsc_packet
-from hytera_homebrew_bridge.tests.prettyprint import prettyprint
+from hytera_homebrew_bridge.lib.utils import assemble_hytera_ipsc_packet
+from okdmr.kaitai.tools.prettyprint import prettyprint
 
 
 class HyteraMmdvmTranslator(LoggingTrait):
@@ -48,22 +49,21 @@ class HyteraMmdvmTranslator(LoggingTrait):
                 if not isinstance(packet, IpSiteConnectProtocol):
                     self.queue_hytera_to_translate.task_done()
                     continue
-                elif isinstance(packet, IpSiteConnectProtocol) and packet.slot_type in [
+
+                burst: Burst = Burst.from_hytera_ipsc(packet)
+                if isinstance(packet, IpSiteConnectProtocol) and packet.slot_type in [
                     IpSiteConnectProtocol.SlotTypes.slot_type_wakeup_request,
                     IpSiteConnectProtocol.SlotTypes.slot_type_sync,
                 ]:
                     print(
                         "Slot Type", packet.slot_type, "Frame Type", packet.frame_type
                     )
-                    burst: BurstInfo = BurstInfo(
-                        data=byteswap_bytes(packet.ipsc_payload)
-                    )
                     burst.debug()
                     self.queue_hytera_to_translate.task_done()
                     continue
 
-                burst: Optional[BurstInfo] = self.transmission_watcher.process_packet(
-                    packet, do_debug=False
+                burst: Optional[Burst] = self.transmission_watcher.process_burst(
+                    burst=burst
                 )
                 if burst:
                     burst.debug()
@@ -78,7 +78,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         + get_mmdvm_bitflags(burst, packet)
                         + burst.stream_no[:4]
                         # ipsc payload is 34 bytes (little endian), expected mmdvm payload is 33 bytes (big endian)
-                        + byteswap_bytes(packet.ipsc_payload)[0:-1]
+                        + byteswap_bytes(packet.ipsc_payload)
                     )
 
                     self.queue_mmdvm_output.put_nowait((self.hytera_ip, mmdvm_out))
@@ -116,8 +116,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     self.queue_mmdvm_to_translate.task_done()
                     continue
 
-                burst: Optional[BurstInfo] = self.transmission_watcher.process_packet(
-                    packet, do_debug=False
+                burst: Optional[Burst] = self.transmission_watcher.process_burst(
+                    burst=burst
                 )
                 if burst:
                     burst.debug()

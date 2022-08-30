@@ -7,10 +7,7 @@ import socket
 import sys
 from asyncio import AbstractEventLoop, Queue
 from signal import SIGINT, SIGTERM
-from socket import SocketKind
 from typing import Optional, Dict
-
-from uvloop.loop import UDPTransport
 
 self_name: str = "hytera_homebrew_bridge"
 self_spec = importlib.util.find_spec(self_name)

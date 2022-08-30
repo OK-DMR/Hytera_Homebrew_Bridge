@@ -5,6 +5,7 @@ import zlib
 from binascii import hexlify
 
 from dmr_utils3.decode import voice_head_term
+from okdmr.dmrlib.utils.bits_bytes import byteswap_bytes
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.hytera_radio_network_protocol import HyteraRadioNetworkProtocol
 from okdmr.kaitai.hytera.hytera_simple_transport_reliability_protocol import (
@@ -13,9 +14,7 @@ from okdmr.kaitai.hytera.hytera_simple_transport_reliability_protocol import (
 from okdmr.kaitai.hytera.ip_site_connect_heartbeat import IpSiteConnectHeartbeat
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 from okdmr.kaitai.hytera.real_time_transport_protocol import RealTimeTransportProtocol
-
-from hytera_homebrew_bridge.lib.utils import byteswap_bytes
-from hytera_homebrew_bridge.tests.prettyprint import prettyprint
+from okdmr.kaitai.tools.prettyprint import prettyprint
 
 mmdvm_frame_types: dict = {0: "VOICE", 1: "VOICE SYNC", 2: "DATA SYNC", 3: "UNUSED"}
 
@@ -173,7 +172,7 @@ def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
 
     dmr_data_hash: str = base64.urlsafe_b64encode(
         # comparable is only first 33 bytes of dmr payload, 34th byte is endianness leftover
-        byteswap_bytes(ipsc.ipsc_payload)[0:-1]
+        byteswap_bytes(ipsc.ipsc_payload)
     ).decode("ascii")
     return (
         format_brackets(

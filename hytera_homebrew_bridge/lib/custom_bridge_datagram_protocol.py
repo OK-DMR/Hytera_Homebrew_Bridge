@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from asyncio import protocols
 
-from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
+from okdmr.dmrlib.utils.logging_trait import LoggingTrait
+
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 from hytera_homebrew_bridge.lib.snmp import SNMP
 

@@ -4,7 +4,7 @@ import configparser
 import socket
 from typing import Dict, Tuple
 
-from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
+from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
 _UNSET = object()
 
