@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 from asyncio import protocols
 
-from okdmr.dmrlib.utils.logging_trait import LoggingTrait
-
 from okdmr.hhb.settings import BridgeSettings
 from okdmr.hhb.snmp import SNMP
 

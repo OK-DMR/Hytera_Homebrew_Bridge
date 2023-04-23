@@ -9,14 +9,6 @@ from asyncio import AbstractEventLoop, Queue
 from signal import SIGINT, SIGTERM
 from typing import Optional, Dict
 
-self_name: str = "hytera_homebrew_bridge"
-self_spec = importlib.util.find_spec(self_name)
-if self_spec is None:
-    parent_folder: str = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    expected_folder: str = f"{parent_folder}{os.path.sep}"
-    if os.path.isdir(expected_folder):
-        sys.path.append(expected_folder)
-
 from okdmr.hhb.hytera_protocols import (
     HyteraP2PProtocol,
     HyteraDMRProtocol,

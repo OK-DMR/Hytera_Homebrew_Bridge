@@ -1,72 +1,43 @@
-# Hytera Homebrew Bridge
+# Hytera Homebrew Bridge (HHB)
 
-![.github/workflows/sanity.yml](https://img.shields.io/github/workflow/status/OK-DMR/Hytera_Homebrew_Bridge/Sanity?style=flat-square)
-![Code Style: Python Black](https://img.shields.io/badge/code%20style-black-000000.svg)
-![License](https://img.shields.io/github/license/smarek/Hytera_Homebrew_Bridge)
-![Last released version](https://img.shields.io/pypi/v/hytera-homebrew-bridge?style=flat-square)
-![PyPI downloads](https://img.shields.io/pypi/dm/hytera-homebrew-bridge?style=flat-square)
-
-
-**21.12.2020: We've entered alpha testing phase, see instructions below, on how to install and test**
-
-----
-
-This software will interconnect your Hytera repeater (tested RD625 and RD985) with MMDVM server (HBlink, DMRGateway, ...)
-
-It does not require running under root/admin user, if you bind to ports over 1024
+[![.github/workflows/sanity.yml](https://img.shields.io/github/actions/workflow/status/OK-DMR/Hytera_Homebrew_Bridge/sanity.yml?style=flat-square&branch=master)](https://github.com/OK-DMR/Hytera_Homebrew_Bridge/actions)
+[![Code Style: Python Black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+[![License](https://img.shields.io/github/license/OK-DMR/Hytera_Homebrew_Bridge?style=flat-square)](https://github.com/OK-DMR/Hytera_Homebrew_Bridge/blob/master/LICENSE)
+[![Last released version](https://img.shields.io/pypi/v/hytera-homebrew-bridge?style=flat-square)](https://pypi.org/project/hytera-homebrew-bridge/)
+[![PyPI downloads](https://img.shields.io/pypi/dd/hytera-homebrew-bridge?style=flat-square)](https://libraries.io/pypi/hytera-homebrew-bridge)
+[![Python versions](https://img.shields.io/pypi/pyversions/hytera-homebrew-bridge?style=flat-square)](https://pypi.org/project/hytera-homebrew-bridge/)
+[![Wheel](https://img.shields.io/pypi/wheel/hytera-homebrew-bridge?style=flat-square)](https://pypi.org/project/hytera-homebrew-bridge/#files)
+[![Codecov](https://img.shields.io/codecov/c/github/OK-DMR/Hytera_Homebrew_Bridge?style=flat-square)](https://app.codecov.io/gh/OK-DMR/Hytera_Homebrew_Bridge)
 
 ----
-## Simple install:
+
+This software will interconnect your Hytera repeater with MMDVM server (such as hblink, dmrgateway, etc...)
+
+----
+## Install:
 ```shell
-# You need to have Python3 installed, at least version 3.7
+# upgrade important system dependencies, "wheel" is essential
 $ python3 -m pip install pip wheel setuptools --upgrade
+# install (and upgrade) hytera-homebrew-bridge
 $ python3 -m pip install hytera-homebrew-bridge --upgrade
-# download config file
-$ curl "https://raw.githubusercontent.com/OK-DMR/Hytera_Homebrew_Bridge/master/settings.ini.minimal.default" -o settings.ini
-# Now edit settings.ini
-# Hytera: You must provide at least IPSC IP + ports (P2P, DMR and RDAC)
-# MMDVM: You must provide at least local_ip, master_ip, port and password
-# See "settings.ini.minimal.default" for required params / minimal configuration
-$ hytera-homebrew-bridge.py settings.ini
-```
-
-----
-## Install on Windows
-
-To get software running on Windows, you need to install appropriate Python 3.7+ package (depending on your Windows version),
-and you need to install dependencies (MSVC++ 14) required to build **bitarray** dependency
-
-- Microsoft Visual C++ Build Tools v14.0
-  - Use [visualcppbuildtools_full.exe](https://go.microsoft.com/fwlink/?LinkId=691126) and install with default configuration
-
-
-Then you should be able to use **Simple install**
-```shell
-# From standard Windows Command Line (cmd.exe)
-$ python -m pip install pip wheel setuptools --upgrade
-$ python -m pip install hytera-homebrew-bridge --upgrade
-# Download settings from the project, settings.ini.minimal.default or settings.ini.default and modify it
-$ hytera-homebrew-bridge.py <path to settings.ini> <optinally path to logging.ini>
+$ hytera-homebrew-bridge <path to settings.ini> <optionally path to logging.ini>
 ```
 
 
 ----
-## Developer install:
-
-Run the software without installing to Python packages, so you can edit code and run the edits
+## Develop:
 
 ```shell
-# Optionally uninstall the version installed in system
-# python3
+# clone repo
 $ git clone https://github.com/OK-DMR/Hytera_Homebrew_Bridge.git
+# change path into cloned repo
 $ cd Hytera_Homebrew_Bridge
 # You can use either settings.ini.default (all configuration params) or settings.ini.minimal.default (only required params)
 $ cp settings.ini.default settings.ini
-$ apt-get install libsnmp-dev snmp-mibs-downloader gcc python-dev
-$ python3 -m pip install -r requirements.txt --user --upgrade
-# Dependencies to run tests (pytest, pcapng parsing, ...)
-$ python3 -m pip install -r requirements.development.txt --user --upgrade
-$ python3 bin/hytera-homebrew-bridge.py settings.ini
+# install current directory to local site-packages in editable mode
+$ python3 -m pip install -e .
+# run hytera-homebrew-bridge with params
+$ hytera-homebrew-bridge <path to settings.ini> <optionally path to logging.ini>
 ```
 
 ----

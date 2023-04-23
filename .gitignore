@@ -7,3 +7,4 @@ __pycache__
 /settings.ini
 /logging.ini
 /build
+/coverage.xml
