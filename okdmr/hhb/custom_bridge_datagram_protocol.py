@@ -3,8 +3,8 @@ from asyncio import protocols
 
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
-from hytera_homebrew_bridge.lib.settings import BridgeSettings
-from hytera_homebrew_bridge.lib.snmp import SNMP
+from okdmr.hhb.settings import BridgeSettings
+from okdmr.hhb.snmp import SNMP
 
 
 class CustomBridgeDatagramProtocol(protocols.DatagramProtocol, LoggingTrait):
@@ -12,10 +12,12 @@ class CustomBridgeDatagramProtocol(protocols.DatagramProtocol, LoggingTrait):
         super().__init__()
         self.settings = settings
 
-    def hytera_repeater_obtain_snmp(self, address: tuple, force: bool = False) -> None:
+    async def hytera_repeater_obtain_snmp(
+        self, address: tuple, force: bool = False
+    ) -> None:
         self.settings.hytera_repeater_ip = address[0]
         if self.settings.snmp_enabled:
             if force or not self.settings.hytera_snmp_data.get(address[0]):
-                SNMP().walk_ip(address, self.settings)
+                await SNMP().walk_ip(address, self.settings)
         else:
             self.log_warning("SNMP is disabled")

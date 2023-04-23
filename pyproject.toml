@@ -1,0 +1,99 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling>=1.13.0", "hatch-fancy-pypi-readme"]
+
+[project]
+authors = [
+  {name = "Marek Sebera", email = "marek.sebera@gmail.com"}
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+  "Environment :: Console",
+  "Topic :: Communications :: Ham Radio",
+  "Operating System :: POSIX :: Linux",
+  "Typing :: Typed",
+  "Framework :: Pytest",
+  "Intended Audience :: Telecommunications Industry",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.7"
+]
+dependencies = [
+  "ok-dmrlib>=0.8",
+  "puresnmp>=2.0.0.post1",
+  "configparser>=5.0.0"
+]
+description = "Connect Hytera IPSC repeater to MMDVM system such as HBlink, DMRGateway"
+dynamic = ["readme"]
+keywords = [
+  "mmdvm",
+  "dmr",
+  "hytera",
+  "repeater",
+  "ham",
+  "radio",
+  "repeater"
+]
+license = {text = "AGPL-3.0"}
+name = "hytera-homebrew-bridge"
+requires-python = ">=3.7"
+version = "2023.1"
+
+[project.optional-dependencies]
+pre-commit = ["pre-commit>=3.0.0"]
+test = [
+  "pytest>=7.0.0",
+  "pytest-cov>=4.0.0",
+  "pytest-asyncio>=0.20.0"
+]
+
+[project.scripts]
+hytera-homebrew-bridge = "okdmr.hhb.hytera_homebrew_bridge:__main__"
+
+[project.urls]
+repository = "https://github.com/OK-DMR/Hytera_Homebrew_Bridge"
+
+[tool.coverage.report]
+exclude_lines = [
+  "if __name__ == .__main__.:",
+  "pass",
+  "continue",
+  "traceback.print_exc()",
+  "raise KeyError",
+  "raise ValueError"
+]
+precision = 2
+
+[tool.coverage.run]
+# branch is currently broken see: https://github.com/nedbat/coveragepy/issues/1530
+branch = false
+source = ["okdrm.hhb"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  ".gitignore",
+  "/.gitignore",
+  ".gitkeep",
+  "/okdmr/tests",
+  "/.github"
+]
+include = [
+  "/README.md",
+  "/okdmr",
+  "/Makefile",
+  "/.yamllint",
+  "/.pre-commit-config.yaml",
+  "/setup.py"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["/okdmr"]
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+fragments = [
+  {path = "README.md"}
+]
+
+[tool.isort]
+profile = "black"

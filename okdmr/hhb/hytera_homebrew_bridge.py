@@ -17,16 +17,16 @@ if self_spec is None:
     if os.path.isdir(expected_folder):
         sys.path.append(expected_folder)
 
-from hytera_homebrew_bridge.lib.hytera_protocols import (
+from okdmr.hhb.hytera_protocols import (
     HyteraP2PProtocol,
     HyteraDMRProtocol,
     HyteraRDACProtocol,
 )
-from hytera_homebrew_bridge.lib.mmdvm_protocol import MMDVMProtocol
-from hytera_homebrew_bridge.lib.settings import BridgeSettings
-from hytera_homebrew_bridge.lib.hytera_mmdvm_translator import HyteraMmdvmTranslator
+from okdmr.hhb.mmdvm_protocol import MMDVMProtocol
+from okdmr.hhb.settings import BridgeSettings
+from okdmr.hhb.hytera_mmdvm_translator import HyteraMmdvmTranslator
 
-from hytera_homebrew_bridge.lib.callback_interface import CallbackInterface
+from okdmr.hhb.callback_interface import CallbackInterface
 
 
 class HyteraRepeater(CallbackInterface):
@@ -166,7 +166,7 @@ class HyteraHomebrewBridge(CallbackInterface):
 
         self.hytera_p2p_protocol.disconnect()
         self.loop.stop()
-        for task in asyncio.Task.all_tasks():
+        for task in asyncio.all_tasks():
             task.cancel()
             task.done()
 
@@ -187,7 +187,6 @@ if __name__ == "__main__":
     mainlog = logging.getLogger("hytera-homebrew-bridge.py")
 
     mainlog.info("Hytera Homebrew Bridge")
-    mainlog.info("This project is experimental, use at your own risk\n")
 
     if len(sys.argv) < 2:
         mainlog.error(
@@ -205,8 +204,9 @@ if __name__ == "__main__":
 
         uvloop.install()
 
-    loop = asyncio.get_event_loop()
-    # order is necessary, various asyncio object are created at bridge init
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    # order is IMPORTANT, various asyncio object are created at bridge init
     # and those must be created after the main loop is created
     bridge: HyteraHomebrewBridge = HyteraHomebrewBridge(sys.argv[1])
     if os.name != "nt":

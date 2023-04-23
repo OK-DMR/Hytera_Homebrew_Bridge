@@ -10,15 +10,15 @@ from typing import Optional, Callable, Tuple
 
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
-from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
+from okdmr.hhb.custom_bridge_datagram_protocol import (
     CustomBridgeDatagramProtocol,
 )
-from hytera_homebrew_bridge.lib.packet_format import (
+from okdmr.hhb.packet_format import (
     common_log_format,
     get_dmr_data_hash,
 )
-from hytera_homebrew_bridge.lib.settings import BridgeSettings
-from hytera_homebrew_bridge.lib.utils import log_mmdvm_configuration
+from okdmr.hhb.settings import BridgeSettings
+from okdmr.hhb.utils import log_mmdvm_configuration
 
 
 class MMDVMProtocol(CustomBridgeDatagramProtocol):

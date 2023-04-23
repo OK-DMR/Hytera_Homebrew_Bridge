@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
+import socket
 from asyncio import transports, Queue
 from binascii import hexlify
 from typing import Optional, Tuple, Dict
@@ -8,14 +9,14 @@ from kaitaistruct import ValidationNotEqualError, KaitaiStruct
 from okdmr.dmrlib.utils.parsing import parse_hytera_data
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
-from hytera_homebrew_bridge.lib.callback_interface import CallbackInterface
-from hytera_homebrew_bridge.lib.custom_bridge_datagram_protocol import (
+from okdmr.hhb.callback_interface import CallbackInterface
+from okdmr.hhb.custom_bridge_datagram_protocol import (
     CustomBridgeDatagramProtocol,
 )
-from hytera_homebrew_bridge.lib.packet_format import (
+from okdmr.hhb.packet_format import (
     common_log_format,
 )
-from hytera_homebrew_bridge.lib.settings import BridgeSettings
+from okdmr.hhb.settings import BridgeSettings
 
 
 class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
@@ -68,7 +69,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
 
         self.transport.sendto(data, address)
 
-        self.hytera_repeater_obtain_snmp(address)
+        asyncio.gather(self.hytera_repeater_obtain_snmp(address))
         self.settings.hytera_is_registered[address[0]] = True
         asyncio.get_running_loop().create_task(
             self.repeater_accepted_callback.homebrew_connect(address[0])
@@ -156,6 +157,9 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.transport = transport
+        sock: socket.socket = transport.get_extra_info("socket")
+        if sock:
+            self.log_debug(f"new peer {sock}")
         self.log_debug("connection prepared")
 
     def datagram_received(self, data: bytes, address: Tuple[str, int]) -> None:
@@ -480,7 +484,7 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
             self.step[address[0]] = 14
             self.log_debug("rdac completed identification")
             self.settings.print_repeater_configuration()
-            self.hytera_repeater_obtain_snmp(address)
+            asyncio.gather(self.hytera_repeater_obtain_snmp(address))
             asyncio.get_running_loop().create_task(
                 self.rdac_completed_callback.homebrew_connect(address[0])
             )

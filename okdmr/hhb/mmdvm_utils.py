@@ -62,11 +62,12 @@ DMR_DATA_TYPE_TO_IPSC_SLOT_TYPE: Dict[
     VoiceBursts.VoiceBurstE: IpSiteConnectProtocol.SlotTypes.slot_type_data_a,
     VoiceBursts.VoiceBurstF: IpSiteConnectProtocol.SlotTypes.slot_type_data_b,
     DataTypes.VoiceLCHeader: IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header,
-    DataTypes.Rate34DataContinuation: IpSiteConnectProtocol.SlotTypes.slot_type_rate_34_data,
-    DataTypes.Rate12DataContinuation: IpSiteConnectProtocol.SlotTypes.slot_type_rate_12_data,
+    DataTypes.Rate34Data: IpSiteConnectProtocol.SlotTypes.slot_type_rate_34_data,
+    DataTypes.Rate12Data: IpSiteConnectProtocol.SlotTypes.slot_type_rate_12_data,
+    DataTypes.Rate1Data: IpSiteConnectProtocol.SlotTypes.slot_type_rate_12_data,
     DataTypes.CSBK: IpSiteConnectProtocol.SlotTypes.slot_type_csbk,
     DataTypes.DataHeader: IpSiteConnectProtocol.SlotTypes.slot_type_data_header,
-    DataTypes.PrivacyIndicatorHeader: IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc,
+    DataTypes.PIHeader: IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc,
     DataTypes.TerminatorWithLC: IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc,
 }
 
@@ -80,11 +81,12 @@ DMR_DATA_TYPE_TO_IPSC_FRAME_TYPE: Dict[
     VoiceBursts.VoiceBurstE: IpSiteConnectProtocol.FrameTypes.frame_type_voice,
     VoiceBursts.VoiceBurstF: IpSiteConnectProtocol.FrameTypes.frame_type_voice,
     DataTypes.VoiceLCHeader: IpSiteConnectProtocol.FrameTypes.frame_type_data_header,
-    DataTypes.Rate34DataContinuation: IpSiteConnectProtocol.FrameTypes.frame_type_data,
-    DataTypes.Rate12DataContinuation: IpSiteConnectProtocol.FrameTypes.frame_type_data,
+    DataTypes.Rate34Data: IpSiteConnectProtocol.FrameTypes.frame_type_data,
+    DataTypes.Rate12Data: IpSiteConnectProtocol.FrameTypes.frame_type_data,
+    DataTypes.Rate1Data: IpSiteConnectProtocol.SlotTypes.slot_type_rate_12_data,
     DataTypes.CSBK: IpSiteConnectProtocol.FrameTypes.frame_type_data,
     DataTypes.DataHeader: IpSiteConnectProtocol.FrameTypes.frame_type_data_header,
-    DataTypes.PrivacyIndicatorHeader: IpSiteConnectProtocol.FrameTypes.frame_type_data,
+    DataTypes.PIHeader: IpSiteConnectProtocol.FrameTypes.frame_type_data,
     DataTypes.TerminatorWithLC: IpSiteConnectProtocol.FrameTypes.frame_type_data,
 }
 

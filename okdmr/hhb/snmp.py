@@ -2,13 +2,13 @@
 import logging
 import sys
 
+import asyncio
+import puresnmp
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
-from puresnmp import get
-from puresnmp.const import Version
 from puresnmp.exc import Timeout
 
-from hytera_homebrew_bridge.lib.settings import BridgeSettings
-from hytera_homebrew_bridge.lib.utils import octet_string_to_utf8
+from okdmr.hhb.settings import BridgeSettings
+from okdmr.hhb.utils import octet_string_to_utf8
 
 
 class SNMP(LoggingTrait):
@@ -118,7 +118,7 @@ class SNMP(LoggingTrait):
     OID_WALK_BASE_1: str = "1.3.6.1.4.1.40297.1.2.4"
     OID_WALK_BASE_2: str = "1.3.6.1.4.1.40297.1.2.1.2"
 
-    def walk_ip(
+    async def walk_ip(
         self, address: tuple, settings_storage: BridgeSettings, first_try: bool = True
     ) -> dict:
         ip, port = address
@@ -130,15 +130,16 @@ class SNMP(LoggingTrait):
         other_family: str = (
             "public" if settings_storage.snmp_family == "hytera" else "hytera"
         )
+        client = puresnmp.PyWrapper(
+            puresnmp.Client(
+                ip=ip, credentials=puresnmp.V1(settings_storage.snmp_family)
+            )
+        )
+
         try:
             for oid in SNMP.ALL_KNOWN:
                 raw_oid = oid.replace("iso", "1")
-                snmp_result = get(
-                    ip=ip,
-                    community=settings_storage.snmp_family,
-                    oid=raw_oid,
-                    version=Version.V1,
-                )
+                snmp_result = await client.get(oid=raw_oid)
                 if oid in SNMP.ALL_STRINGS:
                     snmp_result = octet_string_to_utf8(str(snmp_result, "utf8"))
                 elif oid in SNMP.ALL_FLOATS:
@@ -154,7 +155,7 @@ class SNMP(LoggingTrait):
                     % (settings_storage.snmp_family, other_family)
                 )
                 settings_storage.snmp_family = other_family
-                self.walk_ip(
+                await self.walk_ip(
                     address=address, settings_storage=settings_storage, first_try=False
                 )
             else:
@@ -175,11 +176,22 @@ class SNMP(LoggingTrait):
         self.log_debug(
             "-------------- REPEATER SNMP CONFIGURATION ----------------------------"
         )
-        longest_label = 0
+        # ip address longest 15 letters (255.255.255.255)
+        longest_label = 15
         for key in SNMP.READABLE_LABELS:
             label_len = len(SNMP.READABLE_LABELS.get(key)[0])
             if label_len > longest_label:
                 longest_label = label_len
+
+        if len(address) == 2:
+            # log IP address first
+            self.log_debug(
+                "%s| %s"
+                % (
+                    str("IP Address").ljust(longest_label + 5),
+                    f"{address[0]} (port {address[1]})",
+                )
+            )
 
         for key in settings_storage.hytera_snmp_data[address[0]]:
             print_settings = SNMP.READABLE_LABELS.get(key)
@@ -205,4 +217,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.NOTSET)
 
     settings: BridgeSettings = BridgeSettings(filedata=BridgeSettings.MINIMAL_SETTINGS)
-    SNMP().walk_ip((sys.argv[1], 0), settings_storage=settings)
+    asyncio.gather(SNMP().walk_ip((sys.argv[1], 0), settings_storage=settings))

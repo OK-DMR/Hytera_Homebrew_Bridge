@@ -209,7 +209,7 @@ class BridgeSettings(LoggingTrait):
         ).dmr_port
 
     def get_repeater_rx_freq(self, ip: str) -> str:
-        from hytera_homebrew_bridge.lib import snmp
+        from okdmr.hhb import snmp
 
         return str(
             self.hb_rx_freq
@@ -220,7 +220,7 @@ class BridgeSettings(LoggingTrait):
         )
 
     def get_repeater_tx_freq(self, ip: str) -> str:
-        from hytera_homebrew_bridge.lib import snmp
+        from okdmr.hhb import snmp
 
         return str(
             self.hb_tx_freq
@@ -231,7 +231,7 @@ class BridgeSettings(LoggingTrait):
         )
 
     def get_repeater_callsign(self, ip: str) -> str:
-        from hytera_homebrew_bridge.lib import snmp
+        from okdmr.hhb import snmp
 
         return (
             self.hb_callsign
@@ -242,7 +242,7 @@ class BridgeSettings(LoggingTrait):
         )
 
     def get_repeater_dmrid(self, ip: str) -> int:
-        from hytera_homebrew_bridge.lib import snmp
+        from okdmr.hhb import snmp
 
         return int(
             self.hb_repeater_dmr_id

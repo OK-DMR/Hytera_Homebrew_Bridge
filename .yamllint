@@ -1,10 +1,11 @@
+---
 extends: default
 
 yaml-files:
-  - '*.yaml'
-  - '*.ksy'
+    - '*.yaml'
+    - '*.yml'
 
 rules:
-  document-start: disable
-  line-length: disable
-  new-line-at-end-of-file: disable
+    document-start: disable
+    line-length: disable
+    new-line-at-end-of-file: disable

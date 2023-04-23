@@ -11,13 +11,13 @@ from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
-from hytera_homebrew_bridge.lib.mmdvm_utils import (
+from okdmr.hhb.mmdvm_utils import (
     get_mmdvm_bitflags,
     get_ipsc_frame_type,
     get_ipsc_slot_type,
 )
-from hytera_homebrew_bridge.lib.settings import BridgeSettings
-from hytera_homebrew_bridge.lib.utils import assemble_hytera_ipsc_packet
+from okdmr.hhb.settings import BridgeSettings
+from okdmr.hhb.utils import assemble_hytera_ipsc_packet
 from okdmr.kaitai.tools.prettyprint import prettyprint
 
 
@@ -116,6 +116,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     self.queue_mmdvm_to_translate.task_done()
                     continue
 
+                burst: Burst = Burst.from_mmdvm(packet.command_data)
                 burst: Optional[Burst] = self.transmission_watcher.process_burst(
                     burst=burst
                 )
@@ -144,7 +145,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     )
                 else:
                     print(
-                        f"MMDVM BurstInfo not available",
+                        f"MMDVM Burst not available",
                         type(burst),
                         "packet",
                         type(packet),

@@ -1,26 +1,24 @@
+---
 name: Sanity
 
 on: [push, pull_request]
 
 jobs:
-  build:
+    build:
 
-    runs-on: ubuntu-latest
+        runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.7
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.7
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install libsnmp-dev snmp-mibs-downloader gcc python-dev
-          python -m pip install --upgrade pip
-          pip install pytest
-          pip install -r requirements.txt
-          pip install -r requirements.development.txt
-      - name: Test with pytest
-        run: |
-          pytest
+        steps:
+            - uses: actions/checkout@v2
+            - name: Set up Python 3.7
+              uses: actions/setup-python@v2
+              with:
+                  python-version: 3.7
+            - name: Install dependencies
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install libsnmp-dev snmp-mibs-downloader gcc python-dev
+                  python -m pip install --upgrade pip
+            - name: Test with pytest
+              run: |
+                  pytest

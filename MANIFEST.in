@@ -1,5 +1,0 @@
-include settings.ini.default
-include hytera_homebrew_bridge/tests/data/*.bin
-exclude hytera_homebrew_bridge/tests/data/pcap/*
-global-exclude *.pcap
-global-exclude *.pcapng
