@@ -9,16 +9,17 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v2
-            - name: Set up Python 3.7
-              uses: actions/setup-python@v2
+            - uses: actions/checkout@v3
+            - name: Set up Python 3.8
+              uses: actions/setup-python@v4
               with:
-                  python-version: 3.7
+                  python-version: 3.8
             - name: Install dependencies
               run: |
-                  sudo apt-get update
-                  sudo apt-get install libsnmp-dev snmp-mibs-downloader gcc python-dev
-                  python -m pip install --upgrade pip
+                  python -m pip install --upgrade pip setuptools wheel
+                  python -m pip install .[test]
             - name: Test with pytest
               run: |
-                  pytest
+                  make test
+            - name: Upload coverage to codecov
+              uses: codecov/codecov-action@v3

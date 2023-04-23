@@ -16,10 +16,10 @@ classifiers = [
   "Framework :: Pytest",
   "Intended Audience :: Telecommunications Industry",
   "Natural Language :: English",
-  "Programming Language :: Python :: 3.7"
+  "Programming Language :: Python :: 3.8"
 ]
 dependencies = [
-  "ok-dmrlib>=0.8",
+  "ok-dmrlib>=0.8.0",
   "puresnmp>=2.0.0.post1",
   "configparser>=5.0.0"
 ]
@@ -36,8 +36,8 @@ keywords = [
 ]
 license = {text = "AGPL-3.0"}
 name = "hytera-homebrew-bridge"
-requires-python = ">=3.7"
-version = "2023.1"
+requires-python = ">=3.8"
+version = "2023.4.1"
 
 [project.optional-dependencies]
 pre-commit = ["pre-commit>=3.0.0"]
