@@ -55,8 +55,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     IpSiteConnectProtocol.SlotTypes.slot_type_wakeup_request,
                     IpSiteConnectProtocol.SlotTypes.slot_type_sync,
                 ]:
-                    print(
-                        "Slot Type", packet.slot_type, "Frame Type", packet.frame_type
+                    self.log_info(
+                        f"Slot Type: {packet.slot_type}, Frame Type: {packet.frame_type}"
                     )
                     burst.debug()
                     self.queue_hytera_to_translate.task_done()

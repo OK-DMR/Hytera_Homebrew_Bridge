@@ -32,8 +32,8 @@ $ hytera-homebrew-bridge <path to settings.ini> <optionally path to logging.ini>
 $ git clone https://github.com/OK-DMR/Hytera_Homebrew_Bridge.git
 # change path into cloned repo
 $ cd Hytera_Homebrew_Bridge
-# You can use either settings.ini.default (all configuration params) or settings.ini.minimal.default (only required params)
-$ cp settings.ini.default settings.ini
+# You can use either settings.default.ini (all configuration params) or settings.minimal.default.ini (only required params)
+$ cp settings.default.ini settings.ini
 # install current directory to local site-packages in editable mode
 $ python3 -m pip install -e .
 # run hytera-homebrew-bridge with params
@@ -53,6 +53,9 @@ $ hytera-homebrew-bridge <path to settings.ini> <optionally path to logging.ini>
   - A: Check if SNMP port is set to 161 in `Conventional > General Settings > Network` section `SNMP` at the bottom
 - Q: I'm not getting the upstream connection and/or I'm seeing a lot of logs similar to "MMDVMProtocol - Sending Login Request"
   - A: This is usually misconfiguration of Hytera repeater, if you do not see any logs with 'RDAC' or the long packet with 'REPEATER SNMP CONFIGURATION' info. In such cases you should check if the Hytera repeater is programmed correctly as slave and the IP/ports do match the HHB startup log saying 'Hytera Repeater is expected to connect at xxx.xxx.xxx.xxx'
+- Q: where is hytera-homebrew-bridge.py launcher script?
+  - A: It was replaced by script installed by python environment, now you can use just `hytera-homebrew-bridge` command instead 
+  - A: You can use `python -m okdmr.hhb.hytera_homebrew_bridge <settings.ini> <optionally logging.ini>` as an alternative command
 
 ----
 

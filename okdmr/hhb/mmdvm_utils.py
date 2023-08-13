@@ -9,10 +9,6 @@ from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.ip_site_connect_protocol import IpSiteConnectProtocol
 
 
-def get_mmdvm_timeslot(mmdvmdata: Mmdvm2020.TypeDmrData) -> int:
-    return 1 if mmdvmdata.slot_no == Mmdvm2020.Timeslots.timeslot_1 else 2
-
-
 def get_ipsc_timeslot(ipscdata: IpSiteConnectProtocol) -> int:
     return (
         1 if ipscdata.timeslot_raw == IpSiteConnectProtocol.Timeslots.timeslot_1 else 2

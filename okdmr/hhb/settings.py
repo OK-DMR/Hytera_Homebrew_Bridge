@@ -74,7 +74,6 @@ class BridgeSettings(LoggingTrait):
     """
 
     def __init__(self, filepath: str = None, filedata: str = None) -> None:
-
         if not filepath and not filedata:
             raise SystemError(
                 "Cannot init BridgeSettings without filepath and filedata, at least one must be provided"
@@ -270,6 +269,9 @@ class BridgeSettings(LoggingTrait):
             rtn.append(("homebrew.callsign", repeater_callsign, generic_error_message))
 
         return rtn
+
+    def is_repeater_registered(self, repeater_ip: str) -> bool:
+        return repeater_ip in self.hytera_is_registered.keys()
 
     def print_settings(self) -> None:
         self.log_info("Settings Loaded")

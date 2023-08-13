@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 import asyncio
-import importlib.util
-import logging.config
-import os
 import socket
-import sys
 from asyncio import AbstractEventLoop, Queue
-from signal import SIGINT, SIGTERM
 from typing import Optional, Dict
 
+from okdmr.hhb.callback_interface import CallbackInterface
+from okdmr.hhb.hytera_mmdvm_translator import HyteraMmdvmTranslator
 from okdmr.hhb.hytera_protocols import (
     HyteraP2PProtocol,
     HyteraDMRProtocol,
@@ -16,9 +13,6 @@ from okdmr.hhb.hytera_protocols import (
 )
 from okdmr.hhb.mmdvm_protocol import MMDVMProtocol
 from okdmr.hhb.settings import BridgeSettings
-from okdmr.hhb.hytera_mmdvm_translator import HyteraMmdvmTranslator
-
-from okdmr.hhb.callback_interface import CallbackInterface
 
 
 class HyteraRepeater(CallbackInterface):
@@ -56,8 +50,8 @@ class HyteraRepeater(CallbackInterface):
             hytera_repeater_ip=self.ip,
         )
 
-    def homebrew_connection_lost(self, ip: str) -> None:
-        asyncio.run(self.homebrew_connect(ip=ip))
+    def homebrew_connection_lost(self, ip: str, port: int) -> None:
+        asyncio.run(self.homebrew_connect(ip=ip, port=port))
 
     async def hytera_dmr_connect(self) -> None:
         (transport, _) = await self.loop.create_datagram_endpoint(
@@ -65,15 +59,16 @@ class HyteraRepeater(CallbackInterface):
             sock=self.settings.hytera_repeater_data[self.ip].dmr_socket,
         )
 
-    async def homebrew_connect(self, ip: str) -> None:
+    async def homebrew_connect(self, ip: str, port: int) -> None:
         incorrect_config_params = self.settings.get_incorrect_configurations(ip)
         if len(incorrect_config_params) > 0:
             self.homebrew_protocol.log_error(
                 "Current configuration is not valid for connection"
             )
-            for triplet in incorrect_config_params:
+            self.settings.print_settings()
+            for param, current_value, error_message in incorrect_config_params:
                 self.homebrew_protocol.log_error(
-                    f"PARAM: {triplet[0]} CURRENT_VALUE: {triplet[1]} MESSAGE: {triplet[2]}"
+                    f"PARAM: {param} CURRENT_VALUE: {current_value} MESSAGE: {error_message}"
                 )
             return
 
@@ -130,23 +125,30 @@ class HyteraHomebrewBridge(CallbackInterface):
         if not self.settings.hytera_disable_rdac:
             await self.hytera_rdac_connect()
 
-    async def homebrew_connect(self, ip: str) -> None:
+    async def homebrew_connect(self, ip: str, port: int) -> None:
         if not self.repeaters.get(ip):
             self.repeaters[ip] = HyteraRepeater(
                 ip=ip, settings=self.settings, asyncloop=self.loop
             )
             await self.repeaters[ip].go()
 
-        await self.repeaters[ip].homebrew_connect(ip)
+        await self.repeaters[ip].homebrew_connect(ip=ip, port=port)
 
     async def hytera_p2p_connect(self) -> None:
-        # P2P/IPSC Service address
+        """
+        Start P2P/IPSC Service handler
+        :return:
+        """
         await self.loop.create_datagram_endpoint(
             lambda: self.hytera_p2p_protocol,
             local_addr=(self.settings.ipsc_ip, self.settings.p2p_port),
         )
 
     async def hytera_rdac_connect(self) -> None:
+        """
+        Start RDAC service handler
+        :return:
+        """
         await self.loop.create_datagram_endpoint(
             lambda: self.hytera_rdac_protocol,
             local_addr=(self.settings.ipsc_ip, self.settings.rdac_port),
@@ -161,54 +163,3 @@ class HyteraHomebrewBridge(CallbackInterface):
         for task in asyncio.all_tasks():
             task.cancel()
             task.done()
-
-
-if __name__ == "__main__":
-    loggerConfigured: bool = False
-    if len(sys.argv) > 2:
-        if os.path.isfile(sys.argv[2]):
-            logging.config.fileConfig(sys.argv[2])
-            loggerConfigured = True
-    if not loggerConfigured:
-        logging.basicConfig(
-            level=logging.DEBUG,
-            format="%(levelname)s - %(asctime)s - %(name)s - %(message)s",
-        )
-        logging.getLogger("puresnmp.transport").setLevel(logging.WARN)
-
-    mainlog = logging.getLogger("hytera-homebrew-bridge.py")
-
-    mainlog.info("Hytera Homebrew Bridge")
-
-    if len(sys.argv) < 2:
-        mainlog.error(
-            "use as hytera-homebrew-bridge <path to settings.ini> <optionally path to logger.ini>"
-        )
-        mainlog.error(
-            "If you do not have the settings.ini file, you can obtain one here: "
-            "https://github.com/OK-DMR/Hytera_Homebrew_Bridge/blob/master/settings.ini.default"
-        )
-        exit(1)
-
-    uvloop_spec = importlib.util.find_spec("uvloop")
-    if uvloop_spec:
-        import uvloop
-
-        uvloop.install()
-
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    # order is IMPORTANT, various asyncio object are created at bridge init
-    # and those must be created after the main loop is created
-    bridge: HyteraHomebrewBridge = HyteraHomebrewBridge(sys.argv[1])
-    if os.name != "nt":
-        for signal in [SIGINT, SIGTERM]:
-            loop.add_signal_handler(signal, bridge.stop_running)
-
-    try:
-        loop.run_until_complete(bridge.go())
-        loop.run_forever()
-    except BaseException as e:
-        mainlog.exception(e)
-    finally:
-        mainlog.info("Hytera Homebrew Bridge Ended")

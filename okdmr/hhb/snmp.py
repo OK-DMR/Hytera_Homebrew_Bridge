@@ -3,9 +3,9 @@ import logging
 import sys
 
 import asyncio
+
 import puresnmp
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
-from puresnmp.exc import Timeout
 
 from okdmr.hhb.settings import BridgeSettings
 from okdmr.hhb.utils import octet_string_to_utf8
@@ -13,39 +13,39 @@ from okdmr.hhb.utils import octet_string_to_utf8
 
 class SNMP(LoggingTrait):
     # in milli-volts (V * 1000)
-    OID_PSU_VOLTAGE: str = "iso.3.6.1.4.1.40297.1.2.1.2.1.0"
+    OID_PSU_VOLTAGE: str = "1.3.6.1.4.1.40297.1.2.1.2.1.0"
     # in milli-celsius (C * 1000)
-    OID_PA_TEMPERATURE: str = "iso.3.6.1.4.1.40297.1.2.1.2.2.0"
+    OID_PA_TEMPERATURE: str = "1.3.6.1.4.1.40297.1.2.1.2.2.0"
     # voltage ratio on the TX in dB
-    OID_VSWR: str = "iso.3.6.1.4.1.40297.1.2.1.2.4.0"
+    OID_VSWR: str = "1.3.6.1.4.1.40297.1.2.1.2.4.0"
     # Forward power in milli-watt
-    OID_TX_FWD_POWER: str = "iso.3.6.1.4.1.40297.1.2.1.2.5.0"
+    OID_TX_FWD_POWER: str = "1.3.6.1.4.1.40297.1.2.1.2.5.0"
     # Reflected power in milli-watt
-    OID_TX_REF_POWER: str = "iso.3.6.1.4.1.40297.1.2.1.2.6.0"
-    OID_RSSI_TS1: str = "iso.3.6.1.4.1.40297.1.2.1.2.9.0"
-    OID_RSSI_TS2: str = "iso.3.6.1.4.1.40297.1.2.1.2.10.0"
+    OID_TX_REF_POWER: str = "1.3.6.1.4.1.40297.1.2.1.2.6.0"
+    OID_RSSI_TS1: str = "1.3.6.1.4.1.40297.1.2.1.2.9.0"
+    OID_RSSI_TS2: str = "1.3.6.1.4.1.40297.1.2.1.2.10.0"
 
-    OID_REPEATER_MODEL: str = "iso.3.6.1.4.1.40297.1.2.4.1.0"
-    OID_MODEL_NUMBER: str = "iso.3.6.1.4.1.40297.1.2.4.2.0"
+    OID_REPEATER_MODEL: str = "1.3.6.1.4.1.40297.1.2.4.1.0"
+    OID_MODEL_NUMBER: str = "1.3.6.1.4.1.40297.1.2.4.2.0"
     # string
-    OID_FIRMWARE_VERSION: str = "iso.3.6.1.4.1.40297.1.2.4.3.0"
+    OID_FIRMWARE_VERSION: str = "1.3.6.1.4.1.40297.1.2.4.3.0"
     # Radio Data Version, string
-    OID_RCDB_VERSION: str = "iso.3.6.1.4.1.40297.1.2.4.4.0"
-    OID_SERIAL_NUMBER: str = "iso.3.6.1.4.1.40297.1.2.4.5.0"
+    OID_RCDB_VERSION: str = "1.3.6.1.4.1.40297.1.2.4.4.0"
+    OID_SERIAL_NUMBER: str = "1.3.6.1.4.1.40297.1.2.4.5.0"
     # callsign
-    OID_RADIO_ALIAS: str = "iso.3.6.1.4.1.40297.1.2.4.6.0"
+    OID_RADIO_ALIAS: str = "1.3.6.1.4.1.40297.1.2.4.6.0"
     # integer
-    OID_RADIO_ID: str = "iso.3.6.1.4.1.40297.1.2.4.7.0"
+    OID_RADIO_ID: str = "1.3.6.1.4.1.40297.1.2.4.7.0"
     # digital=0, analog=1, mixed=2
-    OID_CUR_CHANNEL_MODE: str = "iso.3.6.1.4.1.40297.1.2.4.8.0"
-    OID_CUR_CHANNEL_NAME: str = "iso.3.6.1.4.1.40297.1.2.4.9.0"
+    OID_CUR_CHANNEL_MODE: str = "1.3.6.1.4.1.40297.1.2.4.8.0"
+    OID_CUR_CHANNEL_NAME: str = "1.3.6.1.4.1.40297.1.2.4.9.0"
     # Hz
-    OID_TX_FREQUENCE: str = "iso.3.6.1.4.1.40297.1.2.4.10.0"
+    OID_TX_FREQUENCE: str = "1.3.6.1.4.1.40297.1.2.4.10.0"
     # Hz
-    OID_RX_FREQUENCE: str = "iso.3.6.1.4.1.40297.1.2.4.11.0"
+    OID_RX_FREQUENCE: str = "1.3.6.1.4.1.40297.1.2.4.11.0"
     # receive=0, transmit=1
-    OID_WORK_STATUS: str = "iso.3.6.1.4.1.40297.1.2.4.12.0"
-    OID_CUR_ZONE_ALIAS: str = "iso.3.6.1.4.1.40297.1.2.4.13.0"
+    OID_WORK_STATUS: str = "1.3.6.1.4.1.40297.1.2.4.12.0"
+    OID_CUR_ZONE_ALIAS: str = "1.3.6.1.4.1.40297.1.2.4.13.0"
 
     READABLE_LABELS = {
         OID_PSU_VOLTAGE: ("PSU Voltage", "%d mV"),
@@ -138,8 +138,8 @@ class SNMP(LoggingTrait):
 
         try:
             for oid in SNMP.ALL_KNOWN:
-                raw_oid = oid.replace("iso", "1")
-                snmp_result = await client.get(oid=raw_oid)
+                snmp_result = await client.get(oid=oid)
+
                 if oid in SNMP.ALL_STRINGS:
                     snmp_result = octet_string_to_utf8(str(snmp_result, "utf8"))
                 elif oid in SNMP.ALL_FLOATS:
@@ -148,7 +148,7 @@ class SNMP(LoggingTrait):
             is_success = True
         except SystemError:
             self.log_error("SNMP failed to obtain repeater info")
-        except Timeout:
+        except asyncio.Timeout:
             if first_try:
                 self.log_debug(
                     "Failed with SNMP family %s, trying with %s as well"
@@ -173,7 +173,7 @@ class SNMP(LoggingTrait):
         return settings_storage.hytera_snmp_data[address[0]]
 
     def print_snmp_data(self, settings_storage: BridgeSettings, address: tuple):
-        self.log_debug(
+        self.log_info(
             "-------------- REPEATER SNMP CONFIGURATION ----------------------------"
         )
         # ip address longest 15 letters (255.255.255.255)
@@ -185,7 +185,7 @@ class SNMP(LoggingTrait):
 
         if len(address) == 2:
             # log IP address first
-            self.log_debug(
+            self.log_info(
                 "%s| %s"
                 % (
                     str("IP Address").ljust(longest_label + 5),
@@ -197,14 +197,14 @@ class SNMP(LoggingTrait):
             print_settings = SNMP.READABLE_LABELS.get(key)
             if print_settings:
                 value = settings_storage.hytera_snmp_data[address[0]].get(key)
-                self.log_debug(
+                self.log_info(
                     "%s| %s"
                     % (
                         str(print_settings[0]).ljust(longest_label + 5),
                         print_settings[1] % value,
                     )
                 )
-        self.log_debug(
+        self.log_info(
             "-------------- REPEATER SNMP CONFIGURATION ----------------------------"
         )
 
@@ -214,7 +214,18 @@ if __name__ == "__main__":
         print("use as snmp.py <ip of hytera repeater>")
         exit(1)
 
-    logging.basicConfig(level=logging.NOTSET)
+    logging.basicConfig(level=logging.INFO)
+    # suppress puresnmp verbose/debug logs
+    logging.getLogger("puresnmp.transport").setLevel(logging.INFO)
+    # suppress puresnmp_plugins experimental warning
+    if not sys.warnoptions:
+        import warnings
+
+        warnings.filterwarnings(
+            message="Experimental SNMPv1 support", category=UserWarning, action="ignore"
+        )
 
     settings: BridgeSettings = BridgeSettings(filedata=BridgeSettings.MINIMAL_SETTINGS)
-    asyncio.gather(SNMP().walk_ip((sys.argv[1], 0), settings_storage=settings))
+    _target: SNMP = SNMP()
+    _target_address: tuple = (sys.argv[1], 0)
+    asyncio.run(_target.walk_ip(_target_address, settings_storage=settings))

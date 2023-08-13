@@ -4,7 +4,7 @@ import io
 import zlib
 from binascii import hexlify
 
-from dmr_utils3.decode import voice_head_term
+from okdmr.dmrlib.etsi.layer2.burst import Burst
 from okdmr.dmrlib.utils.bits_bytes import byteswap_bytes
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 from okdmr.kaitai.hytera.hytera_radio_network_protocol import HyteraRadioNetworkProtocol
@@ -163,10 +163,9 @@ def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
         or ipsc.slot_type
         == IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
     ):
-        lc = voice_head_term(byteswap_bytes(ipsc.ipsc_payload))
-        dmr_data_type: str = dmr_data_types.get(
-            int(lc["DTYPE"][0]), "DMR DT %d" % int(lc["DTYPE"][0])
-        )
+
+        b: Burst = Burst.from_hytera_ipsc(ipsc)
+        dmr_data_type: str = b.data_type.name
     else:
         dmr_data_type: str = "DMR DT ?"
 

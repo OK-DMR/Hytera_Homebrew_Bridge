@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
+import logging
 import socket
 from asyncio import transports, Queue
 from binascii import hexlify
@@ -71,12 +72,13 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
 
         asyncio.gather(self.hytera_repeater_obtain_snmp(address))
         self.settings.hytera_is_registered[address[0]] = True
+        self.log_info(f"handle_registration for {address} launching homebrew_connect")
         asyncio.get_running_loop().create_task(
-            self.repeater_accepted_callback.homebrew_connect(address[0])
+            self.repeater_accepted_callback.homebrew_connect(address[0], address[1])
         )
 
     def handle_rdac_request(self, data: bytes, address: Tuple[str, int]) -> None:
-        if not self.settings.hytera_is_registered.get(address[0]):
+        if not self.settings.is_repeater_registered(address[0]):
             self.log_debug(
                 f"Rejecting RDAC request for not-registered repeater {address[0]}"
             )
@@ -103,7 +105,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
 
     @staticmethod
     def get_redirect_packet(data: bytearray, target_port: int):
-        print(f"Providing redirect packet to port {target_port}")
+        logging.getLogger().debug(f"Providing redirect packet to port {target_port}")
         data = data[: len(data) - 1]
         data[4] = 0x0B
         data[12] = 0xFF
@@ -115,7 +117,7 @@ class HyteraP2PProtocol(CustomBridgeDatagramProtocol):
         return data
 
     def handle_dmr_request(self, data: bytes, address: Tuple[str, int]) -> None:
-        if not self.settings.hytera_is_registered.get(address[0]):
+        if not self.settings.is_repeater_registered(address[0]):
             self.log_debug(
                 f"Rejecting DMR request for not-registered repeater {address[0]}"
             )
@@ -485,8 +487,9 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
             self.log_debug("rdac completed identification")
             self.settings.print_repeater_configuration()
             asyncio.gather(self.hytera_repeater_obtain_snmp(address))
+            self.log_info(f"RDAC step13 for {address} launching homebrew_connect")
             asyncio.get_running_loop().create_task(
-                self.rdac_completed_callback.homebrew_connect(address[0])
+                self.rdac_completed_callback.homebrew_connect(address[0], address[1])
             )
 
     def step14(self, data: bytes, address: Tuple[str, int]) -> None:
@@ -509,11 +512,11 @@ class HyteraRDACProtocol(CustomBridgeDatagramProtocol):
 
         if len(data) == 1 and self.step[addr[0]] != 14:
             if self.step[addr[0]] == 4:
-                self.log_warning(
+                self.log_error(
                     "check repeater zone programming, if Digital IP"
                     "Multi-Site Connect mode allows data pass from timeslots"
                 )
-            self.log_warning(
+            self.log_error(
                 "restart process if response is protocol reset and current step is not 14"
             )
             self.step[addr[0]] = 0
@@ -541,7 +544,7 @@ class HyteraDMRProtocol(CustomBridgeDatagramProtocol):
         self.queue_incoming = queue_incoming
         self.queue_outgoing = queue_outgoing
         self.ip: str = hytera_repeater_ip
-        print(
+        self.log_info(
             f"HyteraDMRProtocol on creation expecting ip {self.ip} and port {self.settings.get_repeater_dmr_port(self.ip)}"
         )
 

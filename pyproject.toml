@@ -48,7 +48,7 @@ test = [
 ]
 
 [project.scripts]
-hytera-homebrew-bridge = "okdmr.hhb.hytera_homebrew_bridge:__main__"
+hytera-homebrew-bridge = "okdmr.hhb.__main__:main"
 
 [project.urls]
 repository = "https://github.com/OK-DMR/Hytera_Homebrew_Bridge"
