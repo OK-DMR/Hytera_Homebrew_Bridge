@@ -1,42 +1,10 @@
 #!/usr/bin/env python3
 
 import configparser
-import socket
-from typing import Dict, Tuple
 
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 
 _UNSET = object()
-
-
-class HyteraRepeaterData:
-    def __init__(self, ipsc_ip: str):
-        self.hytera_repeater_id: int = 0
-        self.hytera_callsign: str = ""
-        self.hytera_hardware: str = ""
-        self.hytera_firmware: str = ""
-        self.hytera_serial_number: str = ""
-        self.hytera_repeater_mode: int = 0
-        self.hytera_tx_freq: int = 0
-        self.hytera_rx_freq: int = 0
-        self.hytera_repeater_ip: str = ""
-        self.dmr_socket: socket.socket = HyteraRepeaterData.create_dmr_socket(
-            ipsc_ip=ipsc_ip
-        )
-        self.dmr_port: int = self.dmr_socket.getsockname()[1]
-
-    @staticmethod
-    def create_dmr_socket(ipsc_ip: str) -> socket.socket:
-        # create socket manually, to be able to find out the free udp port used
-        sock = socket.socket(
-            type=socket.SocketKind.SOCK_DGRAM, proto=socket.IPPROTO_UDP
-        )
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.bind((ipsc_ip, 0))
-        return sock
-
-    def __repr__(self) -> str:
-        return f"[DMRID: {self.hytera_repeater_id}] [IP: {self.hytera_repeater_ip}] [CALL: {self.hytera_callsign}]"
 
 
 class BridgeSettings(LoggingTrait):
@@ -81,13 +49,15 @@ class BridgeSettings(LoggingTrait):
 
         if filepath and filedata:
             raise SystemError(
-                "Both filename and filedata provided, this is unsupported, choose one"
+                "Both filename and filedata provided, this is not supported, choose one"
             )
 
         parser = configparser.ConfigParser()
         parser.sections()
         if filepath:
-            parser.read(filenames=filepath)
+            cnt_read_files = parser.read(filenames=filepath)
+            if not cnt_read_files:
+                raise SystemError("No configuration file was successfully read")
         else:
             parser.read_string(string=filedata)
 
@@ -105,8 +75,11 @@ class BridgeSettings(LoggingTrait):
                 % (self.hb_protocol, self.MMDVM_KNOWN_PROTOCOLS)
             )
 
+        # single mmdvm upstream
         self.hb_master_host = parser.get(self.SECTION_HOMEBREW, "master_ip")
         self.hb_master_port = parser.getint(self.SECTION_HOMEBREW, "master_port")
+
+        # single local ip/port for connecting to mmdvm upstream, and password
         self.hb_local_ip = parser.get(self.SECTION_HOMEBREW, "local_ip")
         self.hb_local_port = parser.getint(
             self.SECTION_HOMEBREW, "local_port", fallback=0
@@ -174,13 +147,6 @@ class BridgeSettings(LoggingTrait):
                 self.SECTION_IPSC, "disable_rdac", fallback=False
             )
 
-        # hytera_protocols variables
-        self.hytera_is_registered: Dict[str, bool] = dict()
-        self.hytera_snmp_data: Dict[str, dict] = dict()
-
-        # hytera repeater data
-        self.hytera_repeater_data: Dict[str, HyteraRepeaterData] = dict()
-
     @staticmethod
     def getint_safe(
         parser: configparser.ConfigParser, section: str, key: str, fallback=_UNSET
@@ -202,77 +168,6 @@ class BridgeSettings(LoggingTrait):
                 raise
             return fallback
 
-    def get_repeater_dmr_port(self, ip: str) -> int:
-        return self.hytera_repeater_data.get(
-            ip, HyteraRepeaterData(self.ipsc_ip)
-        ).dmr_port
-
-    def get_repeater_rx_freq(self, ip: str) -> str:
-        from okdmr.hhb import snmp
-
-        return str(
-            self.hb_rx_freq
-            or self.hytera_repeater_data.get(
-                ip, HyteraRepeaterData(self.ipsc_ip)
-            ).hytera_rx_freq
-            or self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_RX_FREQUENCE)
-        )
-
-    def get_repeater_tx_freq(self, ip: str) -> str:
-        from okdmr.hhb import snmp
-
-        return str(
-            self.hb_tx_freq
-            or self.hytera_repeater_data.get(
-                ip, HyteraRepeaterData(self.ipsc_ip)
-            ).hytera_tx_freq
-            or self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_TX_FREQUENCE)
-        )
-
-    def get_repeater_callsign(self, ip: str) -> str:
-        from okdmr.hhb import snmp
-
-        return (
-            self.hb_callsign
-            or self.hytera_repeater_data.get(
-                ip, HyteraRepeaterData(self.ipsc_ip)
-            ).hytera_callsign
-            or self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_RADIO_ALIAS)
-        )
-
-    def get_repeater_dmrid(self, ip: str) -> int:
-        from okdmr.hhb import snmp
-
-        return int(
-            self.hb_repeater_dmr_id
-            or self.hytera_repeater_data.get(
-                ip, HyteraRepeaterData(self.ipsc_ip)
-            ).hytera_repeater_id
-            or self.hytera_snmp_data.get(ip, {}).get(snmp.SNMP.OID_RADIO_ID)
-            or 0
-        )
-
-    def get_incorrect_configurations(self, ip: str) -> list:
-        rtn: list = list()
-
-        generic_error_message: str = (
-            "Value might have not been configured and was not obtained in Hytera repeater "
-            "configuration process (either P2P, RDAC or SNMP) "
-        )
-
-        repeater_id = self.get_repeater_dmrid(ip=ip)
-        if repeater_id < 1:
-            rtn.append(("homebrew.repeater_dmr_id", repeater_id, generic_error_message))
-
-        repeater_callsign = self.get_repeater_callsign(ip=ip)
-        if not repeater_callsign:
-            rtn.append(("homebrew.callsign", repeater_callsign, generic_error_message))
-
-        return rtn
-
-    def is_repeater_registered(self, repeater_ip: str) -> bool:
-        return repeater_ip in self.hytera_is_registered.keys()
-
     def print_settings(self) -> None:
         self.log_info("Settings Loaded")
         self.log_info(
@@ -282,10 +177,3 @@ class BridgeSettings(LoggingTrait):
         self.log_info(
             f"Upstream Homebrew/MMDVM server is expected at {self.hb_master_host}:{self.hb_master_port}\n"
         )
-
-    def print_repeater_configuration(self):
-        pass
-
-    def ensure_repeater_data(self, address: Tuple[str, int]):
-        if not self.hytera_repeater_data.get(address[0], None):
-            self.hytera_repeater_data[address[0]] = HyteraRepeaterData(self.ipsc_ip)

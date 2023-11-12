@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
 import logging
-import string
 
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
 
 def half_byte_to_bytes(half_byte: int, output_bytes: int = 2) -> bytes:
     return bytes([half_byte | half_byte << 4]) * output_bytes
-
-
-def octet_string_to_utf8(octets: str) -> str:
-    return "".join(filter(lambda c: c in string.printable, octets))
 
 
 def assemble_hytera_ipsc_sync_packet(

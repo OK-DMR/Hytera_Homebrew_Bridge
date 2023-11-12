@@ -2,9 +2,11 @@
 import asyncio
 from asyncio import Queue, CancelledError
 from typing import Optional
+from uuid import UUID
 
 from kaitaistruct import KaitaiStruct
 from okdmr.dmrlib.etsi.layer2.burst import Burst
+from okdmr.dmrlib.storage.repeater_storage import RepeaterStorage
 from okdmr.dmrlib.transmission.transmission_watcher import TransmissionWatcher
 from okdmr.dmrlib.utils.bits_bytes import byteswap_bytes
 from okdmr.dmrlib.utils.logging_trait import LoggingTrait
@@ -29,7 +31,8 @@ class HyteraMmdvmTranslator(LoggingTrait):
         hytera_outgoing: Queue,
         mmdvm_incoming: Queue,
         mmdvm_outgoing: Queue,
-        hytera_repeater_ip: str,
+        repeater_id: UUID,
+        storage: RepeaterStorage,
     ):
         self.transmission_watcher: TransmissionWatcher = TransmissionWatcher()
         self.settings = settings
@@ -37,7 +40,9 @@ class HyteraMmdvmTranslator(LoggingTrait):
         self.queue_hytera_output = hytera_outgoing
         self.queue_mmdvm_to_translate = mmdvm_incoming
         self.queue_mmdvm_output = mmdvm_outgoing
-        self.hytera_ip: str = hytera_repeater_ip
+        rpt = storage.match_uuid(repeater_id)
+
+        self.hytera_ip: str = rpt.address_out[0]
 
     async def translate_from_hytera(self):
         loop = asyncio.get_running_loop()
@@ -81,7 +86,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         + byteswap_bytes(packet.ipsc_payload)
                     )
 
-                    self.queue_mmdvm_output.put_nowait((self.hytera_ip, mmdvm_out))
+                    self.queue_mmdvm_output.put_nowait((self.ip, mmdvm_out))
                 else:
                     print(
                         "Hytera BurstInfo not available",

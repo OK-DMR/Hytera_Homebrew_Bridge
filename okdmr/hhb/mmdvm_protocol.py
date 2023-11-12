@@ -7,12 +7,13 @@ from binascii import hexlify, a2b_hex
 from hashlib import sha256
 from socket import socket
 from typing import Optional, Callable, Tuple
+from uuid import UUID
 
+from okdmr.dmrlib.storage.repeater import Repeater
+from okdmr.dmrlib.storage.repeater_storage import RepeaterStorage
+from okdmr.dmrlib.utils.logging_trait import LoggingTrait
 from okdmr.kaitai.homebrew.mmdvm2020 import Mmdvm2020
 
-from okdmr.hhb.custom_bridge_datagram_protocol import (
-    CustomBridgeDatagramProtocol,
-)
 from okdmr.hhb.packet_format import (
     common_log_format,
     get_dmr_data_hash,
@@ -21,7 +22,7 @@ from okdmr.hhb.settings import BridgeSettings
 from okdmr.hhb.utils import log_mmdvm_configuration
 
 
-class MMDVMProtocol(CustomBridgeDatagramProtocol):
+class MMDVMProtocol(LoggingTrait):
     CON_NEW: int = 1
     CON_LOGIN_REQUEST_SENT: int = 2
     CON_LOGIN_RESPONSE_SENT: int = 3
@@ -30,20 +31,21 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
 
     def __init__(
         self,
+        repeater_id: UUID,
+        storage: RepeaterStorage,
         settings: BridgeSettings,
         connection_lost_callback: Callable,
         queue_outgoing: Queue,
         queue_incoming: Queue,
-        hytera_repeater_ip: str,
     ) -> None:
-        super().__init__(settings)
-        self.settings = settings
         self.transport: Optional[transports.DatagramTransport] = None
         self.connection_lost_callback = connection_lost_callback
         self.connection_status: int = self.CON_NEW
         self.queue_outgoing: Queue = queue_outgoing
         self.queue_incoming: Queue = queue_incoming
-        self.ip: str = hytera_repeater_ip
+        self.repeater_id: UUID = repeater_id
+        self.storage: RepeaterStorage = storage
+        self.settings: BridgeSettings = settings
 
     async def periodic_maintenance(self) -> None:
         while not asyncio.get_running_loop().is_closed():
@@ -154,7 +156,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
             self.connection_status = self.CON_NEW
             is_handled = True
         elif isinstance(packet.command_data, Mmdvm2020.TypeDmrData):
-            self.queue_incoming.put_nowait((self.ip, packet))
+            self.queue_incoming.put_nowait((self.repeater_id, packet))
             is_handled = True
 
             self.log_debug(
@@ -173,13 +175,16 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                 f"UNHANDLED {packet.__class__.__name__} {packet.command_data.__class__.__name__} {hexlify(data)} status {self.connection_status}"
             )
 
+    def rpt(self) -> Repeater:
+        return self.storage.match_uuid(self.repeater_id)
+
     def send_login_request(self) -> None:
         self.log_info("Sending Login Request")
         self.connection_status = self.CON_LOGIN_REQUEST_SENT
         self.queue_outgoing.put_nowait(
             (
-                self.ip,
-                struct.pack(">4sI", b"RPTL", self.settings.get_repeater_dmrid(self.ip)),
+                self.repeater_id,
+                struct.pack(">4sI", b"RPTL", self.rpt().dmr_id),
             )
         )
 
@@ -189,7 +194,7 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
         challenge_response = struct.pack(
             ">4sI32s",
             b"RPTK",
-            self.settings.get_repeater_dmrid(self.ip),
+            self.rpt().dmr_id,
             a2b_hex(
                 sha256(
                     b"".join(
@@ -201,17 +206,18 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
                 ).hexdigest()
             ),
         )
-        self.queue_outgoing.put_nowait((self.ip, challenge_response))
+        self.queue_outgoing.put_nowait((self.repeater_id, challenge_response))
 
     def send_configuration(self) -> None:
         self.log_info(f"Sending self configuration to master")
+        rpt = self.rpt()
         packet = struct.pack(
             ">4sI8s9s9s2s2s8s9s3s20s19s1s124s40s40s",
             b"RPTC",
-            self.settings.get_repeater_dmrid(self.ip),
-            self.settings.get_repeater_callsign(self.ip)[0:8].ljust(8).encode(),
-            self.settings.get_repeater_rx_freq(self.ip)[0:9].rjust(9, "0").encode(),
-            self.settings.get_repeater_tx_freq(self.ip)[0:9].rjust(9, "0").encode(),
+            rpt.dmr_id,
+            rpt.callsign[0:8].ljust(8).encode(),
+            rpt.attr("rx_freq")[0:9].rjust(9, "0").encode(),
+            rpt.attr("tx_freq")[0:9].rjust(9, "0").encode(),
             str(self.settings.hb_tx_power & 0xFFFF).rjust(2, "0").encode(),
             str(self.settings.hb_color_code & 0xF).rjust(2, "0").encode(),
             self.settings.hb_latitude[0:8].rjust(8, "0").encode(),
@@ -227,23 +233,19 @@ class MMDVMProtocol(CustomBridgeDatagramProtocol):
             self.settings.hb_package_id[0:40].ljust(40).encode(),
         )
 
-        self.queue_outgoing.put_nowait((self.ip, packet))
+        self.queue_outgoing.put_nowait((self.repeater_id, packet))
 
         config: Mmdvm2020 = Mmdvm2020.from_bytes(packet)
         log_mmdvm_configuration(logger=self.get_logger(), packet=config)
 
     def send_ping(self) -> None:
-        packet = struct.pack(
-            ">7sI", b"RPTPING", self.settings.get_repeater_dmrid(self.ip)
-        )
-        self.queue_outgoing.put_nowait((self.ip, packet))
+        packet = struct.pack(">7sI", b"RPTPING", self.rpt().dmr_id)
+        self.queue_outgoing.put_nowait((self.repeater_id, packet))
 
     def send_closing(self) -> None:
         self.log_info("Closing MMDVM connection")
-        packet = struct.pack(
-            ">5sI", b"RPTCL", self.settings.get_repeater_dmrid(self.ip)
-        )
-        self.queue_outgoing.put_nowait((self.ip, packet))
+        packet = struct.pack(">5sI", b"RPTCL", self.rpt().dmr_id)
+        self.queue_outgoing.put_nowait((self.repeater_id, packet))
 
     def disconnect(self) -> None:
         if self.transport and not self.transport.is_closing():

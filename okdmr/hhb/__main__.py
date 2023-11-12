@@ -54,6 +54,7 @@ def main():
         )
 
     loop = asyncio.new_event_loop()
+    loop.set_debug(True)
     asyncio.set_event_loop(loop=loop)
     # order is IMPORTANT, various asyncio object are created at bridge init
     # and those must be created after the main loop is created
@@ -63,9 +64,11 @@ def main():
             loop.add_signal_handler(signal, bridge.stop_running)
 
     try:
-        loop.run_until_complete(future=bridge.go())
+        loop.run_until_complete(bridge.go())
+
         loop.run_forever()
     except BaseException as e:
+        mainlog.exception(msg="HHB Main caught")
         mainlog.exception(msg="", exc_info=e)
     finally:
         mainlog.info("Hytera Homebrew Bridge Ended")
