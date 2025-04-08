@@ -50,12 +50,12 @@ def get_mmdvm_bitflags(burst: Burst, packet: IpSiteConnectProtocol) -> bytes:
 DMR_DATA_TYPE_TO_IPSC_SLOT_TYPE: Dict[
     Union[DataTypes, VoiceBursts], IpSiteConnectProtocol.SlotTypes
 ] = {
-    VoiceBursts.VoiceBurstA: IpSiteConnectProtocol.SlotTypes.slot_type_data_c,
-    VoiceBursts.VoiceBurstB: IpSiteConnectProtocol.SlotTypes.slot_type_data_d,
-    VoiceBursts.VoiceBurstC: IpSiteConnectProtocol.SlotTypes.slot_type_data_e,
-    VoiceBursts.VoiceBurstD: IpSiteConnectProtocol.SlotTypes.slot_type_data_f,
-    VoiceBursts.VoiceBurstE: IpSiteConnectProtocol.SlotTypes.slot_type_data_a,
-    VoiceBursts.VoiceBurstF: IpSiteConnectProtocol.SlotTypes.slot_type_data_b,
+    VoiceBursts.VoiceBurstA: IpSiteConnectProtocol.SlotTypes.slot_type_data_a,
+    VoiceBursts.VoiceBurstB: IpSiteConnectProtocol.SlotTypes.slot_type_data_b,
+    VoiceBursts.VoiceBurstC: IpSiteConnectProtocol.SlotTypes.slot_type_data_c,
+    VoiceBursts.VoiceBurstD: IpSiteConnectProtocol.SlotTypes.slot_type_data_d,
+    VoiceBursts.VoiceBurstE: IpSiteConnectProtocol.SlotTypes.slot_type_data_e,
+    VoiceBursts.VoiceBurstF: IpSiteConnectProtocol.SlotTypes.slot_type_data_f,
     DataTypes.VoiceLCHeader: IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header,
     DataTypes.Rate34Data: IpSiteConnectProtocol.SlotTypes.slot_type_rate_34_data,
     DataTypes.Rate12Data: IpSiteConnectProtocol.SlotTypes.slot_type_rate_12_data,
@@ -69,12 +69,12 @@ DMR_DATA_TYPE_TO_IPSC_SLOT_TYPE: Dict[
 DMR_DATA_TYPE_TO_IPSC_FRAME_TYPE: Dict[
     Union[VoiceBursts, DataTypes], IpSiteConnectProtocol.FrameTypes
 ] = {
-    VoiceBursts.VoiceBurstA: IpSiteConnectProtocol.FrameTypes.frame_type_voice,
-    VoiceBursts.VoiceBurstB: IpSiteConnectProtocol.FrameTypes.frame_type_voice,
+    VoiceBursts.VoiceBurstA: IpSiteConnectProtocol.FrameTypes.frame_type_data,
+    VoiceBursts.VoiceBurstB: IpSiteConnectProtocol.FrameTypes.frame_type_data,
     VoiceBursts.VoiceBurstC: IpSiteConnectProtocol.FrameTypes.frame_type_voice_sync,
-    VoiceBursts.VoiceBurstD: IpSiteConnectProtocol.FrameTypes.frame_type_voice,
-    VoiceBursts.VoiceBurstE: IpSiteConnectProtocol.FrameTypes.frame_type_voice,
-    VoiceBursts.VoiceBurstF: IpSiteConnectProtocol.FrameTypes.frame_type_voice,
+    VoiceBursts.VoiceBurstD: IpSiteConnectProtocol.FrameTypes.frame_type_data,
+    VoiceBursts.VoiceBurstE: IpSiteConnectProtocol.FrameTypes.frame_type_data,
+    VoiceBursts.VoiceBurstF: IpSiteConnectProtocol.FrameTypes.frame_type_data,
     DataTypes.VoiceLCHeader: IpSiteConnectProtocol.FrameTypes.frame_type_data_header,
     DataTypes.Rate34Data: IpSiteConnectProtocol.FrameTypes.frame_type_data,
     DataTypes.Rate12Data: IpSiteConnectProtocol.FrameTypes.frame_type_data,
@@ -84,6 +84,32 @@ DMR_DATA_TYPE_TO_IPSC_FRAME_TYPE: Dict[
     DataTypes.PIHeader: IpSiteConnectProtocol.FrameTypes.frame_type_data,
     DataTypes.TerminatorWithLC: IpSiteConnectProtocol.FrameTypes.frame_type_data,
 }
+
+DMR_DATA_TYPE_TO_IPSC_PACKET_TYPE: Dict[
+    Union[VoiceBursts, DataTypes], IpSiteConnectProtocol.PacketTypes
+] = {
+    VoiceBursts.VoiceBurstA: IpSiteConnectProtocol.PacketTypes.a,
+    VoiceBursts.VoiceBurstB: IpSiteConnectProtocol.PacketTypes.a,
+    VoiceBursts.VoiceBurstC: IpSiteConnectProtocol.PacketTypes.b,
+    VoiceBursts.VoiceBurstD: IpSiteConnectProtocol.PacketTypes.a,
+    VoiceBursts.VoiceBurstE: IpSiteConnectProtocol.PacketTypes.a,
+    VoiceBursts.VoiceBurstF: IpSiteConnectProtocol.PacketTypes.a,
+    DataTypes.VoiceLCHeader: IpSiteConnectProtocol.PacketTypes.a,
+    DataTypes.Rate34Data: IpSiteConnectProtocol.PacketTypes.a,
+    DataTypes.Rate12Data: IpSiteConnectProtocol.PacketTypes.a,
+    DataTypes.Rate1Data: IpSiteConnectProtocol.PacketTypes.a,
+    DataTypes.CSBK: IpSiteConnectProtocol.PacketTypes.a,
+    DataTypes.DataHeader: IpSiteConnectProtocol.PacketTypes.a,
+    DataTypes.PIHeader: IpSiteConnectProtocol.PacketTypes.a,
+    DataTypes.TerminatorWithLC: IpSiteConnectProtocol.PacketTypes.terminator,
+}
+
+
+def get_ipsc_packet_type(burst: Burst) -> int:
+    return DMR_DATA_TYPE_TO_IPSC_PACKET_TYPE.get(
+        burst.voice_burst if burst.is_vocoder else burst.data_type,
+        IpSiteConnectProtocol.PacketTypes.a,
+    ).value
 
 
 def get_ipsc_frame_type(burst: Burst) -> int:

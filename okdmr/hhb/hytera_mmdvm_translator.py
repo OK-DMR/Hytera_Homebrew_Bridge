@@ -143,6 +143,7 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         sequence_number=burst.sequence_no,
                         dmr_payload=byteswap_bytes(packet.command_data.dmr_data),
                         frame_type=get_ipsc_frame_type(burst),
+                        packet_type=get_ipsc_packet_type(burst),
                         hytera_slot_type=get_ipsc_slot_type(burst),
                     )
                     self.queue_hytera_output.put_nowait(

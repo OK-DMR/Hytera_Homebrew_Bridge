@@ -124,6 +124,7 @@ def assemble_hytera_ipsc_packet(
     target_id: int,
     color_code: int,
     frame_type: int,
+    packet_type: int,
 ) -> bytes:
     return (
         b"\x5a\x5a\x5a\x5a"
