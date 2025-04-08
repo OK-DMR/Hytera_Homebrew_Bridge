@@ -51,7 +51,7 @@ def assemble_hytera_ipsc_sync_packet(
         # timeslot
         + (b"\x11\x11" if timeslot_is_ts1 else b"\x22\x22")
         # slot type
-        + b"\xEE\xEE"
+        + b"\xee\xee"
         # color code
         + half_byte_to_bytes(half_byte=color_code, output_bytes=2)
         # 1111 => voice sync, 3333 => data sync
@@ -93,7 +93,7 @@ def assemble_hytera_ipsc_wakeup_packet(
         (b"\x11\x11" if timeslot_is_ts1 else b"\x22\x22")
         +
         # slot type
-        b"\xDD\xDD"
+        b"\xdd\xdd"
         +
         # color code
         half_byte_to_bytes(half_byte=color_code, output_bytes=2)
@@ -133,7 +133,7 @@ def assemble_hytera_ipsc_packet(
         sequence_number.to_bytes(1, byteorder="little")
         +
         # reserved_3
-        b"\xE0\x00\x00"
+        b"\xe0\x00\x00"
         +
         # packet type
         b"\x01"
@@ -156,7 +156,7 @@ def assemble_hytera_ipsc_packet(
         frame_type.to_bytes(2, byteorder="little")
         +
         # reserved_2a
-        b"\x40\x5C"
+        b"\x40\x5c"
         +
         # payload data
         dmr_payload

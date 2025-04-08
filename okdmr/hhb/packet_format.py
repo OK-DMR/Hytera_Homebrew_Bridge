@@ -142,9 +142,11 @@ def format_mmdvm_data(mmdvm: Mmdvm2020.TypeDmrData) -> str:
             width=3,
         )
         + format_brackets(
-            text="PRIVATE"
-            if mmdvm.call_type == Mmdvm2020.CallTypes.private_call
-            else "GROUP",
+            text=(
+                "PRIVATE"
+                if mmdvm.call_type == Mmdvm2020.CallTypes.private_call
+                else "GROUP"
+            ),
             width=7,
         )
         + format_brackets(text=mmdvm_frame_types.get(mmdvm.frame_type, "N/A"), width=13)
@@ -184,9 +186,11 @@ def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
             width=3,
         )
         + format_brackets(
-            text="PRIVATE"
-            if ipsc.call_type == IpSiteConnectProtocol.CallTypes.private_call
-            else "GROUP",
+            text=(
+                "PRIVATE"
+                if ipsc.call_type == IpSiteConnectProtocol.CallTypes.private_call
+                else "GROUP"
+            ),
             width=7,
         )
         + format_brackets(
