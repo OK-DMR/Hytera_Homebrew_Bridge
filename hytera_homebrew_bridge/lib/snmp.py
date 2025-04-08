@@ -146,6 +146,7 @@ class SNMP(LoggingTrait):
         # noinspection PyBroadException
         try:
             for oid in SNMP.ALL_KNOWN:
+                oid = oid.replace("iso", "1")
                 snmp_result = await asyncio.wait_for(
                     fut=client.get(oid=oid), timeout=timeout_secs
                 )
