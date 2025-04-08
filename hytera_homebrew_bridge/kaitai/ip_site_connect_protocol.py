@@ -19,6 +19,7 @@ class IpSiteConnectProtocol(KaitaiStruct):
     class PacketTypes(Enum):
         a = 65
         b = 66
+        terminator = 67
 
     class FrameTypes(Enum):
         frame_type_data = 0

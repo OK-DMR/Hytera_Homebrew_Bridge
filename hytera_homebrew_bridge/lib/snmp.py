@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
+import asyncio
 import logging
 import sys
+from typing import Union, Literal, Dict
 
-from puresnmp import get
-from puresnmp.const import Version
-from puresnmp.exc import Timeout
+import puresnmp
 
 from hytera_homebrew_bridge.lib.logging_trait import LoggingTrait
 from hytera_homebrew_bridge.lib.settings import BridgeSettings
 from hytera_homebrew_bridge.lib.utils import octet_string_to_utf8
+
+KNOWN_SNMP_COMMUNITIES = Union[Literal["hytera"], Literal["public"]]
+DEFAULT_SNMP_COMMUNITY = "public"
 
 
 class SNMP(LoggingTrait):
@@ -118,54 +121,78 @@ class SNMP(LoggingTrait):
     OID_WALK_BASE_1: str = "1.3.6.1.4.1.40297.1.2.4"
     OID_WALK_BASE_2: str = "1.3.6.1.4.1.40297.1.2.1.2"
 
-    def walk_ip(
-        self, address: tuple, settings_storage: BridgeSettings, first_try: bool = True
-    ) -> dict:
-        ip, port = address
+    async def walk_ip(
+        self,
+        ip: str,
+        settings_storage: BridgeSettings,
+        snmp_community: KNOWN_SNMP_COMMUNITIES = DEFAULT_SNMP_COMMUNITY,
+        first_try: bool = True,
+        timeout_secs: int = 2,
+    ) -> Dict[str, any]:
         is_success: bool = False
-        other_family: str = (
-            "public" if settings_storage.snmp_family == "hytera" else "hytera"
+
+        snmp_data: Dict[str, any] = {}
+
+        # noinspection PyTypeChecker
+        other_community: KNOWN_SNMP_COMMUNITIES = (
+            "public" if snmp_community == "hytera" else "hytera"
         )
+        client = puresnmp.PyWrapper(
+            client=puresnmp.Client(
+                ip=ip, credentials=puresnmp.V1(community=snmp_community)
+            )
+        )
+
+        # noinspection PyBroadException
         try:
             for oid in SNMP.ALL_KNOWN:
-                raw_oid = oid.replace("iso", "1")
-                snmp_result = get(
-                    ip=ip,
-                    community=settings_storage.snmp_family,
-                    oid=raw_oid,
-                    version=Version.V1,
+                snmp_result = await asyncio.wait_for(
+                    fut=client.get(oid=oid), timeout=timeout_secs
                 )
+
                 if oid in SNMP.ALL_STRINGS:
                     snmp_result = octet_string_to_utf8(str(snmp_result, "utf8"))
                 elif oid in SNMP.ALL_FLOATS:
                     snmp_result = int.from_bytes(snmp_result, byteorder="big")
-                settings_storage.hytera_snmp_data[oid] = snmp_result
+                snmp_data[oid] = snmp_result
             is_success = True
-        except SystemError:
+        except ConnectionRefusedError:
+            self.log_error("SNMP failed, Connection to port 162 was refused")
+        except SystemError as se:
             self.log_error("SNMP failed to obtain repeater info")
-        except Timeout:
+            self.log_exception(se)
+        except (
+            asyncio.exceptions.CancelledError,
+            puresnmp.exc.Timeout,
+            asyncio.exceptions.TimeoutError,
+            TimeoutError,
+        ) as e:
             if first_try:
                 self.log_debug(
                     "Failed with SNMP family %s, trying with %s as well"
-                    % (settings_storage.snmp_family, other_family)
+                    % (snmp_community, other_community)
                 )
-                settings_storage.snmp_family = other_family
-                self.walk_ip(
-                    address=address, settings_storage=settings_storage, first_try=False
+                await self.walk_ip(
+                    ip=ip,
+                    settings_storage=settings_storage,
+                    first_try=False,
+                    snmp_community=other_community,
                 )
             else:
-                self.log_error(
-                    "SNMP failed, maybe try changing setting.ini [snmp] family = %s"
-                    % other_family
-                )
-        except BaseException as e:
+                self.log_error("SNMP failed")
+                self.log_exception(e)
+        except:
             self.log_exception("Unhandled exception")
-            self.log_exception(e)
+            self.log_exception(sys.exc_info())
 
         if is_success:
-            self.print_snmp_data(settings_storage=settings_storage)
+            # set data to storage
+            for key, value in snmp_data.items():
+                settings_storage.hytera_snmp_data[key] = value
+            # print from storage
+            self.print_snmp_data(settings_storage)
 
-        return settings_storage.hytera_snmp_data
+        return snmp_data
 
     def print_snmp_data(self, settings_storage: BridgeSettings):
         self.log_debug(
@@ -201,4 +228,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.NOTSET)
 
     settings: BridgeSettings = BridgeSettings(filedata=BridgeSettings.MINIMAL_SETTINGS)
-    SNMP().walk_ip((sys.argv[1], 0), settings_storage=settings)
+    SNMP().walk_ip(sys.argv[1], settings_storage=settings)

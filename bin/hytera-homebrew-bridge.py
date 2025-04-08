@@ -123,7 +123,7 @@ class HyteraHomebrewBridge:
         self.homebrew_protocol.disconnect()
         self.hytera_p2p_protocol.disconnect()
         self.loop.stop()
-        for task in asyncio.Task.all_tasks():
+        for task in asyncio.all_tasks():
             task.cancel()
             task.done()
 

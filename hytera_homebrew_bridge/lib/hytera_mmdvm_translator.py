@@ -108,13 +108,13 @@ class HyteraMmdvmTranslator(LoggingTrait):
             5: IpSiteConnectProtocol.SlotTypes.slot_type_data_f,
         }
         self.mmdvm_to_hytera_slottype_str: dict = {
-            IpSiteConnectProtocol.SlotTypes.slot_type_data_a_or_privacy: b"\xBB\xBB",
-            IpSiteConnectProtocol.SlotTypes.slot_type_data_b: b"\xCC\xCC",
+            IpSiteConnectProtocol.SlotTypes.slot_type_data_a_or_privacy: b"\xbb\xbb",
+            IpSiteConnectProtocol.SlotTypes.slot_type_data_b: b"\xcc\xcc",
             IpSiteConnectProtocol.SlotTypes.slot_type_data_c: b"\x77\x77",
             IpSiteConnectProtocol.SlotTypes.slot_type_data_d: b"\x88\x88",
             IpSiteConnectProtocol.SlotTypes.slot_type_data_e: b"\x99\x99",
-            IpSiteConnectProtocol.SlotTypes.slot_type_data_f: b"\xAA\xAA",
-            IpSiteConnectProtocol.SlotTypes.slot_type_sync: b"\xEE\xEE",
+            IpSiteConnectProtocol.SlotTypes.slot_type_data_f: b"\xaa\xaa",
+            IpSiteConnectProtocol.SlotTypes.slot_type_sync: b"\xee\xee",
             IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header: b"\x11\x11",
             IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc: b"\x22\x22",
             IpSiteConnectProtocol.SlotTypes.slot_type_csbk: b"\x33\x33",
@@ -187,17 +187,21 @@ class HyteraMmdvmTranslator(LoggingTrait):
                         self.log_info(
                             "HYTER->HHB *%s CALL START* FROM: %s TO: %s TS: %s"
                             % (
-                                "PRIVATE"
-                                if packet.call_type
-                                == IpSiteConnectProtocol.CallTypes.private_call
-                                else "GROUP",
+                                (
+                                    "PRIVATE"
+                                    if packet.call_type
+                                    == IpSiteConnectProtocol.CallTypes.private_call
+                                    else "GROUP"
+                                ),
                                 packet.source_radio_id,
                                 packet.destination_radio_id,
                                 # timeslot
-                                "1"
-                                if packet.timeslot_raw
-                                == IpSiteConnectProtocol.Timeslots.timeslot_1
-                                else "2",
+                                (
+                                    "1"
+                                    if packet.timeslot_raw
+                                    == IpSiteConnectProtocol.Timeslots.timeslot_1
+                                    else "2"
+                                ),
                             )
                         )
                         timeslot_info.mmdvm_last_started_stream_id_out = (
@@ -210,17 +214,21 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     self.log_info(
                         "HYTER->HHB *%s CALL  END * FROM: %s TO: %s TS: %s"
                         % (
-                            "PRIVATE"
-                            if packet.call_type
-                            == IpSiteConnectProtocol.CallTypes.private_call
-                            else "GROUP",
+                            (
+                                "PRIVATE"
+                                if packet.call_type
+                                == IpSiteConnectProtocol.CallTypes.private_call
+                                else "GROUP"
+                            ),
                             packet.source_radio_id,
                             packet.destination_radio_id,
                             # timeslot
-                            "1"
-                            if packet.timeslot_raw
-                            == IpSiteConnectProtocol.Timeslots.timeslot_1
-                            else "2",
+                            (
+                                "1"
+                                if packet.timeslot_raw
+                                == IpSiteConnectProtocol.Timeslots.timeslot_1
+                                else "2"
+                            ),
                         )
                     )
                 self.log_debug(
@@ -350,19 +358,23 @@ class HyteraMmdvmTranslator(LoggingTrait):
             swapped_bytes: bytes = byteswap_bytes(packet.command_data.dmr_data)
 
             slot_type: IpSiteConnectProtocol.SlotTypes
+            packet_type: IpSiteConnectProtocol.PacketTypes
             if packet.command_data.frame_type == 2:
                 if packet.command_data.data_type == 1:
                     # voice lc header
                     slot_type = (
                         IpSiteConnectProtocol.SlotTypes.slot_type_voice_lc_header
                     )
+                    packet_type = IpSiteConnectProtocol.PacketTypes.a
                     timeslot_info.hytera_last_sequence_out = 0
                     self.log_info(
                         "MMDVM->HHB *%s CALL START* FROM: %s TO: %s TS: %s"
                         % (
-                            "PRIVATE"
-                            if packet.command_data.call_type == 1
-                            else "GROUP",
+                            (
+                                "PRIVATE"
+                                if packet.command_data.call_type == 1
+                                else "GROUP"
+                            ),
                             packet.command_data.source_id,
                             packet.command_data.target_id,
                             "2" if packet.command_data.slot_no == 1 else "1",
@@ -388,12 +400,15 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     slot_type = (
                         IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
                     )
+                    packet_type = IpSiteConnectProtocol.PacketTypes.terminator
                     self.log_info(
                         "MMDVM->HHB *%s CALL  END * FROM: %s TO: %s TS: %s"
                         % (
-                            "PRIVATE"
-                            if packet.command_data.call_type == 1
-                            else "GROUP",
+                            (
+                                "PRIVATE"
+                                if packet.command_data.call_type == 1
+                                else "GROUP"
+                            ),
                             packet.command_data.source_id,
                             packet.command_data.target_id,
                             "2" if packet.command_data.slot_no == 1 else "1",
@@ -404,29 +419,33 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     slot_type = (
                         IpSiteConnectProtocol.SlotTypes.slot_type_terminator_with_lc
                     )
+                    packet_type = IpSiteConnectProtocol.PacketTypes.a
             else:
                 slot_type = self.mmdvm_to_hytera_slottype.get(
                     packet.command_data.data_type,
                     IpSiteConnectProtocol.SlotTypes.slot_type_data_a_or_privacy,
                 )
+                packet_type = IpSiteConnectProtocol.PacketTypes.a
 
             timeslot_info.up_hytera_last_sequence_out()
             hytera_ipsc_packet: bytes = assemble_hytera_ipsc_packet(
                 udp_port=self.settings.dmr_port,
                 sequence_number=timeslot_info.hytera_last_sequence_out,
                 timeslot_is_ts1=(packet.command_data.slot_no == 0),
-                hytera_slot_type=int(slot_type.__getattribute__("value")),
+                hytera_slot_type=int(slot_type.value),
                 dmr_payload=swapped_bytes,
                 is_private_call=(packet.command_data.call_type == 1),
                 target_id=packet.command_data.target_id,
                 source_id=packet.command_data.source_id,
                 color_code=self.settings.hb_color_code,
                 frame_type=IpSiteConnectProtocol.FrameTypes.frame_type_voice.value,
+                packet_type=packet_type.value,
             )
 
+            self.log_info(f"Sending ipsc sync to repeater {hytera_ipsc_packet.hex()}")
             await self.queue_hytera_output.put(hytera_ipsc_packet)
 
-            if slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_data_f:
+            if slot_type == IpSiteConnectProtocol.SlotTypes.slot_type_data_d:
                 timeslot_info.up_hytera_last_sequence_out()
                 # send sync packet
                 hytera_ipsc_packet: bytes = assemble_hytera_ipsc_sync_packet(
@@ -437,7 +456,9 @@ class HyteraMmdvmTranslator(LoggingTrait):
                     color_code=self.settings.hb_color_code,
                     sequence_number=timeslot_info.hytera_last_sequence_out,
                 )
-                #  self.log_info(f"Sending ipsc sync to repeater {hytera_ipsc_packet.hex()}")
+                self.log_info(
+                    f"Sending ipsc sync to repeater {hytera_ipsc_packet.hex()}"
+                )
                 await self.queue_hytera_output.put(hytera_ipsc_packet)
 
             timeslot_info.set_hytera_last_sent_timestamp()

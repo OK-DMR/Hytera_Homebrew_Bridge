@@ -156,14 +156,16 @@ def assemble_hytera_ipsc_sync_packet(
         + sequence_number.to_bytes(1, byteorder="little")
         + bytes(3)
         # magic
-        + b"\x42\x00\x05\x01"
+        + b"\x42\x00\x05"
+        # packet type b=66=0x42
+        + b"\x42"
         # timeslot
         + (b"\x01" if timeslot_is_ts1 else b"\x02")
         + bytes(3)
         # timeslot
         + (b"\x11\x11" if timeslot_is_ts1 else b"\x22\x22")
         # slot type
-        + b"\xEE\xEE"
+        + b"\xee\xee"
         # color code
         + half_byte_to_bytes(half_byte=color_code, output_bytes=2)
         # 1111 => voice sync, 3333 => data sync
@@ -195,7 +197,10 @@ def assemble_hytera_ipsc_wakeup_packet(
         + bytes(4)
         +
         # magic
-        b"\x42\x00\x05\x01"
+        b"\x42\x00\x05"
+        +
+        # packet type 0x42=66, PacketTypes.b
+        b"\x42"
         +
         # timeslot = wakeup
         (b"\x01" if timeslot_is_ts1 else b"\x02")
@@ -205,7 +210,7 @@ def assemble_hytera_ipsc_wakeup_packet(
         (b"\x11\x11" if timeslot_is_ts1 else b"\x22\x22")
         +
         # slot type
-        b"\xDD\xDD"
+        b"\xdd\xdd"
         +
         # color code
         half_byte_to_bytes(half_byte=color_code, output_bytes=2)
@@ -237,6 +242,7 @@ def assemble_hytera_ipsc_packet(
     target_id: int,
     color_code: int,
     frame_type: int,
+    packet_type: int,
 ) -> bytes:
     return (
         b"\x5a\x5a\x5a\x5a"
@@ -245,10 +251,10 @@ def assemble_hytera_ipsc_packet(
         sequence_number.to_bytes(1, byteorder="little")
         +
         # reserved_3
-        b"\xE0\x00\x00"
+        b"\xe0\x00\x00"
         +
         # packet type
-        b"\x01"
+        packet_type.to_bytes(1, byteorder="little")
         +
         # reserved_7a
         b"\x00\x05\x01"
@@ -268,7 +274,7 @@ def assemble_hytera_ipsc_packet(
         frame_type.to_bytes(2, byteorder="little")
         +
         # reserved_2a
-        b"\x40\x5C"
+        b"\x40\x5c"
         +
         # payload data
         dmr_payload
