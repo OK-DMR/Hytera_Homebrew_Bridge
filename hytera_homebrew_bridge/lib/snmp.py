@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import sys
+import warnings
 from typing import Union, Literal, Dict
 
 import puresnmp
@@ -146,9 +147,9 @@ class SNMP(LoggingTrait):
         # noinspection PyBroadException
         try:
             for oid in SNMP.ALL_KNOWN:
-                oid = oid.replace("iso", "1")
+                _oid = oid.replace("iso", "1")
                 snmp_result = await asyncio.wait_for(
-                    fut=client.get(oid=oid), timeout=timeout_secs
+                    fut=client.get(oid=_oid), timeout=timeout_secs
                 )
 
                 if oid in SNMP.ALL_STRINGS:
@@ -227,6 +228,9 @@ if __name__ == "__main__":
         exit(1)
 
     logging.basicConfig(level=logging.NOTSET)
+    logging.getLogger("puresnmp.transport").setLevel(logging.WARN)
+
+    warnings.filterwarnings("ignore", category=UserWarning, module="puresnmp_plugins")
 
     settings: BridgeSettings = BridgeSettings(filedata=BridgeSettings.MINIMAL_SETTINGS)
-    SNMP().walk_ip(sys.argv[1], settings_storage=settings)
+    asyncio.run(SNMP().walk_ip(sys.argv[1], settings_storage=settings))

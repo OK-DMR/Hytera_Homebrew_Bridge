@@ -38,14 +38,14 @@ mmdvm_data_types_voice: dict = {
 ipsc_frame_types: dict = {
     0x1111: "VOICE SYNC",
     0x3333: "DATA SYNC | CSBK",
-    0xEEEE: "SYNC",
+    0xEEEE: "DATA SYNC",
     0x6666: "DATA HEADER",
     0x0000: "DATA",
     0xFFFF: "UNKNOWN 0xFFFF",
     0xBBBB: "VOICE",
 }
 
-ipsc_data_types: dict = {
+ipsc_slot_types: dict = {
     0x0000: "PI HEADER",
     0x1111: "VOICE LC HDR",
     0x2222: "TERMINATOR LC",
@@ -159,9 +159,11 @@ def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
             width=3,
         )
         + format_brackets(
-            text="PRIVATE"
-            if ipsc.call_type == IpSiteConnectProtocol.CallTypes.private_call
-            else "GROUP",
+            text=(
+                "PRIVATE"
+                if ipsc.call_type == IpSiteConnectProtocol.CallTypes.private_call
+                else "GROUP"
+            ),
             width=7,
         )
         + format_brackets(
@@ -172,7 +174,7 @@ def format_ipsc_data(ipsc: IpSiteConnectProtocol) -> str:
             width=13,
         )
         + format_brackets(
-            text=ipsc_data_types.get(
+            text=ipsc_slot_types.get(
                 -1 if isinstance(ipsc.slot_type, int) else ipsc.slot_type.value,
                 f"Unknown Data Type {ipsc.slot_type}",
             ),

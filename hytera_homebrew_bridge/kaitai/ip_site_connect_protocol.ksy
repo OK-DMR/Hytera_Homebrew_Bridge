@@ -19,7 +19,7 @@ enums:
     0xBBBB: slot_type_data_a_or_privacy
     0xCCCC: slot_type_data_b
     0xDDDD: slot_type_wakeup_request
-    # migh be data or voice sync as well
+    # might be data or voice sync as well
     0xEEEE: slot_type_sync
   frame_types:
     0x1111: frame_type_voice_sync

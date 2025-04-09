@@ -16,8 +16,7 @@ class CustomBridgeDatagramProtocol(protocols.DatagramProtocol, LoggingTrait):
         self.settings.hytera_repeater_ip = address[0]
         if self.settings.snmp_enabled:
             if force or not self.settings.hytera_snmp_data:
-                asyncio.get_event_loop().run_until_complete(
-                    SNMP().walk_ip(address[0], self.settings)
-                )
+                fut = asyncio.ensure_future(SNMP().walk_ip(address[0], self.settings))
+                asyncio.get_event_loop().run_until_complete(fut)
         else:
             self.log_warning("SNMP is disabled")

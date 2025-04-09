@@ -215,14 +215,15 @@ def assemble_hytera_ipsc_wakeup_packet(
         # color code
         half_byte_to_bytes(half_byte=color_code, output_bytes=2)
         +
-        # is ipsc sync?
+        # frame_type=0 is appropriate for wakeup
         b"\x00\x00"
         + b"\x40"
         + bytes(11)
         + b"\x01\x00\x02\x00\x02\x00\x01"
         + bytes(13)
         + b"\xff\xff\xef\x08\x2a\x00"
-        + (b"\x00" if is_private_call else b"\x01")
+        # call_type=7 is wakeup call
+        + b"\x07"
         + bytes(1)
         + target_id.to_bytes(3, byteorder="little")
         + bytes(1)

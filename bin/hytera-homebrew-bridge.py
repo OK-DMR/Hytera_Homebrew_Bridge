@@ -178,11 +178,11 @@ if __name__ == "__main__":
     from hytera_homebrew_bridge.lib.settings import BridgeSettings
     from hytera_homebrew_bridge.lib.hytera_mmdvm_translator import HyteraMmdvmTranslator
 
-    uvloop_spec = importlib.util.find_spec("uvloop")
-    if uvloop_spec:
-        import uvloop
+    nest_spec = importlib.util.find_spec("nest_asyncio")
+    if nest_spec:
+        import nest_asyncio
 
-        uvloop.install()
+        nest_asyncio.apply()
 
     loop = asyncio.get_event_loop()
     # order is necessary, various asyncio object are create at bridge init
